@@ -7,10 +7,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | Phase 1 - Scaffold + demo login |
-| Phase status | In progress |
-| Last completed task | Phase 0 approved and committed |
-| Next task | 1.1 Rename branch, add `.gitignore` and `.editorconfig` |
-| Blockers / open questions | None |
+| Phase status | Awaiting review |
+| Last completed task | 1.20 README; Phase 1 committed |
+| Next task | User review of Phase 1, then 2.1 Team endpoints |
+| Blockers / open questions | Phase 1 review (see "Notes and deviations" in Phase 1) |
 | Last updated | 2026-10-26 |
 
 ## Phase overview
@@ -18,7 +18,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | Phase | Day | Milestone | Status |
 | --- | --- | --- | --- |
 | 0 | Mon | Plan approved | Done |
-| 1 | Mon | Scaffold + demo login | In progress |
+| 1 | Mon | Scaffold + demo login | Awaiting review |
 | 2 | Tue | Board | Not started |
 | 3 | Wed | Capacity grid (read) | Not started |
 | 4 | Thu am | Capacity grid interactions | Not started |
@@ -113,7 +113,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 ## Phase 1 - Scaffold + demo login (Mon)
 
-**Status:** In progress
+**Status:** Awaiting review
 **Done when:** the app opens, a seeded user signs in, the team switcher works
 
 **Files**
@@ -134,52 +134,60 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - `GET /api/auth/demo-users` (anonymous)
 - `POST /api/auth/sign-in` `{ userId }` -> 204, sets cookie
 - `POST /api/auth/sign-out` -> 204
-- `GET /api/auth/me` -> user, org role, teams with role
-- `GET /api/teams` -> teams the user can see
+- `GET /api/auth/me` -> user, org role, person id
+- `GET /api/teams` -> teams the user can see, with their role in each
 
 **Tasks**
 
-- [ ] 1.1 Rename branch to `main`; add `.gitignore` and `.editorconfig`
-- [ ] 1.2 `docker-compose.yml`: Postgres 18, named volume, healthcheck
-- [ ] 1.3 Create solution, `Juggle.Api` (controllers) and `Juggle.Api.Tests`; `Directory.Build.props` with nullable, implicit usings, warnings as errors
-- [ ] 1.4 Add packages: Npgsql EF Core provider, EF Core Design, OpenAPI; tests: Mvc.Testing, Testcontainers.PostgreSql
-- [ ] 1.5 Entities for the 12 tables (plus `RejectionReason`) and enums
-- [ ] 1.6 `JuggleDbContext`: configurations, `OrgId` global query filters, enums as strings
-- [ ] 1.7 Initial migration
-- [ ] 1.8 `OrgClock`: today in Africa/Johannesburg, Monday week start
-- [ ] 1.9 Auth: cookie scheme, `IDemoAuth` / `CookieDemoAuth`, `CurrentUser` from claims, `TeamAccess` (can view / can manage team)
-- [ ] 1.10 ProblemDetails, logging, `Branding` options
-- [ ] 1.11 `DemoSeeder` (idempotent, runs on startup in Development, `--reset-demo` flag):
-  - [ ] Organisation, departments, teams, users, memberships, people
-  - [ ] Design and Marketing workflow statuses
-  - [ ] 8 to 10 projects with colours and departments
-  - [ ] About 40 tasks across columns; 3 overdue; some with review cycle 2 or 3
-  - [ ] Allocations for 6 weeks (2 back, 4 ahead): most at 60 to 90%, one over 100% next week, one under 40%
-  - [ ] Time off for 2 people in the next 2 weeks
-  - [ ] SA public holidays for the current and next year
-  - [ ] Requests: 5 New in Design, 2 New in Marketing, 3 Accepted
-- [ ] 1.12 `AuthController` and `TeamsController`
-- [ ] 1.13 Smoke test: `ApiFactory` (Testcontainers) and `AuthTests`
-- [ ] 1.14 Scaffold `juggle-web` in `web/`; add Tailwind, angular-eslint, Angular CDK, dev proxy
-- [ ] 1.15 Branding: `branding.ts` constant, accent colour in the Tailwind theme, `logo.svg`
-- [ ] 1.16 Core: models, `AuthService`, `TeamContextService`, auth and role guards
-- [ ] 1.17 Shell: left nav (role-aware), header with team switcher, current user, "Switch user"
-- [ ] 1.18 Login page; landing redirect per role
-- [ ] 1.19 Routes `/login`, `/t/:teamId/{capacity,board,triage,dashboard}`, `/request` with placeholder pages
-- [ ] 1.20 `README.md`: Docker Compose, API, web, seed reset
+- [x] 1.1 Rename branch to `main`; add `.gitignore` and `.editorconfig`
+- [x] 1.2 `docker-compose.yml`: Postgres 18, named volume, healthcheck
+- [x] 1.3 Create solution, `Juggle.Api` (controllers) and `Juggle.Api.Tests`; `Directory.Build.props` with nullable, implicit usings, warnings as errors
+- [x] 1.4 Add packages: Npgsql EF Core provider, EF Core Design, OpenAPI; tests: Mvc.Testing, Testcontainers.PostgreSql
+- [x] 1.5 Entities for the 12 tables (plus `RejectionReason`) and enums
+- [x] 1.6 `JuggleDbContext`: configurations, `OrgId` global query filters, enums as strings
+- [x] 1.7 Initial migration
+- [x] 1.8 `OrgClock`: today in Africa/Johannesburg, Monday week start
+- [x] 1.9 Auth: cookie scheme, `IDemoAuth` / `CookieDemoAuth`, `CurrentUser` from claims, `TeamAccess` (can view / can manage team)
+- [x] 1.10 ProblemDetails, logging, `Branding` options
+- [x] 1.11 `DemoSeeder` (idempotent, runs on startup in Development, `--reset-demo` flag):
+  - [x] Organisation, departments, teams, users, memberships, people
+  - [x] Design and Marketing workflow statuses
+  - [x] 8 to 10 projects with colours and departments
+  - [x] About 40 tasks across columns; 3 overdue; some with review cycle 2 or 3
+  - [x] Allocations for 6 weeks (2 back, 4 ahead): most at 60 to 90%, one over 100% next week, one under 40%
+  - [x] Time off for 2 people in the next 2 weeks
+  - [x] SA public holidays for the current and next year
+  - [x] Requests: 5 New in Design, 2 New in Marketing, 3 Accepted
+- [x] 1.12 `AuthController` and `TeamsController`
+- [x] 1.13 Smoke test: `ApiFactory` (Testcontainers) and `AuthTests`
+- [x] 1.14 Scaffold `juggle-web` in `web/`; add Tailwind, angular-eslint, Angular CDK, dev proxy
+- [x] 1.15 Branding: `branding.ts` constant, accent colour in the Tailwind theme, `logo.svg`
+- [x] 1.16 Core: models, `AuthService`, `TeamContextService`, auth and role guards
+- [x] 1.17 Shell: left nav (role-aware), header with team switcher, current user, "Switch user"
+- [x] 1.18 Login page; landing redirect per role
+- [x] 1.19 Routes `/login`, `/t/:teamId/{capacity,board,triage,dashboard}`, `/request` with placeholder pages
+- [x] 1.20 `README.md`: Docker Compose, API, web, seed reset
 
 **Acceptance criteria**
 
-- [ ] Lists seeded users with name, role and team; clicking one signs in
-- [ ] Header shows the user and a "Switch user" action
+- [x] Lists seeded users with name, role and team; clicking one signs in
+- [x] Header shows the user and a "Switch user" action
+
+**Notes and deviations**
+
+- Small data model additions: `User.DepartmentId` (requesters show their department on the login screen), `Request.CreatedAt` (triage sorts newest first), `TimeOff.Description` (holiday names), `TeamMembership.OrgId` (OrgId on every table)
+- The task entity is `TaskItem` (table `Tasks`) to avoid clashing with `System.Threading.Tasks.Task`
+- `global.json` (opts `dotnet test` into Microsoft.Testing.Platform, required by xUnit v3 on .NET 10) and the `dotnet-ef` tool manifest live at the repo root
+- API errors: services throw `NotFoundException` / `ForbiddenException` / `BadRequestException`, mapped to ProblemDetails by `ApiExceptionHandler`
+- Data-driven colours (avatars, later project colours) use `[style.background-color]` bindings, since Tailwind cannot generate classes for runtime values
 
 **Review gate**
 
-- [ ] Build passes with no warnings, lint passes, smoke tests pass
-- [ ] Acceptance criteria ticked
-- [ ] Committed as `Phase 1: Scaffold and demo login`
-- [ ] "Where we left off" and status updated to Awaiting review
-- [ ] **STOP** for review
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Acceptance criteria ticked
+- [x] Committed as `Phase 1: Scaffold and demo login`
+- [x] "Where we left off" and status updated to Awaiting review
+- [x] **STOP** for review
 - [ ] Approved by user
 
 ---
@@ -464,3 +472,4 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 ## Progress log
 
 - 2026-10-26: Read the brief, created `CLAUDE.md` and this plan. Decisions D1-D34 approved; Phase 0 committed. Starting Phase 1.
+- 2026-10-26: Phase 1 built and verified (API smoke tests, web unit test, headless-browser walkthrough of login, team switcher and role landing pages). Committed; awaiting review.

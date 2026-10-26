@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Juggle.Api.Tests/Juggle.Api.Tests.csproj" />
+  <Project Path="Juggle.Api/Juggle.Api.csproj" />
+</Solution>

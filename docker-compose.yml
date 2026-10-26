@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: juggle
+      POSTGRES_USER: juggle
+      POSTGRES_PASSWORD: juggle_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - juggle-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U juggle -d juggle"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  juggle-db:

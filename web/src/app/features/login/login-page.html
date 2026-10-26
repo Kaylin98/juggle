@@ -1,0 +1,42 @@
+<div class="flex min-h-screen items-start justify-center px-4 py-16">
+  <div class="w-full max-w-xl">
+    <div class="mb-8 flex flex-col items-center text-center">
+      <img [src]="branding.logoUrl" alt="" class="mb-4 size-12" />
+      <h1 class="text-2xl font-semibold tracking-tight">Sign in to {{ branding.productName }}</h1>
+      <p class="mt-1 text-sm text-slate-500">Demo mode: pick a user to see the app from their point of view.</p>
+    </div>
+
+    @if (users.isLoading()) {
+      <p class="text-center text-sm text-slate-500">Loading users...</p>
+    } @else if (users.error()) {
+      <p class="text-center text-sm text-red-600">Could not load users. Is the API running?</p>
+    } @else {
+      <div class="flex flex-col gap-6">
+        @for (group of groups(); track group.heading) {
+          <section>
+            <h2 class="mb-2 px-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">{{ group.heading }}</h2>
+            <ul class="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white">
+              @for (user of group.users; track user.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 disabled:opacity-60"
+                    [disabled]="signingInAs() !== null"
+                    (click)="signIn(user)"
+                  >
+                    <app-avatar [name]="user.name" [colour]="user.avatarColour" />
+                    <span class="min-w-0 flex-1">
+                      <span class="block text-sm font-medium">{{ user.name }}</span>
+                      <span class="block truncate text-xs text-slate-500">{{ subtitle(user) }}</span>
+                    </span>
+                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{{ user.role }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+    }
+  </div>
+</div>

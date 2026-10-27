@@ -478,6 +478,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 - "My requests" list for requesters
 - Settings screens (statuses, request types, teams)
+- Make D36 a setting: Team Admins and Org Admins choose whether Members can reassign their own tasks. Could live on a settings page that works per department (team)
 - Comments, audit log, notifications, email
 - SSO (Entra ID, Google) behind `IDemoAuth`
 - Azure deployment

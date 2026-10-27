@@ -1,4 +1,5 @@
-import { Component, computed, input } from '@angular/core';
+import { formatDate } from '@angular/common';
+import { Component, LOCALE_ID, computed, inject, input } from '@angular/core';
 import { Allocation } from '../../core/models';
 import { formatHours } from '../../shared/load-colour';
 
@@ -19,13 +20,17 @@ import { formatHours } from '../../shared/load-colour';
   `,
 })
 export class AllocationBar {
+  private readonly locale = inject(LOCALE_ID);
+
   readonly allocation = input.required<Allocation>();
 
   protected readonly hours = computed(() => formatHours(this.allocation().hoursPerDay));
 
+  /** For example "Q1 Campaign (Design team): 4h/day, 12 Oct to 20 Nov". */
   protected readonly title = computed(() => {
     const a = this.allocation();
-    const owner = a.otherTeam ? " (another team's project)" : '';
-    return `${a.projectName}${owner}: ${this.hours()}h/day, ${a.startDate} to ${a.endDate}`;
+    const from = formatDate(a.startDate, 'd MMM', this.locale);
+    const to = formatDate(a.endDate, 'd MMM', this.locale);
+    return `${a.projectName} (${a.teamName} team): ${this.hours()}h/day, ${from} to ${to}`;
   });
 }

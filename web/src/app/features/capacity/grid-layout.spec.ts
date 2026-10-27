@@ -10,6 +10,7 @@ function allocation(id: string, startDate: string, endDate: string): Allocation 
     projectId: 'x',
     projectName: id,
     projectColour: '#000',
+    teamName: 'Design',
     taskId: null,
     startDate,
     endDate,

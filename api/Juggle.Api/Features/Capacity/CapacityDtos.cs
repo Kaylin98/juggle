@@ -27,6 +27,7 @@ public sealed record AllocationDto(
     Guid ProjectId,
     string ProjectName,
     string ProjectColour,
+    string TeamName,
     Guid? TaskId,
     DateOnly StartDate,
     DateOnly EndDate,

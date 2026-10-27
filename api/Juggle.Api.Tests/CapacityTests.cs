@@ -79,7 +79,7 @@ public sealed class CapacityTests(ApiFactory api)
 
         var jason = schedule.People.Single(p => p.Name == "Jason van Wyk");
         var jasonBars = schedule.Allocations.Where(a => a.PersonId == jason.Id).ToList();
-        Assert.Contains(jasonBars, a => a.OtherTeam && a.ProjectName == "Social Calendar");
+        Assert.Contains(jasonBars, a => a.OtherTeam && a.ProjectName == "Social Calendar" && a.TeamName == "Marketing");
         Assert.Contains(jasonBars, a => !a.OtherTeam && a.ProjectName == "Q1 Campaign");
         Assert.Contains(jason.Days, d => d.TimeOff is null && d.Allocated == 6.5m);
     }

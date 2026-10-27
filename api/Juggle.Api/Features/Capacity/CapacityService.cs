@@ -40,6 +40,8 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
             .AsNoTracking()
             .ToListAsync(ct);
 
+        var teamNames = await db.Teams.ToDictionaryAsync(t => t.Id, t => t.Name, ct);
+
         var timeOff = await db.TimeOff
             .Where(t => t.Status == TimeOffStatus.Approved
                 && (t.PersonId == null || personIds.Contains(t.PersonId.Value))
@@ -69,6 +71,7 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
                 a.ProjectId,
                 a.Project.Name,
                 a.Project.Colour,
+                teamNames[a.Project.TeamId],
                 a.TaskId,
                 a.StartDate,
                 a.EndDate,

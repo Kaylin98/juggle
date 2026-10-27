@@ -68,6 +68,22 @@ public sealed class TasksTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task Member_cannot_reassign_their_own_task()
+    {
+        var client = await api.SignInAsAsync("Jason van Wyk");
+        var task = (await GetTasksAsync(client, "Design")).Single(t => t.Title == "Campaign key visual");
+        var designId = await GetTeamIdAsync(client, "Design");
+        var people = await client.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{designId}/people", ApiFactory.Json, _ct);
+        var colleague = people!.First(p => p.Id != task.AssigneePersonId);
+
+        var response = await client.PutAsJsonAsync($"/api/tasks/{task.Id}", ToUpdate(task) with { AssigneePersonId = colleague.Id }, ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var after = (await GetTasksAsync(client, "Design")).Single(t => t.Id == task.Id);
+        Assert.Equal(task.AssigneePersonId, after.AssigneePersonId);
+    }
+
+    [Fact]
     public async Task Update_without_a_title_returns_400()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");

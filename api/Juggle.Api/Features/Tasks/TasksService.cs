@@ -23,6 +23,12 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, OrgC
     public async Task<TaskDto> UpdateAsync(Guid id, UpdateTaskRequest request, CancellationToken ct)
     {
         var task = await FindEditableAsync(id, ct);
+        if (request.AssigneePersonId != task.AssigneePersonId
+            && await teamAccess.GetRoleAsync(task.TeamId, ct) != TeamRole.TeamAdmin)
+        {
+            throw new ForbiddenException("Only team admins can reassign tasks.");
+        }
+
         if (request.AssigneePersonId is { } personId
             && !await db.People.AnyAsync(p => p.Id == personId && p.User.Memberships.Any(m => m.TeamId == task.TeamId), ct))
         {

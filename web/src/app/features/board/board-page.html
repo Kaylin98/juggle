@@ -36,5 +36,9 @@
 </div>
 
 @if (openCard(); as card) {
-  <app-task-drawer [card]="card" [people]="data()?.people ?? []" (closed)="openTaskId.set(null)" (saved)="onSaved($event)" />
+  <app-task-drawer
+    [card]="card"
+    [people]="data()?.people ?? []"
+    [canReassign]="teamContext.isTeamAdmin()"
+    (closed)="openTaskId.set(null)" (saved)="onSaved($event)" />
 }

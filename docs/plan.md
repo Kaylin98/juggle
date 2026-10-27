@@ -73,6 +73,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D30 The request confirmation page shows the request's title and status (New). No "My requests" list (in Later)
 - D34 Moving a bar can change its dates and its person (drop on another row in the same team)
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
+- D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it
 
 **Seed**
 
@@ -236,6 +237,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 **Notes and deviations**
 
+- Review fix (D36): Members can no longer reassign their own tasks. The API returns 403 and the drawer shows the assignee read-only with "Ask a team admin to reassign this task."
 - No `GET /api/tasks/{id}`: the drawer uses the board's data and `PUT` returns the saved task, so nothing needed it
 - The service is `TasksService`, matching `TeamsService`
 - `TaskDto.IsOverdue` is computed on the server with the org's date (D21), so the browser's time zone cannot change it

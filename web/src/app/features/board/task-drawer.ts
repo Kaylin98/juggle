@@ -50,6 +50,8 @@ export class TaskDrawer {
 
   readonly card = input.required<BoardCard>();
   readonly people = input.required<Person[]>();
+  /** Only Team Admins change the assignee (D36). */
+  readonly canReassign = input.required<boolean>();
   readonly closed = output<void>();
   readonly saved = output<Task>();
 
@@ -57,6 +59,7 @@ export class TaskDrawer {
 
   protected readonly taskForm = form(this.model, (task) => {
     disabled(task, () => !this.card().canEdit);
+    disabled(task.assigneePersonId, () => !this.canReassign());
     required(task.title, { message: 'Enter a title.' });
     maxLength(task.title, 200, { message: 'Keep the title under 200 characters.' });
     maxLength(task.description, 4000, { message: 'Keep the description under 4000 characters.' });

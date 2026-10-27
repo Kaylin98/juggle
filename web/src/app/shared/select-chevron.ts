@@ -2,11 +2,14 @@ import { Component } from '@angular/core';
 
 /**
  * The arrow for a styled select. Place it after the select inside a `relative` wrapper;
- * the select needs `appearance-none` and right padding (`pr-9`) to make room for it.
+ * the select needs `appearance-none`, right padding (`pr-9`) to make room for it, and the
+ * `peer` class so the arrow hides when the select is disabled.
  */
 @Component({
   selector: 'app-select-chevron',
-  host: { class: 'pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-500' },
+  host: {
+    class: 'pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-500 peer-disabled:hidden',
+  },
   template: `
     <!-- Heroicons chevron-down (mini, MIT) -->
     <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

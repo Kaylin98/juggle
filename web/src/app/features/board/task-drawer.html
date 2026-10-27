@@ -26,7 +26,7 @@
       <div>
         <label class="form-label" for="task-assignee">Assignee</label>
         <span class="relative block">
-          <select id="task-assignee" class="form-select" [formField]="taskForm.assigneePersonId">
+          <select id="task-assignee" class="form-select peer" [formField]="taskForm.assigneePersonId">
             <option value="">Unassigned</option>
             @for (person of people(); track person.id) {
               <option [value]="person.id">{{ person.name }}</option>

@@ -10,7 +10,7 @@ import { SelectChevron } from '../shared/select-chevron';
     <label class="flex items-center gap-2 text-sm">
       <span class="text-slate-500">Team</span>
       <span class="relative">
-        <select class="compact-select" (change)="teamContext.switchTo($any($event.target).value)">
+        <select class="compact-select peer" (change)="teamContext.switchTo($any($event.target).value)">
           @for (team of auth.teams(); track team.id) {
             <option [value]="team.id" [selected]="team.id === teamContext.teamId()">{{ team.name }}</option>
           }

@@ -77,3 +77,41 @@ export interface UpdateTask {
   dueDate: string | null;
   link: string | null;
 }
+
+export interface DayLoad {
+  date: string;
+  capacity: number;
+  allocated: number;
+  /** Why the day is not worked (leave, a public holiday), or null on a working day. */
+  timeOff: string | null;
+}
+
+export interface SchedulePerson {
+  id: string;
+  name: string;
+  avatarColour: string;
+  jobTitle: string;
+  hoursPerDay: number;
+  days: DayLoad[];
+}
+
+export interface Allocation {
+  id: string;
+  personId: string;
+  projectId: string;
+  projectName: string;
+  projectColour: string;
+  taskId: string | null;
+  startDate: string;
+  endDate: string;
+  hoursPerDay: number;
+  notes: string | null;
+  /** The project belongs to another team; shown greyed. */
+  otherTeam: boolean;
+}
+
+export interface Schedule {
+  days: string[];
+  people: SchedulePerson[];
+  allocations: Allocation[];
+}

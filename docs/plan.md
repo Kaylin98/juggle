@@ -6,11 +6,11 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | Phase 2 - Board |
+| Current phase | Phase 3 - Schedule, read |
 | Phase status | Awaiting review |
-| Last completed task | 2.10 Member restriction; Phase 2 committed |
-| Next task | User review of Phase 2, then 3.1 `CapacityCalculator` |
-| Blockers / open questions | Phase 2 review (see "Notes and deviations" in Phase 2) |
+| Last completed task | 3.11 "All teams"; Phase 3 committed |
+| Next task | User review of Phase 3, then 4.1 `AllocationService` |
+| Blockers / open questions | Phase 3 review (see "Notes and deviations" in Phase 3) |
 | Last updated | 2026-10-27 |
 
 ## Phase overview
@@ -19,8 +19,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- | --- | --- |
 | 0 | Mon | Plan approved | Done |
 | 1 | Mon | Scaffold + demo login | Done |
-| 2 | Tue | Board | Awaiting review |
-| 3 | Wed | Schedule (read) | Not started |
+| 2 | Tue | Board | Done |
+| 3 | Wed | Schedule (read) | Awaiting review |
 | 4 | Thu am | Schedule interactions | Not started |
 | 5 | Thu pm | Requests + triage | Not started |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
@@ -196,7 +196,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 ## Phase 2 - Board (Tue)
 
-**Status:** Awaiting review
+**Status:** Done
 **Done when:** Design and Marketing boards differ; moves persist after reload
 
 **Files**
@@ -256,55 +256,65 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - [x] Committed as `Phase 2: Board`
 - [x] "Where we left off" and status updated to Awaiting review
 - [x] **STOP** for review
-- [ ] Approved by user
+- [x] Approved by user (2026-10-27)
 
 ---
 
 ## Phase 3 - Schedule, read (Wed)
 
-**Status:** Not started
+**Status:** Awaiting review
 **Done when:** the grid shows seeded load correctly, including cross-team people
 
 **Files**
 
 - API: `Features/Capacity/{CapacityController, CapacityService, CapacityCalculator, CapacityDtos}.cs`
 - Tests: `CapacityTests.cs` (endpoint smoke test and calculator unit test)
-- Web: `features/capacity/{capacity-page, capacity-grid, person-row, allocation-bar, grid-toolbar, capacity.service, lanes.ts}`, `shared/{dates.ts, load-colour.ts}`
+- Web: `features/capacity/{capacity-page, capacity-grid, person-row, allocation-bar, grid-toolbar, capacity.service, grid-layout.ts}`, `shared/{dates.ts, load-colour.ts}`
 
 **Endpoints**
 
-- `GET /api/capacity?teamId={id|all}&start=YYYY-MM-DD&weeks=1|2|4` -> people, allocations (with an `otherTeam` flag), time off, holidays, per-day load
+- `GET /api/capacity?teamId={id|all}&start=YYYY-MM-DD&weeks=1|2|4` -> weekdays, people with per-day load (capacity, allocated, time-off reason), allocations (with an `otherTeam` flag)
 
 **Tasks**
 
-- [ ] 3.1 `CapacityCalculator`: working days, day capacity, day load (D13-D15); unit test
-- [ ] 3.2 `CapacityService` and controller
-- [ ] 3.3 Smoke test: `CapacityTests`
-- [ ] 3.4 Shared `dates.ts` and `load-colour.ts`
-- [ ] 3.5 Grid layout: CSS grid, sticky person column, weekday columns, week headers
-- [ ] 3.6 Toolbar: 1, 2 or 4 weeks; previous, next, today
-- [ ] 3.7 Allocation bars stacked in lanes: project colour, name, hours/day
-- [ ] 3.8 Cell load colour and hours free
-- [ ] 3.9 Time off and public holidays as hatched blocks
-- [ ] 3.10 Other-team allocations greyed
-- [ ] 3.11 "All teams" option for Org Admin
+- [x] 3.1 `CapacityCalculator`: working days, day capacity, day load (D13-D15); unit test
+- [x] 3.2 `CapacityService` and controller
+- [x] 3.3 Smoke test: `CapacityTests`
+- [x] 3.4 Shared `dates.ts` and `load-colour.ts`
+- [x] 3.5 Grid layout: CSS grid, sticky person column, weekday columns, week headers
+- [x] 3.6 Toolbar: 1, 2 or 4 weeks; previous, next, today
+- [x] 3.7 Allocation bars stacked in lanes: project colour, name, hours/day
+- [x] 3.8 Cell load colour and hours free
+- [x] 3.9 Time off and public holidays as hatched blocks
+- [x] 3.10 Other-team allocations greyed
+- [x] 3.11 "All teams" option for Org Admin
 
 **Acceptance criteria**
 
-- [ ] Rows = people in the current team; columns = weekdays; view 1, 2 or 4 weeks; previous/next/today
-- [ ] Allocation bars show project colour, name and hours/day; one person can have several bars per day
-- [ ] Each cell shows load colour (green under 80%, amber 80 to 100%, red over 100%) and hours free
-- [ ] Time off and public holidays show as hatched blocks and reduce capacity
-- [ ] Load includes allocations from other teams (shown greyed)
-- [ ] Org Admin sees a team switcher option "All teams" on the schedule
+- [x] Rows = people in the current team; columns = weekdays; view 1, 2 or 4 weeks; previous/next/today
+- [x] Allocation bars show project colour, name and hours/day; one person can have several bars per day
+- [x] Each cell shows load colour (green under 80%, amber 80 to 100%, red over 100%) and hours free
+- [x] Time off and public holidays show as hatched blocks and reduce capacity
+- [x] Load includes allocations from other teams (shown greyed)
+- [x] Org Admin sees a team switcher option "All teams" on the schedule
+
+**Notes and deviations**
+
+- The server works out each person's day load (`CapacityCalculator`) and sends it with the reason for any day off, so the browser only draws it; Phase 6's dashboard can reuse the same rules
+- A red day shows "2h over" rather than "0h free" (D15 keeps hours free at 0 or more, so the label shows how far over instead); the 4-week view uses short labels ("2h", "+2")
+- Time off is a hatched block across the person's bars on those days, since allocations do not count on days off (D13)
+- "All teams" is the URL `/t/<team>/capacity?teams=all`, so the nav and guards keep working with a real team; picking a team clears it
+- The view opens on 2 weeks, so the demo shows this week and next week (Lerato over capacity, Amahle on leave) together
+- Grid placement (`grid-column`, `grid-row`) uses style bindings, like project colours, since the positions come from data
+- No public holiday falls in the next 4 weeks of the seed; paging forward to December shows Christmas Day and New Year's Day
 
 **Review gate**
 
-- [ ] Build passes with no warnings, lint passes, smoke tests pass
-- [ ] Acceptance criteria ticked
-- [ ] Committed as `Phase 3: Schedule`
-- [ ] "Where we left off" and status updated to Awaiting review
-- [ ] **STOP** for review
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Acceptance criteria ticked
+- [x] Committed as `Phase 3: Schedule`
+- [x] "Where we left off" and status updated to Awaiting review
+- [x] **STOP** for review
 - [ ] Approved by user
 
 ---
@@ -494,3 +504,4 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - 2026-10-26: Read the brief, created `CLAUDE.md` and this plan. Decisions D1-D34 approved; Phase 0 committed. Starting Phase 1.
 - 2026-10-26: Phase 1 built and verified (API smoke tests, web unit test, headless-browser walkthrough of login, team switcher and role landing pages). Committed; awaiting review.
 - 2026-10-27: Phase 1 approved. Schedule rename (D35) and team dropdown fix. Phase 2 built and verified (10 API tests, 10 web unit tests, headless-browser walkthrough of columns, cards, drag between and within columns, filtered drag, filters, drawer edit, Marketing board, Member restrictions). Committed; awaiting review.
+- 2026-10-27: Phase 2 review fixes (D36 admin-only reassign, disabled field styling, toast position); reassign setting recorded under Later. Phase 2 approved. Phase 3 built and verified (18 API tests, 19 web unit tests, headless-browser walkthrough of 1/2/4 weeks, paging, load colours, leave and holidays, greyed cross-team bars, All teams, Marketing, Member view). Committed; awaiting review.

@@ -57,3 +57,26 @@ describe('TeamContextService.switchTo', () => {
     expect(await switchTeam('/t/design/triage', 'marketing')).toBe('/t/marketing/board');
   });
 });
+
+describe('TeamContextService.showAllTeams', () => {
+  it('shows every team on the schedule until a team is picked', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    TestBed.inject(AuthService).teams.set([
+      { id: 'design', name: 'Design', colour: '#7c3aed', myRole: 'TeamAdmin' },
+      { id: 'marketing', name: 'Marketing', colour: '#0284c7', myRole: 'TeamAdmin' },
+    ]);
+    const router = TestBed.inject(Router);
+    const teamContext = TestBed.inject(TeamContextService);
+    await router.navigateByUrl('/t/design/capacity');
+
+    teamContext.showAllTeams();
+    await vi.waitFor(() => expect(router.url).toBe('/t/design/capacity?teams=all'));
+    expect(teamContext.allTeams()).toBe(true);
+
+    teamContext.switchTo('marketing');
+    await vi.waitFor(() => expect(router.url).toBe('/t/marketing/capacity'));
+    expect(teamContext.allTeams()).toBe(false);
+  });
+});

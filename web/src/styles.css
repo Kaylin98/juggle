@@ -43,6 +43,12 @@
   }
 }
 
+/* Time off and public holidays on the schedule. */
+@utility hatched {
+  background-color: var(--color-slate-100);
+  background-image: repeating-linear-gradient(135deg, var(--color-slate-200) 0 6px, transparent 6px 12px);
+}
+
 /* Angular CDK drag and drop adds these classes at runtime; the drag preview is appended to <body>. */
 .cdk-drag-preview {
   @apply rotate-1 shadow-lg;

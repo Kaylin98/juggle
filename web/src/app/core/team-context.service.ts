@@ -6,6 +6,8 @@ import { AuthService } from './auth.service';
 
 const TEAM_URL = /^\/t\/([^/?#]+)(?:\/([^/?#]+))?/;
 
+export const ALL_TEAMS = 'all';
+
 /** The team being viewed, taken from the `/t/:teamId/...` URL. Pages outside a team keep the last one. */
 @Injectable({ providedIn: 'root' })
 export class TeamContextService {
@@ -34,6 +36,15 @@ export class TeamContextService {
   readonly team = computed(() => this.auth.teams().find((t) => t.id === this.teamId()) ?? null);
 
   readonly isTeamAdmin = computed(() => this.team()?.myRole === 'TeamAdmin');
+
+  /** Org Admins can show every team on the schedule ("All teams"), kept in the URL as `?teams=all`. */
+  readonly allTeams = computed(
+    () => this.page() === 'capacity' && this.router.parseUrl(this.url()).queryParams['teams'] === ALL_TEAMS,
+  );
+
+  showAllTeams(): void {
+    void this.router.navigate(['/t', this.teamId(), 'capacity'], { queryParams: { teams: ALL_TEAMS } });
+  }
 
   /** Opens the same page in another team, falling back to the role's landing page. */
   switchTo(teamId: string): void {

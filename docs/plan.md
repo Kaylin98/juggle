@@ -7,10 +7,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | Phase 3 - Schedule, read |
-| Phase status | Awaiting review |
-| Last completed task | 3.11 "All teams"; Phase 3 committed |
-| Next task | User review of Phase 3, then 4.1 `AllocationService` |
-| Blockers / open questions | Phase 3 review (see "Notes and deviations" in Phase 3) |
+| Phase status | Done (Phase 4 not started; waiting for the go-ahead) |
+| Last completed task | Phase 3 approved |
+| Next task | 4.1 `AllocationService`, once the user says to start Phase 4 |
+| Blockers / open questions | Waiting for the user to start Phase 4 |
 | Last updated | 2026-10-27 |
 
 ## Phase overview
@@ -20,7 +20,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 0 | Mon | Plan approved | Done |
 | 1 | Mon | Scaffold + demo login | Done |
 | 2 | Tue | Board | Done |
-| 3 | Wed | Schedule (read) | Awaiting review |
+| 3 | Wed | Schedule (read) | Done |
 | 4 | Thu am | Schedule interactions | Not started |
 | 5 | Thu pm | Requests + triage | Not started |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
@@ -262,7 +262,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 ## Phase 3 - Schedule, read (Wed)
 
-**Status:** Awaiting review
+**Status:** Done
 **Done when:** the grid shows seeded load correctly, including cross-team people
 
 **Files**
@@ -315,7 +315,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - [x] Committed as `Phase 3: Schedule`
 - [x] "Where we left off" and status updated to Awaiting review
 - [x] **STOP** for review
-- [ ] Approved by user
+- [x] Approved by user (2026-10-27)
 
 ---
 
@@ -505,3 +505,4 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - 2026-10-26: Phase 1 built and verified (API smoke tests, web unit test, headless-browser walkthrough of login, team switcher and role landing pages). Committed; awaiting review.
 - 2026-10-27: Phase 1 approved. Schedule rename (D35) and team dropdown fix. Phase 2 built and verified (10 API tests, 10 web unit tests, headless-browser walkthrough of columns, cards, drag between and within columns, filtered drag, filters, drawer edit, Marketing board, Member restrictions). Committed; awaiting review.
 - 2026-10-27: Phase 2 review fixes (D36 admin-only reassign, disabled field styling, toast position); reassign setting recorded under Later. Phase 2 approved. Phase 3 built and verified (18 API tests, 19 web unit tests, headless-browser walkthrough of 1/2/4 weeks, paging, load colours, leave and holidays, greyed cross-team bars, All teams, Marketing, Member view). Committed; awaiting review.
+- 2026-10-27: Phase 3 review fix (team name in allocation tooltips). Phase 3 approved; Phase 4 on hold until the user says to start.

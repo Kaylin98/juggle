@@ -4,6 +4,7 @@ using Juggle.Api.Common;
 using Juggle.Api.Data;
 using Juggle.Api.Data.Seed;
 using Juggle.Api.Features.Auth;
+using Juggle.Api.Features.Tasks;
 using Juggle.Api.Features.Teams;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -25,6 +26,7 @@ builder.Services.AddScoped<IDemoAuth, CookieDemoAuth>();
 builder.Services.AddScoped<DemoSeeder>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<TeamsService>();
+builder.Services.AddScoped<TasksService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

@@ -1,0 +1,79 @@
+import { Component, inject, input, linkedSignal, output } from '@angular/core';
+import { FormField, disabled, form, max, maxLength, min, required, submit } from '@angular/forms/signals';
+import { Person, Task, UpdateTask } from '../../core/models';
+import { Drawer } from '../../shared/drawer';
+import { SelectChevron } from '../../shared/select-chevron';
+import { ToastService } from '../../shared/toast.service';
+import { BoardService } from './board.service';
+import { BoardCard } from './task-card';
+
+/** Form fields as the inputs hold them: empty strings for blank values. */
+interface TaskForm {
+  title: string;
+  description: string;
+  assigneePersonId: string;
+  estimateHours: number | null;
+  dueDate: string;
+  link: string;
+}
+
+function toForm(task: Task): TaskForm {
+  return {
+    title: task.title,
+    description: task.description ?? '',
+    assigneePersonId: task.assigneePersonId ?? '',
+    estimateHours: task.estimateHours,
+    dueDate: task.dueDate ?? '',
+    link: task.link ?? '',
+  };
+}
+
+function toUpdate(value: TaskForm): UpdateTask {
+  return {
+    title: value.title.trim(),
+    description: value.description.trim() || null,
+    assigneePersonId: value.assigneePersonId || null,
+    estimateHours: value.estimateHours,
+    dueDate: value.dueDate || null,
+    link: value.link.trim() || null,
+  };
+}
+
+@Component({
+  selector: 'app-task-drawer',
+  imports: [Drawer, FormField, SelectChevron],
+  templateUrl: './task-drawer.html',
+})
+export class TaskDrawer {
+  private readonly boardService = inject(BoardService);
+  private readonly toast = inject(ToastService);
+
+  readonly card = input.required<BoardCard>();
+  readonly people = input.required<Person[]>();
+  readonly closed = output<void>();
+  readonly saved = output<Task>();
+
+  protected readonly model = linkedSignal(() => toForm(this.card().task));
+
+  protected readonly taskForm = form(this.model, (task) => {
+    disabled(task, () => !this.card().canEdit);
+    required(task.title, { message: 'Enter a title.' });
+    maxLength(task.title, 200, { message: 'Keep the title under 200 characters.' });
+    maxLength(task.description, 4000, { message: 'Keep the description under 4000 characters.' });
+    min(task.estimateHours, 0, { message: 'The estimate cannot be negative.' });
+    max(task.estimateHours, 999, { message: 'The estimate must be under 1000 hours.' });
+    maxLength(task.link, 1000, { message: 'Keep the link under 1000 characters.' });
+  });
+
+  protected async save(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.taskForm, async () => {
+      try {
+        this.saved.emit(await this.boardService.updateTask(this.card().task.id, toUpdate(this.model())));
+      } catch (error) {
+        this.toast.error(error);
+      }
+      return undefined;
+    });
+  }
+}

@@ -6,20 +6,20 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | Phase 1 - Scaffold + demo login |
+| Current phase | Phase 2 - Board |
 | Phase status | Awaiting review |
-| Last completed task | 1.20 README; Phase 1 committed |
-| Next task | User review of Phase 1, then 2.1 Team endpoints |
-| Blockers / open questions | Phase 1 review (see "Notes and deviations" in Phase 1) |
-| Last updated | 2026-10-26 |
+| Last completed task | 2.10 Member restriction; Phase 2 committed |
+| Next task | User review of Phase 2, then 3.1 `CapacityCalculator` |
+| Blockers / open questions | Phase 2 review (see "Notes and deviations" in Phase 2) |
+| Last updated | 2026-10-27 |
 
 ## Phase overview
 
 | Phase | Day | Milestone | Status |
 | --- | --- | --- | --- |
 | 0 | Mon | Plan approved | Done |
-| 1 | Mon | Scaffold + demo login | Awaiting review |
-| 2 | Tue | Board | Not started |
+| 1 | Mon | Scaffold + demo login | Done |
+| 2 | Tue | Board | Awaiting review |
 | 3 | Wed | Schedule (read) | Not started |
 | 4 | Thu am | Schedule interactions | Not started |
 | 5 | Thu pm | Requests + triage | Not started |
@@ -114,7 +114,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 ## Phase 1 - Scaffold + demo login (Mon)
 
-**Status:** Awaiting review
+**Status:** Done
 **Done when:** the app opens, a seeded user signs in, the team switcher works
 
 **Files**
@@ -189,20 +189,20 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - [x] Committed as `Phase 1: Scaffold and demo login`
 - [x] "Where we left off" and status updated to Awaiting review
 - [x] **STOP** for review
-- [ ] Approved by user
+- [x] Approved by user (2026-10-27)
 
 ---
 
 ## Phase 2 - Board (Tue)
 
-**Status:** Not started
+**Status:** Awaiting review
 **Done when:** Design and Marketing boards differ; moves persist after reload
 
 **Files**
 
-- API: `Features/Teams` (statuses, projects, people), `Features/Tasks/{TasksController, TaskService, TaskDtos}.cs`
+- API: `Features/Teams` (statuses, projects, people), `Features/Tasks/{TasksController, TasksService, TaskDtos}.cs`
 - Tests: `TasksTests.cs`
-- Web: `features/board/{board-page, board-column, task-card, task-drawer, board-filters, board.service}`, `shared/{avatar, drawer, toast}`
+- Web: `features/board/{board-page, board-column, task-card, task-drawer, board-filters, board.service}`, `shared/{avatar, drawer, toast.service, toasts, select-chevron}`
 
 **Endpoints**
 
@@ -210,38 +210,50 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - `GET /api/teams/{teamId}/projects`
 - `GET /api/teams/{teamId}/people`
 - `GET /api/teams/{teamId}/tasks`
-- `GET /api/tasks/{id}`
 - `PUT /api/tasks/{id}`
 - `POST /api/tasks/{id}/move` `{ statusId, index }`
 
 **Tasks**
 
-- [ ] 2.1 Team endpoints: statuses, projects, people
-- [ ] 2.2 Task endpoints: list, get, update (Members only their own tasks)
-- [ ] 2.3 Move endpoint: status change, column reorder, review cycle rule (D20)
-- [ ] 2.4 Smoke test: `TasksTests`
-- [ ] 2.5 Shared UI: avatar, drawer, toast
-- [ ] 2.6 Board page: columns from statuses (Triage hidden), task cards
-- [ ] 2.7 CDK drag-drop within and between columns, persisted via the move endpoint
-- [ ] 2.8 Task drawer: edit title, description, assignee, estimate, due date, link
-- [ ] 2.9 Filters by assignee and project
-- [ ] 2.10 Member restriction in the UI: only own cards draggable and editable
+- [x] 2.1 Team endpoints: statuses, projects, people
+- [x] 2.2 Task endpoints: list, update (Members only their own tasks)
+- [x] 2.3 Move endpoint: status change, column reorder, review cycle rule (D20)
+- [x] 2.4 Smoke test: `TasksTests`
+- [x] 2.5 Shared UI: avatar, drawer, toast
+- [x] 2.6 Board page: columns from statuses (Triage hidden), task cards
+- [x] 2.7 CDK drag-drop within and between columns, persisted via the move endpoint
+- [x] 2.8 Task drawer: edit title, description, assignee, estimate, due date, link
+- [x] 2.9 Filters by assignee and project
+- [x] 2.10 Member restriction in the UI: only own cards draggable and editable
 
 **Acceptance criteria**
 
-- [ ] Columns come from the current team's workflow statuses (Design and Marketing differ)
-- [ ] Cards show title, project colour, assignee avatar, due date (red if overdue), review cycle
-- [ ] Drag between and within columns persists order and status
-- [ ] Filter by assignee and project
-- [ ] Clicking a card opens a drawer: edit title, description, assignee, estimate, due date, link ("Book on schedule" is built in Phase 4)
+- [x] Columns come from the current team's workflow statuses (Design and Marketing differ)
+- [x] Cards show title, project colour, assignee avatar, due date (red if overdue), review cycle
+- [x] Drag between and within columns persists order and status
+- [x] Filter by assignee and project
+- [x] Clicking a card opens a drawer: edit title, description, assignee, estimate, due date, link ("Book on schedule" is built in Phase 4)
+
+**Notes and deviations**
+
+- No `GET /api/tasks/{id}`: the drawer uses the board's data and `PUT` returns the saved task, so nothing needed it
+- The service is `TasksService`, matching `TeamsService`
+- `TaskDto.IsOverdue` is computed on the server with the org's date (D21), so the browser's time zone cannot change it
+- Triage is hidden as the first status by `Order` (D18)
+- Moves update the board straight away; if the API refuses, a toast shows the reason and the board reloads
+- Dragging while a filter is active drops the card just before the visible card it lands on (`move-task.ts`, unit tested)
+- The drawer uses Angular signal forms (stable in Angular 22)
+- Shared control styles (`form-input`, `form-select`, `compact-select`, `btn-primary`, `btn-secondary`) live in `styles.css`; the select arrow is a shared `SelectChevron` component, now also used by the team switcher
+- Test fix: `ApiFactory` now starts the server in `InitializeAsync`. With two test classes running in parallel, both called `CreateClient()` at once, the factory built two servers, and both seeded the same database (unique email violation)
+- Running `--reset-demo` while the API is up makes the API's next request fail once (its pooled connection was closed by the drop); reset before starting the API
 
 **Review gate**
 
-- [ ] Build passes with no warnings, lint passes, smoke tests pass
-- [ ] Acceptance criteria ticked
-- [ ] Committed as `Phase 2: Board`
-- [ ] "Where we left off" and status updated to Awaiting review
-- [ ] **STOP** for review
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Acceptance criteria ticked
+- [x] Committed as `Phase 2: Board`
+- [x] "Where we left off" and status updated to Awaiting review
+- [x] **STOP** for review
 - [ ] Approved by user
 
 ---
@@ -474,3 +486,4 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 - 2026-10-26: Read the brief, created `CLAUDE.md` and this plan. Decisions D1-D34 approved; Phase 0 committed. Starting Phase 1.
 - 2026-10-26: Phase 1 built and verified (API smoke tests, web unit test, headless-browser walkthrough of login, team switcher and role landing pages). Committed; awaiting review.
+- 2026-10-27: Phase 1 approved. Schedule rename (D35) and team dropdown fix. Phase 2 built and verified (10 API tests, 10 web unit tests, headless-browser walkthrough of columns, cards, drag between and within columns, filtered drag, filters, drawer edit, Marketing board, Member restrictions). Committed; awaiting review.

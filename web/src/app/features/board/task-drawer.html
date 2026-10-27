@@ -1,0 +1,84 @@
+<app-drawer heading="Task" (closed)="closed.emit()">
+  <form class="flex min-h-full flex-col" novalidate (submit)="save($event)">
+    <div class="flex-1 space-y-5 px-6 py-5">
+      <div class="flex items-center gap-2 text-sm text-slate-600">
+        <span class="h-4 w-1 rounded-full" [style.background-color]="card().project.colour"></span>
+        <span>{{ card().project.name }} &middot; {{ card().project.department }}</span>
+        @if (card().task.reviewCycle > 1) {
+          <span class="ml-auto rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800">
+            Review cycle {{ card().task.reviewCycle }}
+          </span>
+        }
+      </div>
+
+      @if (!card().canEdit) {
+        <p class="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-600">You can only edit tasks assigned to you.</p>
+      }
+
+      <div>
+        <label class="form-label" for="task-title">Title</label>
+        <input id="task-title" class="form-input" [formField]="taskForm.title" />
+        @if (taskForm.title().touched() && taskForm.title().invalid()) {
+          <p class="mt-1 text-sm text-red-600">{{ taskForm.title().errors()[0].message }}</p>
+        }
+      </div>
+
+      <div>
+        <label class="form-label" for="task-assignee">Assignee</label>
+        <span class="relative block">
+          <select id="task-assignee" class="form-select" [formField]="taskForm.assigneePersonId">
+            <option value="">Unassigned</option>
+            @for (person of people(); track person.id) {
+              <option [value]="person.id">{{ person.name }}</option>
+            }
+          </select>
+          <app-select-chevron />
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="form-label" for="task-estimate">Estimate (hours)</label>
+          <input id="task-estimate" class="form-input" type="number" step="0.5" [formField]="taskForm.estimateHours" />
+          @if (taskForm.estimateHours().touched() && taskForm.estimateHours().invalid()) {
+            <p class="mt-1 text-sm text-red-600">{{ taskForm.estimateHours().errors()[0].message }}</p>
+          }
+        </div>
+        <div>
+          <label class="form-label" for="task-due">Due date</label>
+          <input id="task-due" class="form-input" type="date" [formField]="taskForm.dueDate" />
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-baseline justify-between">
+          <label class="form-label" for="task-link">Link</label>
+          @if (card().task.link; as link) {
+            <a class="text-sm font-medium text-accent-600 hover:text-accent-700" [href]="link" target="_blank" rel="noopener">
+              Open
+            </a>
+          }
+        </div>
+        <input id="task-link" class="form-input" type="url" placeholder="https://" [formField]="taskForm.link" />
+        @if (taskForm.link().touched() && taskForm.link().invalid()) {
+          <p class="mt-1 text-sm text-red-600">{{ taskForm.link().errors()[0].message }}</p>
+        }
+      </div>
+
+      <div>
+        <label class="form-label" for="task-description">Description</label>
+        <textarea id="task-description" class="form-input" rows="6" [formField]="taskForm.description"></textarea>
+        @if (taskForm.description().touched() && taskForm.description().invalid()) {
+          <p class="mt-1 text-sm text-red-600">{{ taskForm.description().errors()[0].message }}</p>
+        }
+      </div>
+    </div>
+
+    @if (card().canEdit) {
+      <footer class="sticky bottom-0 flex justify-end gap-2 border-t border-slate-200 bg-white px-6 py-4">
+        <button type="button" class="btn-secondary" (click)="closed.emit()">Cancel</button>
+        <button type="submit" class="btn-primary" [disabled]="taskForm().submitting()">Save</button>
+      </footer>
+    }
+  </form>
+</app-drawer>

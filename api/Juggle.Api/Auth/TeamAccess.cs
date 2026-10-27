@@ -36,4 +36,22 @@ public sealed class TeamAccess(JuggleDbContext db, CurrentUser currentUser)
             throw new ForbiddenException("Only team admins can do this.");
         }
     }
+
+    /// <summary>Team Admins edit any task in their team; Members only the tasks assigned to them.</summary>
+    public async Task EnsureCanEditTaskAsync(TaskItem task, CancellationToken ct)
+    {
+        var role = await GetRoleAsync(task.TeamId, ct)
+            ?? throw new ForbiddenException("You are not a member of this team.");
+        if (role == TeamRole.TeamAdmin)
+        {
+            return;
+        }
+
+        var isAssignee = task.AssigneePersonId is { } assigneeId
+            && await db.People.AnyAsync(p => p.Id == assigneeId && p.UserId == currentUser.UserId, ct);
+        if (!isAssignee)
+        {
+            throw new ForbiddenException("You can only edit tasks assigned to you.");
+        }
+    }
 }

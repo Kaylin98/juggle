@@ -20,7 +20,13 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     private readonly PostgreSqlContainer _db = new PostgreSqlBuilder("postgres:18").Build();
 
-    public async ValueTask InitializeAsync() => await _db.StartAsync();
+    // Test classes run in parallel, and the factory builds its server lazily without a lock;
+    // starting it here stops two servers seeding the same database at once.
+    public async ValueTask InitializeAsync()
+    {
+        await _db.StartAsync();
+        StartServer();
+    }
 
     public override async ValueTask DisposeAsync()
     {

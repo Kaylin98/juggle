@@ -23,6 +23,7 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, OrgC
     public async Task<TaskDto> UpdateAsync(Guid id, UpdateTaskRequest request, CancellationToken ct)
     {
         var task = await FindEditableAsync(id, ct);
+        // D36: only Team Admins reassign. Planned to become a per-team setting after the MVP (plan.md, Later).
         if (request.AssigneePersonId != task.AssigneePersonId
             && await teamAccess.GetRoleAsync(task.TeamId, ct) != TeamRole.TeamAdmin)
         {

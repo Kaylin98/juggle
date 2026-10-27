@@ -50,7 +50,7 @@ export class TaskDrawer {
 
   readonly card = input.required<BoardCard>();
   readonly people = input.required<Person[]>();
-  /** Only Team Admins change the assignee (D36). */
+  /** Only Team Admins change the assignee (D36); planned to become a per-team setting after the MVP. */
   readonly canReassign = input.required<boolean>();
   readonly closed = output<void>();
   readonly saved = output<Task>();

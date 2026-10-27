@@ -73,7 +73,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D30 The request confirmation page shows the request's title and status (New). No "My requests" list (in Later)
 - D34 Moving a bar can change its dates and its person (drop on another row in the same team)
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
-- D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it
+- D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
 
 **Seed**
 
@@ -478,7 +478,11 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 - "My requests" list for requesters
 - Settings screens (statuses, request types, teams)
-- Make D36 a setting: Team Admins and Org Admins choose whether Members can reassign their own tasks. Could live on a settings page that works per department (team)
+- **Members reassigning tasks becomes a setting** (requested by the product owner, 2026-10-27)
+  - Today (D36): only Team Admins and Org Admins can change a task's assignee; Members cannot, even on their own tasks
+  - After the MVP: Team Admins and Org Admins can switch this on or off, so each team chooses whether its Members may reassign their own tasks
+  - Where: a settings page that works per department (team), which could also hold the other settings above
+  - Code to change: the assignee check in `TasksService.UpdateAsync` (API) and the `canReassign` input of the task drawer (web)
 - Comments, audit log, notifications, email
 - SSO (Entra ID, Google) behind `IDemoAuth`
 - Azure deployment

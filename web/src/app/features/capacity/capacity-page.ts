@@ -20,7 +20,7 @@ export class CapacityPage {
 
   protected readonly today = today();
   protected readonly start = signal(startOfWeek(this.today));
-  protected readonly weeks = signal<Weeks>(2);
+  protected readonly weeks = signal<Weeks>(4);
 
   protected readonly schedule = resource({
     params: () => ({

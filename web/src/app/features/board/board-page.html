@@ -19,14 +19,20 @@
   @if (board.error()) {
     <p class="empty-state mx-8 text-over-700">The board could not be loaded. Refresh the page to try again.</p>
   } @else if (data()) {
-    <div class="flex min-h-0 flex-1 items-start gap-6 overflow-x-auto px-8 pb-8" cdkDropListGroup>
+    <!-- Only this area scrolls sideways when the columns do not fit, with a fade on an edge that has more to show; each column scrolls its own cards. -->
+    <div
+      #area
+      class="scroll-thin scroll-fade-x flex min-h-0 flex-1 gap-6 overflow-x-auto overflow-y-hidden px-8 pb-8"
+      cdkDropListGroup
+    >
       @for (column of columns(); track column.status.id) {
         <app-board-column
-          class="max-h-full"
           [status]="column.status"
           [cards]="column.cards"
+          [collapsed]="collapsed().has(column.status.id)"
           (dropped)="drop($event)"
           (opened)="openTaskId.set($event.id)"
+          (toggled)="toggleColumn(column.status.id)"
         />
       }
     </div>

@@ -57,7 +57,10 @@ Calm, soft and easy on the eyes; nothing sharp or bright. Mood reference: `docs/
 - **Depth:** `shadow-soft` for cards and panels, `shadow-lifted` on hover, `shadow-raised` for the drawer, toasts and drag preview. Prefer shadow to borders; use a 1px `line` border only where needed
 - **Type:** `font-display` (Space Grotesk) for headings, card titles and grid dates; Manrope for everything else. `label-caps` for section labels and counts; `page-title` for page headings
 - **Spacing:** 8px grid; use even Tailwind steps (2, 4, 6, 8, 12). Odd steps only for tight gaps inside a control
+- **Dropdowns:** always `<app-select>` (`shared/select.ts`, CDK Overlay + Listbox), never a native `<select>`. Options can show an avatar (`avatarColour`) or a colour dot (`colour`); bind `[(value)]` or use it as a form control
 - **Shared classes:** `panel`, `btn-primary`, `btn-secondary`, `btn-quiet`, `btn-pill`, `form-label`, `form-input`, `form-select`, `pill-select`, `field-error`, `empty-state`. Reuse them before writing new control styles
+- **Load and availability:** utilisation uses `accent` under 50% (available), then `ok`, `warn`, `over` (D15). Each working day in the availability strip is a fill bar: booked hours in `ink-faint`, free hours in `ok-500`, all `over-500` when over capacity. Time off is a solid `ink` block with white text, never a hue
+- **Layout:** pages always use the full content width. Only a page's own area (a grid, the board) scrolls sideways, never the page; scroll areas use `scroll-thin`, or `scroll-quiet` to show the scrollbar on hover
 - **Accessibility:** text meets WCAG AA (4.5:1) on its background; every control has a visible `accent-200` focus ring
 
 ## Working documentation

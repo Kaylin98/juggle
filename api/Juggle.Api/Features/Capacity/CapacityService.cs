@@ -33,7 +33,7 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
         var personIds = team.Select(p => p.Id).ToList();
 
         var allocations = await db.Allocations
-            .Include(a => a.Project)
+            .Include(a => a.Project).ThenInclude(p => p.Department)
             .Where(a => personIds.Contains(a.PersonId) && a.StartDate <= to && a.EndDate >= from)
             .OrderBy(a => a.StartDate)
             .ThenBy(a => a.Project.Name)
@@ -71,6 +71,7 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
                 a.ProjectId,
                 a.Project.Name,
                 a.Project.Colour,
+                a.Project.Department.Name,
                 teamNames[a.Project.TeamId],
                 a.TaskId,
                 a.StartDate,

@@ -4,7 +4,7 @@ namespace Juggle.Api.Features.Capacity;
 
 /// <param name="TeamId">A team id, or "all" for every person in the organisation (Org Admin only).</param>
 /// <param name="Start">Any date; the schedule starts on the Monday of its week.</param>
-public sealed record CapacityQuery([Required] string TeamId, [Required] DateOnly? Start, [AllowedValues(1, 2, 4)] int Weeks = 1);
+public sealed record CapacityQuery([Required] string TeamId, [Required] DateOnly? Start, [AllowedValues(1, 2, 4, 8)] int Weeks = 1);
 
 /// <param name="Days">The weekdays shown, in order.</param>
 public sealed record CapacityDto(
@@ -27,6 +27,7 @@ public sealed record AllocationDto(
     Guid ProjectId,
     string ProjectName,
     string ProjectColour,
+    string ProjectDepartment,
     string TeamName,
     Guid? TaskId,
     DateOnly StartDate,

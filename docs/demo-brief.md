@@ -105,7 +105,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 
 **2. Schedule (default landing page for admins)**
 
-- [ ] Rows = people in the current team; columns = weekdays; view 1, 2 or 4 weeks; previous/next/today
+- [ ] Rows = people in the current team; columns = weekdays (weekends shown as narrow shaded columns); view 1, 2, 4 or 8 weeks; previous/next/today
 - [ ] Allocation bars show project colour, name and hours/day; one person can have several bars per day
 - [ ] Each person shows utilisation for the period in load colour (green under 80%, amber 80 to 100%, red over 100%); a day over capacity is tinted red with the hours over
 - [ ] Drag on empty cells to create an allocation (pick project, hours/day); drag a bar to move it; drag its edge to resize

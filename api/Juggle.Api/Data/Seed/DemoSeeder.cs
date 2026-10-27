@@ -228,9 +228,10 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         AddTask(employerBrand, "Employer brand video script", ms["Planned"], chloe, 6, 18);
         AddTask(employerBrand, "Graduate programme flyer", ms["Published"], jason, 3, -9);
 
-        // Allocations: weeks -2 to 3 relative to this week; weekdays 0 (Mon) to 4 (Fri)
+        // Allocations: weeks -1 to 5 relative to this week; weekdays 0 (Mon) to 4 (Fri).
+        // Lengths vary from two days to three weeks, with gaps, and the far weeks are lighter.
 
-        void Allocate(Person person, Project project, int fromWeek, int toWeek, decimal hoursPerDay, int fromDay = 0, int toDay = 4) =>
+        void Allocate(Person person, Project project, int fromWeek, int fromDay, int toWeek, int toDay, decimal hoursPerDay) =>
             db.Allocations.Add(new Allocation
             {
                 OrgId = org.Id,
@@ -241,62 +242,82 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 HoursPerDay = hoursPerDay,
             });
 
-        Allocate(naledi, annualReport, -2, 3, 3);
-        Allocate(naledi, websiteRefresh, -2, 1, 2);
-        Allocate(naledi, q1Campaign, 2, 3, 2);
+        Allocate(naledi, annualReport, -1, 0, 1, 4, 3);
+        Allocate(naledi, websiteRefresh, 0, 0, 0, 4, 2);
+        Allocate(naledi, q1Campaign, 2, 0, 3, 4, 2);
+        Allocate(naledi, annualReport, 3, 0, 4, 2, 2);
 
-        Allocate(ethan, websiteRefresh, -2, 3, 5);
-        Allocate(ethan, launchVideo, -2, 0, 2);
-        Allocate(ethan, salesDeck, 1, 3, 2);
+        Allocate(ethan, websiteRefresh, -1, 0, 1, 4, 5);
+        Allocate(ethan, launchVideo, 0, 0, 0, 2, 2);
+        Allocate(ethan, salesDeck, 1, 1, 2, 2, 3);
+        Allocate(ethan, websiteRefresh, 2, 3, 4, 4, 4);
+        Allocate(ethan, annualReport, 5, 0, 5, 3, 2);
 
-        // Lerato is over capacity next week.
-        Allocate(lerato, salesDeck, -2, 3, 5);
-        Allocate(lerato, q1Campaign, -2, 0, 1);
-        Allocate(lerato, q1Campaign, 1, 1, 5);
-        Allocate(lerato, q1Campaign, 2, 3, 2);
+        // Lerato is over capacity from Tuesday next week.
+        Allocate(lerato, salesDeck, -1, 2, 1, 4, 5);
+        Allocate(lerato, q1Campaign, 0, 0, 0, 1, 1);
+        Allocate(lerato, q1Campaign, 1, 1, 2, 1, 5);
+        Allocate(lerato, hrOnboarding, 2, 2, 3, 4, 3);
+        Allocate(lerato, websiteRefresh, 4, 0, 5, 2, 4);
 
         // Jason's load is split across Design and Marketing.
-        Allocate(jason, q1Campaign, -2, 3, 4);
-        Allocate(jason, socialCalendar, -2, 3, 2.5m);
+        Allocate(jason, q1Campaign, 0, 0, 2, 1, 4);
+        Allocate(jason, socialCalendar, 0, 2, 2, 4, 2.5m);
+        Allocate(jason, employerBrand, 3, 0, 3, 4, 3);
+        Allocate(jason, annualReport, 4, 1, 5, 4, 4);
 
-        Allocate(amahle, launchVideo, -2, 3, 6);
+        Allocate(amahle, launchVideo, 0, 0, 2, 4, 6);
+        Allocate(amahle, salesDeck, 0, 3, 0, 4, 2);
+        Allocate(amahle, launchVideo, 3, 0, 4, 2, 4);
 
-        Allocate(ruben, hrOnboarding, -2, 3, 2.5m);
-        Allocate(ruben, q1Campaign, -2, 1, 1);
+        Allocate(ruben, hrOnboarding, -1, 0, 1, 4, 2.5m);
+        Allocate(ruben, q1Campaign, 0, 0, 1, 2, 2);
+        Allocate(ruben, hrOnboarding, 2, 0, 3, 1, 3);
+        Allocate(ruben, annualReport, 4, 0, 5, 4, 2);
 
         // Priya is the under-loaded designer the demo assigns new work to.
-        Allocate(priya, websiteRefresh, -2, 3, 2);
-        Allocate(priya, salesDeck, -2, -1, 1);
+        Allocate(priya, websiteRefresh, 0, 0, 1, 4, 2);
+        Allocate(priya, salesDeck, 0, 1, 0, 2, 2);
+        Allocate(priya, hrOnboarding, 2, 0, 2, 4, 2);
+        Allocate(priya, websiteRefresh, 3, 2, 4, 1, 3);
 
-        Allocate(sipho, annualReport, -2, 3, 3);
-        Allocate(sipho, hrOnboarding, -2, 3, 2);
-        Allocate(sipho, websiteRefresh, -2, 1, 1);
+        Allocate(sipho, annualReport, -1, 0, 1, 4, 3);
+        Allocate(sipho, hrOnboarding, 0, 0, 2, 2, 2);
+        Allocate(sipho, websiteRefresh, 0, 3, 1, 1, 2);
+        Allocate(sipho, annualReport, 3, 2, 5, 1, 4);
 
-        Allocate(megan, caseStudies, -2, 3, 3);
-        Allocate(megan, employerBrand, -2, 3, 2);
+        Allocate(megan, caseStudies, -1, 0, 1, 4, 3);
+        Allocate(megan, employerBrand, 0, 0, 2, 4, 2);
+        Allocate(megan, newsletter, 2, 0, 2, 3, 2);
+        Allocate(megan, caseStudies, 3, 0, 5, 4, 3);
 
-        Allocate(thabo, newsletter, -2, 3, 4);
-        Allocate(thabo, caseStudies, -2, 3, 2.5m);
+        Allocate(thabo, newsletter, 0, 0, 1, 2, 4);
+        Allocate(thabo, caseStudies, 0, 1, 2, 4, 2.5m);
+        Allocate(thabo, newsletter, 3, 0, 4, 4, 4);
 
-        Allocate(chloe, socialCalendar, -2, 3, 4);
-        Allocate(chloe, employerBrand, -2, 3, 2);
+        Allocate(chloe, socialCalendar, -1, 0, 1, 4, 4);
+        Allocate(chloe, employerBrand, 0, 2, 1, 1, 2);
+        Allocate(chloe, socialCalendar, 2, 0, 4, 4, 4);
+        Allocate(chloe, employerBrand, 5, 0, 5, 4, 3);
 
         // Leave and public holidays
 
-        void AddLeave(Person person, int week, int fromDay, int toDay) =>
+        void AddLeave(Person person, int fromWeek, int fromDay, int toWeek, int toDay) =>
             db.TimeOff.Add(new TimeOff
             {
                 OrgId = org.Id,
                 PersonId = person.Id,
-                StartDate = weekStart.AddDays((week * 7) + fromDay),
-                EndDate = weekStart.AddDays((week * 7) + toDay),
+                StartDate = weekStart.AddDays((fromWeek * 7) + fromDay),
+                EndDate = weekStart.AddDays((toWeek * 7) + toDay),
                 Type = TimeOffType.AnnualLeave,
                 Status = TimeOffStatus.Approved,
                 Description = "Annual leave",
             });
 
-        AddLeave(amahle, 1, 0, 2);
-        AddLeave(thabo, 1, 3, 4);
+        // Two Design people are on leave in the next weeks; Sipho's runs over a weekend.
+        AddLeave(amahle, 1, 0, 1, 2);
+        AddLeave(sipho, 2, 3, 3, 1);
+        AddLeave(thabo, 1, 3, 1, 4);
 
         foreach (var (date, name) in SouthAfricanHolidays.For(today.Year).Concat(SouthAfricanHolidays.For(today.Year + 1)))
         {

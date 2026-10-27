@@ -36,6 +36,9 @@ module.exports = defineConfig([
   {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
-    rules: {},
+    rules: {
+      // The shared select renders a button trigger, which a wrapping <label> labels.
+      '@angular-eslint/template/label-has-associated-control': ['error', { controlComponents: ['app-select'] }],
+    },
   },
 ]);

@@ -1,4 +1,4 @@
-import { loadLevel, totalLoad } from './load-colour';
+import { bookedShare, dayState, loadLevel, totalLoad, utilisationLevel } from './load-colour';
 
 const day = (allocated: number, capacity = 8) => ({ date: '2026-11-02', capacity, allocated, timeOff: null });
 
@@ -12,6 +12,32 @@ describe('loadLevel', () => {
 
   it('is off when the day has no capacity', () => {
     expect(loadLevel(day(0, 0))).toBe('off');
+  });
+});
+
+describe('utilisationLevel', () => {
+  it('marks under 50% as available and keeps the load levels above it', () => {
+    expect(utilisationLevel(day(3.9))).toBe('available');
+    expect(utilisationLevel(day(4))).toBe('green');
+    expect(utilisationLevel(day(8.5))).toBe('red');
+    expect(utilisationLevel(day(0, 0))).toBe('off');
+  });
+});
+
+describe('dayState', () => {
+  it('is working up to capacity, over above it, off without capacity', () => {
+    expect(dayState(day(8))).toBe('working');
+    expect(dayState(day(9))).toBe('over');
+    expect(dayState(day(0, 0))).toBe('off');
+  });
+});
+
+describe('bookedShare', () => {
+  it('is the booked part of the day, at most all of it', () => {
+    expect(bookedShare(day(6))).toBe(0.75);
+    expect(bookedShare(day(0))).toBe(0);
+    expect(bookedShare(day(10))).toBe(1);
+    expect(bookedShare(day(0, 0))).toBe(0);
   });
 });
 

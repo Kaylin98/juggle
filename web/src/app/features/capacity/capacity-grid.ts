@@ -1,58 +1,69 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { Allocation, Schedule } from '../../core/models';
+import { isoWeek } from '../../shared/dates';
+import { dayColumn } from './grid-layout';
 import { PersonRow } from './person-row';
 
-// One column for people and utilisation, then one per weekday. Full class names so Tailwind generates them.
-const COLUMNS: Record<number, string> = {
-  1: 'grid-cols-[18rem_repeat(5,minmax(7rem,1fr))]',
-  2: 'grid-cols-[18rem_repeat(10,minmax(4.5rem,1fr))]',
-  4: 'grid-cols-[18rem_repeat(20,minmax(2.5rem,1fr))]',
-};
-
-/** People x weekdays. Built as a CSS grid; each row and the header use subgrid to share the columns. */
+/**
+ * People x days. Built as a CSS grid: the people column, then per week five fixed-width day columns and a
+ * narrow weekend column. Each row and the header use subgrid to share the columns.
+ */
 @Component({
   selector: 'app-capacity-grid',
   imports: [DatePipe, PersonRow],
   template: `
-    <div class="grid min-w-fit" [class]="columns()">
+    <div class="grid w-full" [style.grid-template-columns]="columns()" [style.min-width.rem]="minWidth()">
       <div class="sticky top-0 z-30 col-span-full grid grid-cols-subgrid border-b border-line bg-surface">
-        <div class="sticky left-0 flex items-end justify-between border-r border-line bg-surface px-4 py-3">
+        <div class="sticky left-0 z-10 row-span-2 flex items-end justify-between border-r border-line bg-surface px-4 py-3">
           <span class="label-caps">{{ schedule().people.length }} people</span>
           <span class="label-caps" title="Utilisation over the days shown">Util.</span>
         </div>
+
+        @for (week of weeks(); track week.monday) {
+          <div
+            class="row-start-1 border-l border-ink-faint px-2 pt-3 pb-1 whitespace-nowrap"
+            [style.grid-column]="week.column + ' / span 6'"
+          >
+            <!-- Sticks beside the people column while the week scrolls under it. -->
+            <span class="sticky left-[calc(18rem+0.5rem)] inline-block">
+              <span class="label-caps text-ink">W{{ week.number }}</span>
+              <span class="ml-2 text-xs text-ink-muted">{{ week.monday | date: 'd MMM' }}</span>
+            </span>
+          </div>
+          <div class="row-start-2 bg-surface-muted" [style.grid-column]="week.column + 5"></div>
+        }
+
         @for (day of schedule().days; track day; let i = $index) {
           <div
-            class="border-l py-2 text-center"
-            [class]="i % 5 === 0 ? 'border-line-strong' : 'border-line'"
-            [class.today-edge]="day === today()"
+            class="row-start-2 border-l pt-1 pb-2 text-center"
+            [class]="i % 5 === 0 ? 'border-ink-faint' : 'border-line'"
+            [class.bg-accent-50]="day === today()"
+            [style.grid-column]="column(i)"
           >
-            <div class="label-caps" [class.text-accent-600]="day === today()">
-              {{ day | date: (compact() ? 'EEEEE' : 'EEE') }}
-            </div>
+            <div class="label-caps" [class.text-accent-600]="day === today()">{{ day | date: 'EEE' }}</div>
             <div class="mt-0.5 font-display text-sm font-semibold" [class.text-accent-600]="day === today()">
-              {{ day | date: (i % 5 === 0 && !compact() ? 'd MMM' : 'd') }}
+              {{ day | date: 'd' }}
             </div>
           </div>
         }
       </div>
 
-      <!-- Rows are placed explicitly so the today line can span them. -->
+      <!-- Rows are placed explicitly so the today tint can span them. -->
       @for (person of schedule().people; track person.id; let i = $index) {
         <app-person-row
           [style.grid-row]="i + 2"
           [person]="person"
           [allocations]="allocationsByPerson().get(person.id) ?? []"
-          [days]="schedule().days"
         />
       } @empty {
         <p class="col-span-full px-4 py-12 text-center text-sm text-ink-muted">Nobody in this team has a schedule yet.</p>
       }
 
-      @if (todayColumn(); as column) {
+      @if (todayIndex() !== -1) {
         <div
-          class="pointer-events-none z-0 w-0.5 justify-self-start bg-accent-500"
-          [style.grid-column]="column"
+          class="pointer-events-none z-0 bg-accent-50 mix-blend-multiply"
+          [style.grid-column]="column(todayIndex())"
           [style.grid-row]="'2 / span ' + schedule().people.length"
         ></div>
       }
@@ -63,15 +74,27 @@ export class CapacityGrid {
   readonly schedule = input.required<Schedule>();
   readonly today = input.required<string>();
 
-  private readonly weeks = computed(() => this.schedule().days.length / 5);
-  protected readonly columns = computed(() => COLUMNS[this.weeks()]);
-  protected readonly compact = computed(() => this.weeks() === 4);
+  private readonly weekCount = computed(() => this.schedule().days.length / 5);
 
-  /** The grid column of today (after the people column), or null when today is not shown. */
-  protected readonly todayColumn = computed(() => {
-    const index = this.schedule().days.indexOf(this.today());
-    return index === -1 ? null : index + 2;
-  });
+  /**
+   * The 18rem people column, then per week five days that share the width (at least 56px each) and a fixed
+   * 20px weekend column. CSS cannot nest repeat(), so the week's tracks are written out.
+   */
+  protected readonly columns = computed(
+    () => `18rem repeat(${this.weekCount()}, ${'minmax(3.5rem, 1fr) '.repeat(5)}1.25rem)`,
+  );
+
+  /** Below this width the days would shrink past their minimum, so the panel scrolls instead. */
+  protected readonly minWidth = computed(() => 18 + this.weekCount() * (5 * 3.5 + 1.25));
+
+  /** Each week's Monday, ISO week number and first grid column. */
+  protected readonly weeks = computed(() =>
+    this.schedule()
+      .days.filter((_, i) => i % 5 === 0)
+      .map((monday, w) => ({ monday, number: isoWeek(monday), column: w * 6 + 2 })),
+  );
+
+  protected readonly todayIndex = computed(() => this.schedule().days.indexOf(this.today()));
 
   protected readonly allocationsByPerson = computed(() => {
     const byPerson = new Map<string, Allocation[]>();
@@ -80,4 +103,9 @@ export class CapacityGrid {
     }
     return byPerson;
   });
+
+  /** The grid column of a weekday, after the people column. */
+  protected column(index: number): number {
+    return dayColumn(index) + 2;
+  }
 }

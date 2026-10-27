@@ -101,6 +101,7 @@ export interface Allocation {
   projectId: string;
   projectName: string;
   projectColour: string;
+  projectDepartment: string;
   /** The team that owns the project. */
   teamName: string;
   taskId: string | null;

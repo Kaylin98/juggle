@@ -1,8 +1,8 @@
-import { Component, inject, input, linkedSignal, output } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { FormField, disabled, form, max, maxLength, min, required, submit } from '@angular/forms/signals';
 import { Person, Task, UpdateTask } from '../../core/models';
 import { Drawer } from '../../shared/drawer';
-import { SelectChevron } from '../../shared/select-chevron';
+import { Select, SelectOption } from '../../shared/select';
 import { ToastService } from '../../shared/toast.service';
 import { BoardService } from './board.service';
 import { BoardCard } from './task-card';
@@ -41,7 +41,7 @@ function toUpdate(value: TaskForm): UpdateTask {
 
 @Component({
   selector: 'app-task-drawer',
-  imports: [Drawer, FormField, SelectChevron],
+  imports: [Drawer, FormField, Select],
   templateUrl: './task-drawer.html',
 })
 export class TaskDrawer {
@@ -54,6 +54,11 @@ export class TaskDrawer {
   readonly canReassign = input.required<boolean>();
   readonly closed = output<void>();
   readonly saved = output<Task>();
+
+  protected readonly assigneeOptions = computed<SelectOption[]>(() => [
+    { value: '', label: 'Unassigned' },
+    ...this.people().map((p) => ({ value: p.id, label: p.name, avatarColour: p.avatarColour })),
+  ]);
 
   protected readonly model = linkedSignal(() => toForm(this.card().task));
 

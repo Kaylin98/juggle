@@ -1,0 +1,87 @@
+<button
+  #trigger
+  #origin="cdkOverlayOrigin"
+  cdkOverlayOrigin
+  type="button"
+  class="peer flex items-center gap-2 text-left"
+  [class]="variant() === 'pill' ? 'pill-select' : 'form-select'"
+  [attr.id]="triggerId()"
+  [disabled]="disabled()"
+  aria-haspopup="listbox"
+  [attr.aria-expanded]="open()"
+  (click)="toggle()"
+  (keydown.arrowdown)="$event.preventDefault(); openPanel()"
+  (keydown.arrowup)="$event.preventDefault(); openPanel()"
+>
+  @if (selected(); as option) {
+    <ng-container *ngTemplateOutlet="optionContent; context: { $implicit: option }" />
+  }
+</button>
+<app-select-chevron />
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayMinWidth]="trigger.offsetWidth"
+  (overlayOutsideClick)="onOutsideClick($event)"
+  (overlayKeydown)="onOverlayKeydown($event)"
+  (detach)="close(false)"
+>
+  <!-- Fills the overlay pane, which CDK sizes to at least the trigger's width. -->
+  <div class="flex max-h-80 w-full min-w-48 flex-col overflow-hidden rounded-control bg-surface text-sm text-ink shadow-raised">
+    @if (searchable()) {
+      <div class="border-b border-line p-2">
+        <input
+          #searchBox
+          type="search"
+          class="form-input py-1.5"
+          placeholder="Search"
+          aria-label="Search options"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+          (keydown.arrowdown)="focusList($event)"
+          (keydown.enter)="chooseFirstMatch($event)"
+        />
+      </div>
+    }
+    <ul
+      cdkListbox
+      class="scroll-quiet min-h-0 flex-1 overflow-y-auto py-1 focus:outline-none"
+      [cdkListboxValue]="listboxValue()"
+      (cdkListboxValueChange)="onListboxChange($event)"
+    >
+      @for (option of filtered(); track option.value) {
+        <li
+          [cdkOption]="option.value"
+          [cdkOptionTypeaheadLabel]="option.label"
+          class="flex cursor-pointer items-center gap-2 px-3 py-2 outline-none hover:bg-accent-50 [&.cdk-option-active]:bg-accent-50"
+        >
+          <ng-container *ngTemplateOutlet="optionContent; context: { $implicit: option }" />
+          @if (option.value === value()) {
+            <!-- Heroicons check (mini, MIT) -->
+            <svg class="ml-auto size-4 shrink-0 text-accent-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          }
+        </li>
+      } @empty {
+        <li class="px-3 py-2 text-ink-muted">No matches</li>
+      }
+    </ul>
+  </div>
+</ng-template>
+
+<ng-template #optionContent let-option>
+  @if (option.avatarColour) {
+    <app-avatar size="sm" [name]="option.label" [colour]="option.avatarColour" />
+  } @else if (option.colour) {
+    <span class="hue-dot size-2 shrink-0 rounded-full" [style.--hue]="option.colour"></span>
+  }
+  <span class="truncate">{{ option.label }}</span>
+</ng-template>

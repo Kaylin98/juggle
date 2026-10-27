@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Schedule } from '../../core/models';
 
-export type Weeks = 1 | 2 | 4;
+export type Weeks = 1 | 2 | 4 | 8;
 
 @Injectable({ providedIn: 'root' })
 export class CapacityService {

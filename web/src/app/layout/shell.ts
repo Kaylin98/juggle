@@ -13,7 +13,8 @@ import { Nav } from './nav';
       <app-nav />
       <div class="flex min-w-0 flex-1 flex-col">
         <app-header />
-        <main class="min-h-0 flex-1 overflow-auto">
+        <!-- Pages scroll sideways inside their own areas (schedule grid, board columns), never the page. -->
+        <main class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           <router-outlet />
         </main>
       </div>

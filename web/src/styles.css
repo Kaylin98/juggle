@@ -1,5 +1,6 @@
 @import '@fontsource-variable/manrope';
 @import '@fontsource-variable/space-grotesk';
+@import '@angular/cdk/overlay-prebuilt.css';
 @import 'tailwindcss';
 
 /*
@@ -81,15 +82,65 @@
   color: color-mix(in oklch, var(--hue) 35%, var(--color-ink));
 }
 
-/* The thin accent line on today's column header; the grid draws the rest of the line. */
-@utility today-edge {
-  box-shadow: inset 2px 0 0 var(--color-accent-500);
+/* Scroll areas: a thin, quiet scrollbar; scroll-quiet shows it only while the area is hovered. */
+@utility scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
 }
 
-/* Time off and public holidays on the schedule. */
-@utility hatched {
-  background-color: var(--color-surface-muted);
-  background-image: repeating-linear-gradient(135deg, var(--color-line-strong) 0 1px, transparent 1px 8px);
+@utility scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &:hover {
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
+
+/*
+ * A soft fade on the left or right edge of a sideways scroll area while there is more to scroll to.
+ * A scroll-driven animation moves the mask edges with the scroll position; when nothing overflows the
+ * timeline is inactive, so there is no fade. Browsers without scroll timelines simply show no fade.
+ */
+@property --fade-left {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-right {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes scroll-fade-x {
+  0% {
+    --fade-left: 0px;
+    --fade-right: 48px;
+  }
+  10% {
+    --fade-left: 48px;
+  }
+  90% {
+    --fade-right: 48px;
+  }
+  100% {
+    --fade-left: 48px;
+    --fade-right: 0px;
+  }
+}
+
+@utility scroll-fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--fade-left),
+    black calc(100% - var(--fade-right)),
+    transparent
+  );
+  animation: scroll-fade-x linear both;
+  animation-timeline: scroll(self inline);
 }
 
 @layer base {
@@ -104,7 +155,7 @@
   }
 }
 
-/* Shared styles, used across features. Selects pair with <app-select-chevron>. */
+/* Shared styles, used across features. form-select and pill-select style the <app-select> trigger. */
 @layer components {
   .panel {
     @apply rounded-card bg-surface shadow-soft;

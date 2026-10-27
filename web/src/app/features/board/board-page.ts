@@ -1,12 +1,14 @@
 import { CdkDragDrop, CdkDropListGroup } from '@angular/cdk/drag-drop';
-import { Component, computed, inject, input, linkedSignal, resource } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, input, linkedSignal, resource, signal, viewChild } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
 import { Task } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { ToastService } from '../../shared/toast.service';
 import { BoardColumn } from './board-column';
 import { BoardFilters } from './board-filters';
+import { BoardPrefsService } from './board-prefs.service';
 import { BoardService } from './board.service';
+import { collapsedColumns } from './column-collapse';
 import { columnWithout, moveTask, toColumnIndex } from './move-task';
 import { BoardCard } from './task-card';
 import { TaskDrawer } from './task-drawer';
@@ -18,6 +20,7 @@ import { TaskDrawer } from './task-drawer';
 })
 export class BoardPage {
   private readonly boardService = inject(BoardService);
+  private readonly prefs = inject(BoardPrefsService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   protected readonly teamContext = inject(TeamContextService);
@@ -41,6 +44,23 @@ export class BoardPage {
     source: this.teamId,
     computation: () => null,
   });
+
+  /** The viewer's own collapse and expand choices for this team's columns. */
+  private readonly overrides = linkedSignal(() => this.prefs.columnOverrides(this.teamId()));
+
+  /** The board area's content width, kept up to date as the window resizes. */
+  private readonly area = viewChild<ElementRef<HTMLElement>>('area');
+  private readonly areaWidth = signal(0);
+
+  constructor() {
+    effect((onCleanup) => {
+      const area = this.area()?.nativeElement;
+      if (!area) return;
+      const observer = new ResizeObserver(([entry]) => this.areaWidth.set(entry.contentRect.width));
+      observer.observe(area);
+      onCleanup(() => observer.disconnect());
+    });
+  }
 
   private readonly cards = computed<BoardCard[]>(() => {
     const data = this.data();
@@ -66,6 +86,11 @@ export class BoardPage {
     }));
   });
 
+  /** Status ids of the collapsed columns: the viewer's choices, plus Done collapsed when the columns do not fit. */
+  protected readonly collapsed = computed(() =>
+    collapsedColumns((this.data()?.statuses ?? []).slice(1), this.overrides(), this.areaWidth()),
+  );
+
   protected readonly openCard = computed(
     () => this.cards().find((card) => card.task.id === this.openTaskId()) ?? null,
   );
@@ -88,6 +113,13 @@ export class BoardPage {
       this.toast.error(error);
       this.board.reload();
     }
+  }
+
+  /** A manual collapse or expand overrides the automatic choice for that column, and is remembered. */
+  protected toggleColumn(statusId: string): void {
+    const overrides = { ...this.overrides(), [statusId]: !this.collapsed().has(statusId) };
+    this.overrides.set(overrides);
+    this.prefs.saveColumnOverrides(this.teamId(), overrides);
   }
 
   protected onSaved(task: Task): void {

@@ -3,9 +3,9 @@ import { Component, computed, model } from '@angular/core';
 import { addDays, startOfWeek, today } from '../../shared/dates';
 import { Weeks } from './capacity.service';
 
-const WEEK_OPTIONS: Weeks[] = [1, 2, 4];
+const WEEK_OPTIONS: Weeks[] = [1, 2, 4, 8];
 
-/** Today, previous and next, the date range shown, and the 1, 2 or 4 week toggle. */
+/** Today, previous and next, the date range shown, and the 1, 2, 4 or 8 week toggle. */
 @Component({
   selector: 'app-grid-toolbar',
   imports: [DatePipe],

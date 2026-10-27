@@ -7,10 +7,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | Schedule layout (between Phase 3 and Phase 4) |
-| Phase status | In progress (Phase 4 not started) |
-| Last completed task | Design pass approved and committed |
-| Next task | Schedule layout (resource-planner pattern) |
-| Blockers / open questions | The dev database needs `--reset-demo` for the new seed |
+| Phase status | Done (Phase 4 not started; waiting for the go-ahead) |
+| Last completed task | Schedule layout and follow-ups (L.1 to L.13) approved and committed |
+| Next task | 4.1 `AllocationService`, once the user says to start Phase 4 |
+| Blockers / open questions | Waiting for the user to start Phase 4 |
 | Last updated | 2026-10-27 |
 
 ## Phase overview
@@ -22,6 +22,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 2 | Tue | Board | Done |
 | 3 | Wed | Schedule (read) | Done |
 | D | Tue | Design pass | Done |
+| L | Tue | Schedule layout | Done |
 | 4 | Thu am | Schedule interactions | Not started |
 | 5 | Thu pm | Requests + triage | Not started |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
@@ -76,6 +77,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 - D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
 - D37 (2026-10-27, design pass) Schedule cells show no hours free. Load colour (D15) is shown on each person's utilisation for the days shown (D14), and a day over capacity is tinted red with the hours over ("+2h")
+- D38 (2026-10-27, schedule layout) Fixed-width day columns with narrow weekend columns and week labels; 1, 2, 4 or 8 weeks, opening on 4; an availability strip per row; two-line bookings split at weekends and days off; time off as solid ink blocks; today tinted; utilisation under 50% shown as available. The capacity API accepts `weeks=8` and sends each allocation's project department
 
 **Seed**
 
@@ -359,6 +361,53 @@ Requested by the user on 2026-10-27, with `docs/design-reference.png` for mood o
 
 ---
 
+## Schedule layout (between Phase 3 and Phase 4)
+
+**Status:** Done
+**Done when:** the schedule reads at a glance like a resource planner (`docs/schedule-reference.png` for structure only); screenshots at 1440px reviewed
+
+Requested by the user on 2026-10-27, after the design pass. Design tokens unchanged.
+
+**Tasks**
+
+- [x] L.1 API: `weeks` accepts 1, 2, 4 or 8; each allocation carries its project's department (`ProjectDepartment`); tests updated
+- [x] L.2 Fixed 56px day columns, a narrow shaded weekend column after each week, week labels ("W44 · 26 Oct") and a strong Monday divider; opens on 4 weeks, scrolls sideways
+- [x] L.3 Availability strip per row: free, full or over per working day, with "6h of 8h booked"
+- [x] L.4 Booking blocks: 40px, "4h/day" then "Project · Department", split at weekends and days off, one lane per booking
+- [x] L.5 Time off and public holidays as solid ink blocks: reason, then the dates of the whole run
+- [x] L.6 Taller rows; name, job title and hours/day each on their own line; utilisation under 50% in the accent ("available")
+- [x] L.7 Today tinted `accent-50` down the whole column instead of a line
+- [x] L.8 Seed: realistic bookings (2 days to 3 weeks, mid-week starts, gaps, lighter further out, weeks -1 to 5); Sipho's leave added, over a weekend
+- [x] L.9 Layout helpers tested: `dayColumn`, `placeBars`, `timeOffBlocks`, `isoWeek`, `utilisationLevel`, `dayState`
+- [x] L.10 Responsive (2026-10-27): schedule days flex from 56px (weekend fixed) and scroll only below that; board columns share the width equally (272 to 360px), fill the height and scroll their own cards; only the board area or schedule panel scrolls sideways, never the page; thin, quiet scrollbars
+- [x] L.11 Board tweaks (2026-10-27): column minimum 240px; soft fade on an edge with more to scroll to (CSS scroll-driven mask); collapsible columns (narrow strip with name and card count, still a drop target), remembered per team in localStorage. Automatic collapse: all columns expanded when they fit at their minimum width; otherwise the last Done-category column collapses; recalculated as the board area resizes; a manual collapse or expand overrides it
+- [x] L.12 Availability strip as mini fill bars: booked share in `ink-faint`, free share in `ok-500`, all `over-500` when over capacity, no segment on days off; strip 6px tall
+- [x] L.13 Shared `<app-select>` (CDK Overlay + Listbox, ControlValueAccessor) replaces every native select: team switcher, board filters, task drawer. Text, avatar and colour-dot options; search box above 8 options; keyboard, type-ahead, Escape and outside click; works in the drawer. The request and triage forms (Phase 5) will use it
+
+**Notes and deviations**
+
+- D38 Schedule layout: fixed-width days, weekend columns, 1/2/4/8 weeks (opens on 4), availability strip, two-line bookings split at weekends and days off, solid ink time off, today tint, "available" utilisation under 50%. The "+2h" labels were removed: the red strip segment, the soft red day tint and the tooltip show a day over capacity
+- The weekend is one narrow column per week (Saturday and Sunday together), since nothing is booked on it
+- A one-day time-off block (most public holidays) shows "Off"; the full name and date are in its tooltip, because no label fits 56px
+- Week labels stick beside the people column while a week scrolls under it
+- CSS cannot nest `repeat()`, so the grid columns repeat a six-track list per week
+- The 8-week view failed against the running dev API with 400 ("The Weeks field does not equal any of the values specified in AllowedValuesAttribute"). Root cause: that API process was started before `weeks=8` was allowed and was never restarted (its responses still had the old seed colours). The code is correct (the API test and the screenshot copy return 40 days); restart the API with `--reset-demo`
+- `main` never scrolls sideways (`overflow-x-hidden`); the schedule panel and the board area scroll inside themselves
+- A card dropped on a collapsed column goes to the top of it. Only manual choices are saved (per team, in localStorage, not shared between viewers); the automatic collapse is worked out from the board width each time
+- The edge fade uses a scroll-driven animation; browsers without scroll timelines show no fade, and nothing else changes
+- The select works with Signal Forms `[formField]` through its ControlValueAccessor (Angular uses the accessor before a `value` model). ESLint knows `app-select` as a form control for `<label>` association. Fixed while testing: the CDK listbox throws in dev mode when its value has no matching option, which a search would cause; the listbox now gets the value only while that option is shown
+
+**Review gate**
+
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Screenshots at 1440px reviewed and fixed; responsive check at 1280, 1440 and 1920px (schedule 1/2/4/8 weeks, Design and Marketing boards)
+- [x] Committed as `Schedule layout: resource-planner pattern`
+- [x] "Where we left off" and status updated to Awaiting review
+- [x] **STOP** for review
+- [x] Approved by user (2026-10-27)
+
+---
+
 ## Phase 4 - Schedule interactions (Thu am)
 
 **Status:** Not started
@@ -429,11 +478,11 @@ Requested by the user on 2026-10-27, with `docs/design-reference.png` for mood o
 
 - [ ] 5.1 `RequestService` and controller: options, create, get, list, accept (task in the status after Triage, D18), reject
 - [ ] 5.2 Smoke test: `RequestsTests`
-- [ ] 5.3 Request form page
+- [ ] 5.3 Request form page (dropdowns use the shared `<app-select>`)
 - [ ] 5.4 Confirmation page with status
 - [ ] 5.5 Triage inbox, newest first
 - [ ] 5.6 Nav count badge, refreshed after accept or reject
-- [ ] 5.7 Accept dialog
+- [ ] 5.7 Accept dialog (assignee and other dropdowns use `<app-select>`)
 - [ ] 5.8 Reject dialog with reason
 
 **Acceptance criteria**
@@ -548,3 +597,10 @@ Requested by the user on 2026-10-27, with `docs/design-reference.png` for mood o
 - 2026-10-27: Phase 3 review fix (team name in allocation tooltips). Phase 3 approved; Phase 4 on hold until the user says to start.
 - 2026-10-27: Design pass built (tokens, fonts, shell, Board, Schedule with utilisation and over-capacity tint, drawer, toasts, login; seed colours on the palette; D37). Build, lint, 18 API tests and 21 web tests pass; screenshots at 1440px reviewed and fixed (today line placement, active nav, bar edge, name column width). Awaiting review.
 - 2026-10-27: Design pass approved and committed. Starting the schedule layout rework (resource-planner pattern).
+- 2026-10-27: Schedule layout built (resource-planner pattern, D38): API accepts 8 weeks and sends the project department; realistic seed bookings. Build, lint, 18 API tests and 26 web tests pass; screenshots at 1440px reviewed and fixed (nested repeat() dropped the grid columns, illegible one-day holidays, week labels under the people header, truncated leave labels). Awaiting review.
+- 2026-10-27: Schedule and Board made responsive (L.10). 8-week failure traced to a stale dev API process (400 from the old weeks validation). Screenshots at 1280, 1440 and 1920px checked: no page overflow, schedule fills the width, board columns equal and full height. Awaiting review.
+- 2026-10-27: Board tweaks (L.11): 240px minimum, edge fade, collapsible columns remembered per team (Done starts collapsed). Build, lint and 28 web tests pass; checked at 1440px (fade at start, middle and end of scroll; drop on a collapsed strip; collapse kept after reload). Awaiting review.
+- 2026-10-27: Board column collapse is now automatic: the last Done-category column collapses only when the columns do not fit at 240px, recalculated on resize; manual choices override it and are remembered per team. Build, lint and 33 web tests pass; checked Design at 1920 (all expanded), 1440 and 1280 (Done collapsed), plus reload and resize with manual overrides. Awaiting review.
+- 2026-10-27: Availability strip segments are now fill bars (L.12), so a fully booked day reads as full, not empty. Build, lint and 34 web tests pass; every segment fill checked against its tooltip in the running app. Awaiting review.
+- 2026-10-27: Shared select (L.13) on CDK Overlay + Listbox replaces all native selects. Build, lint and 38 web tests pass; checked in the running app: team switcher, assignee filter (search + Enter), drawer assignee (keyboard open, arrows, type-ahead, Escape and outside click close only the panel). Awaiting review.
+- 2026-10-27: Schedule layout block (L.1 to L.13) approved and committed. Phase 4 on hold until the user says to start.

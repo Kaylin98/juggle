@@ -24,3 +24,10 @@ export function addDays(date: string, days: number): string {
 export function startOfWeek(date: string): string {
   return addDays(date, -((parse(date).getUTCDay() + 6) % 7));
 }
+
+/** The ISO 8601 week number: weeks start on Monday and week 1 holds the year's first Thursday. */
+export function isoWeek(date: string): number {
+  const thursday = parse(addDays(startOfWeek(date), 3));
+  const firstOfYear = Date.UTC(thursday.getUTCFullYear(), 0, 1);
+  return Math.floor((thursday.getTime() - firstOfYear) / 86_400_000 / 7) + 1;
+}

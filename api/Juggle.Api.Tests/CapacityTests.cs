@@ -79,7 +79,7 @@ public sealed class CapacityTests(ApiFactory api)
 
         var jason = schedule.People.Single(p => p.Name == "Jason van Wyk");
         var jasonBars = schedule.Allocations.Where(a => a.PersonId == jason.Id).ToList();
-        Assert.Contains(jasonBars, a => a.OtherTeam && a.ProjectName == "Social Calendar" && a.TeamName == "Marketing");
+        Assert.Contains(jasonBars, a => a.OtherTeam && a.ProjectName == "Social Calendar" && a.TeamName == "Marketing" && a.ProjectDepartment == "Marketing");
         Assert.Contains(jasonBars, a => !a.OtherTeam && a.ProjectName == "Q1 Campaign");
         Assert.Contains(jason.Days, d => d.TimeOff is null && d.Allocated == 6.5m);
     }
@@ -99,13 +99,15 @@ public sealed class CapacityTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Weeks_other_than_1_2_or_4_return_400()
+    public async Task Weeks_other_than_1_2_4_or_8_return_400()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
 
         var response = await client.GetAsync($"/api/capacity?teamId=all&start={_nextWeek:yyyy-MM-dd}&weeks=3", _ct);
+        var eightWeeks = await GetAsync(client, "all", _nextWeek, 8);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(40, eightWeeks.Days.Count);
     }
 
     private async Task<string> GetTeamIdAsync(HttpClient client, string name)

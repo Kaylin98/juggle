@@ -1,10 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { ToastKind, ToastService } from './toast.service';
 
-const KIND_CLASSES: Record<ToastKind, string> = {
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  warning: 'border-amber-200 bg-amber-50 text-amber-800',
-  error: 'border-red-200 bg-red-50 text-red-800',
+const DOT_CLASSES: Record<ToastKind, string> = {
+  success: 'bg-ok-500',
+  warning: 'bg-warn-500',
+  error: 'bg-over-500',
 };
 
 /** Shows the current toasts at the bottom centre, clear of the drawer's buttons. */
@@ -17,11 +17,12 @@ const KIND_CLASSES: Record<ToastKind, string> = {
       aria-live="polite"
     >
       @for (toast of toastService.toasts(); track toast.id) {
-        <div class="flex items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-md" [class]="kindClasses[toast.kind]">
+        <div class="flex items-start gap-3 rounded-control bg-surface px-4 py-3 text-sm text-ink shadow-raised">
+          <span class="mt-1.5 size-2 shrink-0 rounded-full" [class]="dotClasses[toast.kind]"></span>
           <p class="flex-1">{{ toast.message }}</p>
           <button
             type="button"
-            class="font-medium opacity-60 hover:opacity-100"
+            class="font-semibold text-ink-faint hover:text-ink"
             aria-label="Dismiss"
             (click)="toastService.dismiss(toast.id)"
           >
@@ -34,5 +35,5 @@ const KIND_CLASSES: Record<ToastKind, string> = {
 })
 export class Toasts {
   protected readonly toastService = inject(ToastService);
-  protected readonly kindClasses = KIND_CLASSES;
+  protected readonly dotClasses = DOT_CLASSES;
 }

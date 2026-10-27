@@ -1,61 +1,176 @@
+@import '@fontsource-variable/manrope';
+@import '@fontsource-variable/space-grotesk';
 @import 'tailwindcss';
 
-/* The one accent colour. Change these (and public/logo.svg) to rebrand. */
+/*
+ * Design tokens. Every colour, radius, shadow and font in the app comes from here (see "Design" in
+ * CLAUDE.md). Tailwind's default palette is cleared so components can only use these.
+ * Change the accent (and public/logo.svg) to rebrand.
+ */
 @theme {
-  --color-accent-50: var(--color-indigo-50);
-  --color-accent-100: var(--color-indigo-100);
-  --color-accent-200: var(--color-indigo-200);
-  --color-accent-500: var(--color-indigo-500);
-  --color-accent-600: var(--color-indigo-600);
-  --color-accent-700: var(--color-indigo-700);
+  --color-*: initial;
+  --color-white: #ffffff;
+
+  /* Surfaces and lines */
+  --color-page: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef2f7;
+  --color-line: #e6ebf1;
+  --color-line-strong: #d5dce6;
+
+  /* Text. ink-faint is for icons and placeholders only, never for text that must be read. */
+  --color-ink: #13294b;
+  --color-ink-muted: #586a80;
+  --color-ink-faint: #94a3b8;
+
+  /* The one accent: actions, selected states, focus, today */
+  --color-accent-50: #eef4fd;
+  --color-accent-100: #dde8fb;
+  --color-accent-200: #bdd2f6;
+  --color-accent-500: #4a7fe0;
+  --color-accent-600: #2f66cc;
+  --color-accent-700: #2553ad;
+
+  /* Warm amber for small highlights */
+  --color-highlight-50: #fdf4e3;
+  --color-highlight: #e9a83a;
+
+  /* Load and status: 50 tint, 500 dot or bar, 700 text (AA on the tint and on white) */
+  --color-ok-50: #e8f5ee;
+  --color-ok-500: #5fae84;
+  --color-ok-700: #2f7a55;
+  --color-warn-50: #fdf3e1;
+  --color-warn-500: #e0a43a;
+  --color-warn-700: #94630f;
+  --color-over-50: #fcebea;
+  --color-over-500: #e07a72;
+  --color-over-700: #b4423c;
+
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-bar: 6px;
+
+  --shadow-soft: 0 1px 2px rgb(19 41 75 / 0.04), 0 8px 24px rgb(19 41 75 / 0.06);
+  --shadow-lifted: 0 2px 4px rgb(19 41 75 / 0.05), 0 12px 32px rgb(19 41 75 / 0.09);
+  --shadow-raised: 0 16px 48px rgb(19 41 75 / 0.12);
+
+  --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --tracking-caps: 0.14em;
 }
 
-@layer base {
-  body {
-    @apply bg-slate-50 text-slate-900 antialiased;
-  }
+/*
+ * Project and avatar colours come from the data, one of the 8 palette hues listed in CLAUDE.md.
+ * Set the colour as --hue on the element, then use these. Never fill a large area with the hue.
+ */
+@utility hue-tint {
+  background-color: color-mix(in oklch, var(--hue) 14%, var(--color-surface));
 }
 
-/* Shared control styles, used across features. Selects pair with <app-select-chevron>. */
-@layer components {
-  .form-label {
-    @apply mb-1 block text-sm font-medium text-slate-700;
-  }
+@utility hue-edge {
+  border-color: var(--hue);
+}
 
-  .form-input {
-    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-accent-500 focus:ring-2 focus:ring-accent-200 focus:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500;
-  }
+@utility hue-dot {
+  background-color: var(--hue);
+}
 
-  .form-select {
-    @apply w-full cursor-pointer appearance-none rounded-md border border-slate-300 bg-white py-2 pr-9 pl-3 text-sm focus:border-accent-500 focus:ring-2 focus:ring-accent-200 focus:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500;
-  }
+/* Dark text in the hue's family, for initials on a hue tint. */
+@utility hue-ink {
+  color: color-mix(in oklch, var(--hue) 35%, var(--color-ink));
+}
 
-  .compact-select {
-    @apply cursor-pointer appearance-none rounded-md border border-slate-300 bg-white py-1.5 pr-9 pl-3 text-sm font-medium hover:border-slate-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-200 focus:outline-none;
-  }
-
-  .btn-primary {
-    @apply rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white hover:bg-accent-700 disabled:opacity-60;
-  }
-
-  .btn-secondary {
-    @apply rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50;
-  }
+/* The thin accent line on today's column header; the grid draws the rest of the line. */
+@utility today-edge {
+  box-shadow: inset 2px 0 0 var(--color-accent-500);
 }
 
 /* Time off and public holidays on the schedule. */
 @utility hatched {
-  background-color: var(--color-slate-100);
-  background-image: repeating-linear-gradient(135deg, var(--color-slate-200) 0 6px, transparent 6px 12px);
+  background-color: var(--color-surface-muted);
+  background-image: repeating-linear-gradient(135deg, var(--color-line-strong) 0 1px, transparent 1px 8px);
+}
+
+@layer base {
+  body {
+    @apply bg-page font-sans text-ink antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+}
+
+/* Shared styles, used across features. Selects pair with <app-select-chevron>. */
+@layer components {
+  .panel {
+    @apply rounded-card bg-surface shadow-soft;
+  }
+
+  /* Small uppercase labels for sections and counts. */
+  .label-caps {
+    @apply text-[11px] font-semibold tracking-caps text-ink-muted uppercase;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  .form-label {
+    @apply mb-2 block text-sm font-semibold text-ink;
+  }
+
+  .form-input {
+    @apply w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-accent-500 focus:ring-3 focus:ring-accent-200 focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted;
+  }
+
+  .form-select {
+    @apply w-full cursor-pointer appearance-none rounded-control border border-line-strong bg-surface py-2 pr-9 pl-3 text-sm text-ink focus:border-accent-500 focus:ring-3 focus:ring-accent-200 focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted;
+  }
+
+  /* Compact pill select for toolbars and filters. */
+  .pill-select {
+    @apply cursor-pointer appearance-none rounded-full border border-line bg-surface py-1.5 pr-9 pl-4 text-sm font-semibold text-ink shadow-soft hover:border-line-strong focus:border-accent-500 focus:ring-3 focus:ring-accent-200 focus:outline-none;
+  }
+
+  .btn-primary {
+    @apply h-9 rounded-control bg-accent-600 px-4 text-sm font-semibold text-white hover:bg-accent-700 focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply h-9 rounded-control border border-line-strong bg-surface px-4 text-sm font-semibold text-ink hover:bg-page focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none;
+  }
+
+  /* Text-only action for secondary things: Clear, Open, Edit. */
+  .btn-quiet {
+    @apply rounded-control text-sm font-semibold text-accent-600 hover:text-accent-700 focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none;
+  }
+
+  /* Outline pill, like Switch user. */
+  .btn-pill {
+    @apply rounded-full border border-line-strong bg-surface px-4 py-1.5 text-[11px] font-semibold tracking-caps text-ink-muted uppercase hover:border-ink-faint hover:text-ink focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none;
+  }
+
+  .field-error {
+    @apply mt-2 text-sm text-over-700;
+  }
+
+  /* Loading, empty and error messages in place of a page's content. */
+  .empty-state {
+    @apply rounded-card border border-dashed border-line-strong px-6 py-12 text-center text-sm text-ink-muted;
+  }
 }
 
 /* Angular CDK drag and drop adds these classes at runtime; the drag preview is appended to <body>. */
 .cdk-drag-preview {
-  @apply rotate-1 shadow-lg;
+  @apply rotate-1 shadow-raised;
 }
 
 .cdk-drag-placeholder {
-  @apply opacity-40;
+  @apply opacity-50;
 }
 
 .cdk-drag-animating,

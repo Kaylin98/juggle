@@ -3,11 +3,11 @@ import { Component, computed, input } from '@angular/core';
 import { Allocation, Schedule } from '../../core/models';
 import { PersonRow } from './person-row';
 
-// One column for people, then one per weekday. Full class names so Tailwind generates them.
+// One column for people and utilisation, then one per weekday. Full class names so Tailwind generates them.
 const COLUMNS: Record<number, string> = {
-  1: 'grid-cols-[13rem_repeat(5,minmax(7rem,1fr))]',
-  2: 'grid-cols-[13rem_repeat(10,minmax(4.5rem,1fr))]',
-  4: 'grid-cols-[13rem_repeat(20,minmax(2.5rem,1fr))]',
+  1: 'grid-cols-[18rem_repeat(5,minmax(7rem,1fr))]',
+  2: 'grid-cols-[18rem_repeat(10,minmax(4.5rem,1fr))]',
+  4: 'grid-cols-[18rem_repeat(20,minmax(2.5rem,1fr))]',
 };
 
 /** People x weekdays. Built as a CSS grid; each row and the header use subgrid to share the columns. */
@@ -16,35 +16,45 @@ const COLUMNS: Record<number, string> = {
   imports: [DatePipe, PersonRow],
   template: `
     <div class="grid min-w-fit" [class]="columns()">
-      <div class="sticky top-0 z-30 col-span-full grid grid-cols-subgrid border-b border-slate-200 bg-white">
-        <div class="sticky left-0 border-r border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-500">
-          {{ schedule().people.length }} people
+      <div class="sticky top-0 z-30 col-span-full grid grid-cols-subgrid border-b border-line bg-surface">
+        <div class="sticky left-0 flex items-end justify-between border-r border-line bg-surface px-4 py-3">
+          <span class="label-caps">{{ schedule().people.length }} people</span>
+          <span class="label-caps" title="Utilisation over the days shown">Util.</span>
         </div>
         @for (day of schedule().days; track day; let i = $index) {
           <div
-            class="border-l py-1.5 text-center"
-            [class.border-slate-300]="i % 5 === 0"
-            [class.border-slate-100]="i % 5 !== 0"
-            [class.bg-accent-50]="day === today()"
+            class="border-l py-2 text-center"
+            [class]="i % 5 === 0 ? 'border-line-strong' : 'border-line'"
+            [class.today-edge]="day === today()"
           >
-            <div class="text-[11px] text-slate-500 uppercase">{{ day | date: (compact() ? 'EEEEE' : 'EEE') }}</div>
-            <div class="text-sm font-semibold" [class.text-accent-600]="day === today()">
+            <div class="label-caps" [class.text-accent-600]="day === today()">
+              {{ day | date: (compact() ? 'EEEEE' : 'EEE') }}
+            </div>
+            <div class="mt-0.5 font-display text-sm font-semibold" [class.text-accent-600]="day === today()">
               {{ day | date: (i % 5 === 0 && !compact() ? 'd MMM' : 'd') }}
             </div>
           </div>
         }
       </div>
 
-      @for (person of schedule().people; track person.id) {
+      <!-- Rows are placed explicitly so the today line can span them. -->
+      @for (person of schedule().people; track person.id; let i = $index) {
         <app-person-row
+          [style.grid-row]="i + 2"
           [person]="person"
           [allocations]="allocationsByPerson().get(person.id) ?? []"
           [days]="schedule().days"
-          [today]="today()"
-          [compact]="compact()"
         />
       } @empty {
-        <p class="col-span-full px-4 py-6 text-sm text-slate-500">Nobody in this team has a schedule yet.</p>
+        <p class="col-span-full px-4 py-12 text-center text-sm text-ink-muted">Nobody in this team has a schedule yet.</p>
+      }
+
+      @if (todayColumn(); as column) {
+        <div
+          class="pointer-events-none z-0 w-0.5 justify-self-start bg-accent-500"
+          [style.grid-column]="column"
+          [style.grid-row]="'2 / span ' + schedule().people.length"
+        ></div>
       }
     </div>
   `,
@@ -56,6 +66,12 @@ export class CapacityGrid {
   private readonly weeks = computed(() => this.schedule().days.length / 5);
   protected readonly columns = computed(() => COLUMNS[this.weeks()]);
   protected readonly compact = computed(() => this.weeks() === 4);
+
+  /** The grid column of today (after the people column), or null when today is not shown. */
+  protected readonly todayColumn = computed(() => {
+    const index = this.schedule().days.indexOf(this.today());
+    return index === -1 ? null : index + 2;
+  });
 
   protected readonly allocationsByPerson = computed(() => {
     const byPerson = new Map<string, Allocation[]>();

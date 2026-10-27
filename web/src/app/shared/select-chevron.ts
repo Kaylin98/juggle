@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-select-chevron',
   host: {
-    class: 'pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-500 peer-disabled:hidden',
+    class: 'pointer-events-none absolute inset-y-0 right-3 flex items-center text-ink-faint peer-disabled:hidden',
   },
   template: `
     <!-- Heroicons chevron-down (mini, MIT) -->

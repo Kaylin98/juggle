@@ -1,13 +1,13 @@
 import { Component, computed, input } from '@angular/core';
 
-/** A round avatar with the person's initials on their avatar colour. */
+/** A round avatar: the person's initials on a soft tint of their colour. */
 @Component({
   selector: 'app-avatar',
   template: `
     <span
-      class="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white select-none"
+      class="hue-tint hue-ink inline-flex shrink-0 items-center justify-center rounded-full font-bold select-none"
       [class]="size() === 'sm' ? 'size-6 text-[10px]' : 'size-9 text-xs'"
-      [style.background-color]="colour()"
+      [style.--hue]="colour()"
       [attr.title]="name()"
       >{{ initials() }}</span
     >

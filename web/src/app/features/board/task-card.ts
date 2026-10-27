@@ -18,24 +18,31 @@ export interface BoardCard {
     @let task = card().task;
     <button
       type="button"
-      class="block w-full rounded-md border border-l-4 border-slate-200 bg-white px-3 py-2.5 text-left shadow-xs hover:border-slate-300 focus-visible:outline-2 focus-visible:outline-accent-500"
+      class="block w-full rounded-card border border-line bg-surface px-4 py-3 text-left shadow-soft transition-shadow hover:shadow-lifted focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
       [class.cursor-grab]="card().canEdit"
-      [style.border-left-color]="card().project.colour"
       (click)="opened.emit()"
     >
-      <span class="block truncate text-xs text-slate-500">{{ card().project.name }}</span>
-      <span class="mt-0.5 block text-sm font-medium text-slate-900">{{ task.title }}</span>
-      <span class="mt-2.5 flex h-6 items-center gap-2 text-xs">
+      <span class="flex items-center gap-2 text-xs text-ink-muted" [style.--hue]="card().project.colour">
+        <span class="hue-dot size-2 shrink-0 rounded-full"></span>
+        <span class="truncate">{{ card().project.name }}</span>
+      </span>
+      <span class="mt-2 block font-display text-sm font-semibold">{{ task.title }}</span>
+      <span class="mt-3 flex h-6 items-center gap-2 text-xs">
         @if (task.dueDate) {
           <span
-            [class]="task.isOverdue ? 'font-semibold text-red-600' : 'text-slate-500'"
+            class="flex items-center gap-1.5"
+            [class]="task.isOverdue ? 'font-semibold text-over-700' : 'text-ink-muted'"
             [attr.title]="task.isOverdue ? 'Overdue' : 'Due date'"
-            >{{ task.dueDate | date: 'd MMM' }}</span
           >
+            @if (task.isOverdue) {
+              <span class="size-1.5 rounded-full bg-over-500"></span>
+            }
+            {{ task.dueDate | date: 'd MMM' }}
+          </span>
         }
         @if (task.reviewCycle > 1) {
           <span
-            class="rounded bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-800"
+            class="rounded-full bg-warn-50 px-2 py-0.5 font-semibold text-warn-700"
             [attr.title]="'Review cycle ' + task.reviewCycle"
             >R{{ task.reviewCycle }}</span
           >

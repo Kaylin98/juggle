@@ -7,14 +7,17 @@ import { BoardCard, TaskCard } from './task-card';
 @Component({
   selector: 'app-board-column',
   imports: [CdkDropList, CdkDrag, TaskCard],
-  host: { class: 'flex w-72 shrink-0 flex-col rounded-lg bg-slate-100' },
+  host: { class: 'panel flex w-72 shrink-0 flex-col' },
   template: `
-    <h2 class="flex items-center justify-between px-3 pt-3 pb-2 text-sm font-semibold text-slate-700">
-      {{ status().name }}
-      <span class="rounded-full bg-slate-200 px-2 text-xs font-medium text-slate-600">{{ cards().length }}</span>
-    </h2>
+    <div class="px-4 pt-4 pb-2">
+      <div class="flex items-center gap-2">
+        <span class="h-1.5 w-6 rounded-full bg-highlight"></span>
+        <span class="label-caps">{{ cards().length }} {{ cards().length === 1 ? 'card' : 'cards' }}</span>
+      </div>
+      <h2 class="mt-2 text-base font-semibold">{{ status().name }}</h2>
+    </div>
     <div
-      class="flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-3"
+      class="flex min-h-24 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4"
       cdkDropList
       [cdkDropListData]="status().id"
       (cdkDropListDropped)="dropped.emit($event)"
@@ -27,6 +30,10 @@ import { BoardCard, TaskCard } from './task-card';
           [card]="card"
           (opened)="opened.emit(card.task)"
         />
+      } @empty {
+        <p class="rounded-control border border-dashed border-line-strong py-6 text-center text-sm text-ink-muted in-[.cdk-drop-list-dragging]:hidden">
+          No cards
+        </p>
       }
     </div>
   `,

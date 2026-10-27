@@ -9,24 +9,24 @@ import { Component, input, output } from '@angular/core';
   template: `
     <button
       type="button"
-      class="fixed inset-0 z-40 cursor-default bg-slate-900/20"
+      class="fixed inset-0 z-40 cursor-default bg-ink/15"
       tabindex="-1"
       aria-label="Close"
       (click)="closed.emit()"
     ></button>
     <aside
-      class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-xl"
+      class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col overflow-hidden rounded-l-card bg-surface shadow-raised"
       role="dialog"
       aria-modal="true"
       [attr.aria-label]="heading()"
       cdkTrapFocus
       [cdkTrapFocusAutoCapture]="true"
     >
-      <header class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-        <h2 class="text-base font-semibold">{{ heading() }}</h2>
+      <header class="flex items-center justify-between px-6 pt-6 pb-2">
+        <h2 class="label-caps font-sans">{{ heading() }}</h2>
         <button
           type="button"
-          class="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+          class="rounded-control p-1 text-ink-faint hover:bg-surface-muted hover:text-ink focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
           aria-label="Close"
           (click)="closed.emit()"
         >

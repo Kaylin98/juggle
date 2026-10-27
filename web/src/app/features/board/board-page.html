@@ -1,9 +1,9 @@
 <div class="flex h-full flex-col">
-  <div class="flex flex-wrap items-center justify-between gap-4 px-6 pt-6 pb-4">
+  <div class="flex flex-wrap items-end justify-between gap-4 px-8 pt-2 pb-6">
     <div>
-      <h1 class="text-xl font-semibold">Board</h1>
+      <h1 class="page-title">Board</h1>
       @if (teamContext.team(); as team) {
-        <p class="text-sm text-slate-500">{{ team.name }} team</p>
+        <p class="mt-1 text-sm text-ink-muted">{{ team.name }} team</p>
       }
     </div>
     @if (data(); as data) {
@@ -17,9 +17,9 @@
   </div>
 
   @if (board.error()) {
-    <p class="px-6 text-sm text-red-600">The board could not be loaded. Refresh the page to try again.</p>
+    <p class="empty-state mx-8 text-over-700">The board could not be loaded. Refresh the page to try again.</p>
   } @else if (data()) {
-    <div class="flex min-h-0 flex-1 items-start gap-4 overflow-x-auto px-6 pb-6" cdkDropListGroup>
+    <div class="flex min-h-0 flex-1 items-start gap-6 overflow-x-auto px-8 pb-8" cdkDropListGroup>
       @for (column of columns(); track column.status.id) {
         <app-board-column
           class="max-h-full"
@@ -31,7 +31,7 @@
       }
     </div>
   } @else {
-    <p class="px-6 text-sm text-slate-500">Loading the board...</p>
+    <p class="empty-state mx-8">Loading the board...</p>
   }
 </div>
 

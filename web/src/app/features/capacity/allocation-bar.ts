@@ -3,21 +3,21 @@ import { Component, LOCALE_ID, computed, inject, input } from '@angular/core';
 import { Allocation } from '../../core/models';
 import { formatHours } from '../../shared/load-colour';
 
-/** One allocation: project colour, name and hours/day. Another team's work is greyed. */
+/** One allocation: a soft tint of the project colour with its name and hours/day. Another team's work is greyed. */
 @Component({
   selector: 'app-allocation-bar',
   host: {
-    class: 'mx-px flex h-6 min-w-0 items-center gap-1 rounded px-1.5 text-xs font-medium',
-    '[class.bg-slate-200]': 'allocation().otherTeam',
-    '[class.text-slate-500]': 'allocation().otherTeam',
-    '[class.text-white]': '!allocation().otherTeam',
-    '[style.background-color]': 'allocation().otherTeam ? null : allocation().projectColour',
+    class: 'z-10 mx-0.5 flex h-6 min-w-0 items-center rounded-bar border-l-3 px-2 text-xs font-semibold',
+    '[class.hue-tint]': '!allocation().otherTeam',
+    '[class.hue-edge]': '!allocation().otherTeam',
+    '[class.text-ink]': '!allocation().otherTeam',
+    '[class.bg-surface-muted]': 'allocation().otherTeam',
+    '[class.border-line-strong]': 'allocation().otherTeam',
+    '[class.text-ink-muted]': 'allocation().otherTeam',
+    '[style.--hue]': 'allocation().projectColour',
     '[attr.title]': 'title()',
   },
-  template: `
-    <span class="truncate">{{ allocation().projectName }}</span>
-    <span class="ml-auto shrink-0 opacity-80">{{ hours() }}h</span>
-  `,
+  template: `<span class="truncate">{{ allocation().projectName }} &middot; {{ hours() }}h/day</span>`,
 })
 export class AllocationBar {
   private readonly locale = inject(LOCALE_ID);

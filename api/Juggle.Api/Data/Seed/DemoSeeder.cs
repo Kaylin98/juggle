@@ -45,16 +45,17 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             .ToDictionary(name => name, name => new Department { OrgId = org.Id, Name = name });
         db.Departments.AddRange(departments.Values);
 
-        var design = new Team { OrgId = org.Id, Name = "Design", Colour = "#7c3aed" };
-        var marketing = new Team { OrgId = org.Id, Name = "Marketing", Colour = "#0284c7" };
+        // Colours are hues from the project palette under "Design" in CLAUDE.md.
+        var design = new Team { OrgId = org.Id, Name = "Design", Colour = "#8a78d6" };
+        var marketing = new Team { OrgId = org.Id, Name = "Marketing", Colour = "#3fa7a0" };
         db.Teams.AddRange(design, marketing);
 
         // Users and people
 
         var avatarColours = new Queue<string>(
         [
-            "#7c3aed", "#2563eb", "#db2777", "#059669", "#d97706", "#0891b2", "#dc2626",
-            "#4f46e5", "#65a30d", "#c026d3", "#0d9488", "#ea580c", "#475569", "#9333ea",
+            "#8a78d6", "#5b8def", "#d16b8f", "#6aa36f", "#d9a441", "#3fa7a0", "#e07a5f",
+            "#7b8ea8", "#5b8def", "#d16b8f", "#6aa36f", "#d9a441", "#3fa7a0", "#e07a5f",
         ]);
 
         User AddUser(string name, string? department = null, OrgRole orgRole = OrgRole.User)
@@ -149,16 +150,16 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             return project;
         }
 
-        var q1Campaign = AddProject(design, "Q1 Campaign", "Marketing", "#f97316", 45);
-        var websiteRefresh = AddProject(design, "Website Refresh", "Product", "#3b82f6", 40);
-        var salesDeck = AddProject(design, "Sales Deck", "Sales", "#10b981", 14);
-        var hrOnboarding = AddProject(design, "HR Onboarding Pack", "HR", "#ec4899", 21);
-        var annualReport = AddProject(design, "Annual Report", "Executive", "#64748b", 30);
-        var launchVideo = AddProject(design, "Product Launch Video", "Product", "#8b5cf6", 28);
-        var newsletter = AddProject(marketing, "Monthly Newsletter", "Marketing", "#06b6d4", 25);
-        var socialCalendar = AddProject(marketing, "Social Calendar", "Marketing", "#eab308", 30);
-        var caseStudies = AddProject(marketing, "Customer Case Studies", "Sales", "#22c55e", 35);
-        var employerBrand = AddProject(marketing, "Employer Brand", "HR", "#f43f5e", 40);
+        var q1Campaign = AddProject(design, "Q1 Campaign", "Marketing", "#e07a5f", 45);
+        var websiteRefresh = AddProject(design, "Website Refresh", "Product", "#5b8def", 40);
+        var salesDeck = AddProject(design, "Sales Deck", "Sales", "#6aa36f", 14);
+        var hrOnboarding = AddProject(design, "HR Onboarding Pack", "HR", "#d16b8f", 21);
+        var annualReport = AddProject(design, "Annual Report", "Executive", "#7b8ea8", 30);
+        var launchVideo = AddProject(design, "Product Launch Video", "Product", "#8a78d6", 28);
+        var newsletter = AddProject(marketing, "Monthly Newsletter", "Marketing", "#3fa7a0", 25);
+        var socialCalendar = AddProject(marketing, "Social Calendar", "Marketing", "#d9a441", 30);
+        var caseStudies = AddProject(marketing, "Customer Case Studies", "Sales", "#6aa36f", 35);
+        var employerBrand = AddProject(marketing, "Employer Brand", "HR", "#d16b8f", 40);
 
         // Tasks
 

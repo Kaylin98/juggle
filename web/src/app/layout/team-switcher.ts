@@ -7,10 +7,10 @@ import { SelectChevron } from '../shared/select-chevron';
   selector: 'app-team-switcher',
   imports: [SelectChevron],
   template: `
-    <label class="flex items-center gap-2 text-sm">
-      <span class="text-slate-500">Team</span>
+    <label class="flex items-center gap-3">
+      <span class="label-caps">Team</span>
       <span class="relative">
-        <select class="compact-select peer" (change)="select($any($event.target).value)">
+        <select class="pill-select peer" (change)="select($any($event.target).value)">
           @if (auth.isOrgAdmin() && teamContext.page() === 'capacity') {
             <option [value]="allTeams" [selected]="teamContext.allTeams()">All teams</option>
           }

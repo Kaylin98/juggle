@@ -6,12 +6,12 @@ import { TeamContextService } from '../core/team-context.service';
 @Component({
   selector: 'app-placeholder-page',
   template: `
-    <div class="p-8">
-      <h1 class="text-xl font-semibold">{{ title }}</h1>
+    <div class="px-8 pt-2 pb-8">
+      <h1 class="page-title">{{ title }}</h1>
       @if (teamContext.team(); as team) {
-        <p class="mt-1 text-sm text-slate-500">{{ team.name }} team</p>
+        <p class="mt-1 text-sm text-ink-muted">{{ team.name }} team</p>
       }
-      <p class="mt-6 text-sm text-slate-500">This page is built in a later phase.</p>
+      <p class="empty-state mt-6">This page is built in a later phase.</p>
     </div>
   `,
 })

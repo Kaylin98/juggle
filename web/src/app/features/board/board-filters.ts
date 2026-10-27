@@ -6,12 +6,12 @@ import { SelectChevron } from '../../shared/select-chevron';
 @Component({
   selector: 'app-board-filters',
   imports: [SelectChevron],
-  host: { class: 'flex items-center gap-4' },
+  host: { class: 'flex items-center gap-6' },
   template: `
-    <label class="flex items-center gap-2 text-sm">
-      <span class="text-slate-500">Assignee</span>
+    <label class="flex items-center gap-3">
+      <span class="label-caps">Assignee</span>
       <span class="relative">
-        <select class="compact-select peer" (change)="assigneeId.set($any($event.target).value)">
+        <select class="pill-select peer" (change)="assigneeId.set($any($event.target).value)">
           <option value="" [selected]="assigneeId() === ''">Everyone</option>
           @for (person of people(); track person.id) {
             <option [value]="person.id" [selected]="person.id === assigneeId()">{{ person.name }}</option>
@@ -20,10 +20,10 @@ import { SelectChevron } from '../../shared/select-chevron';
         <app-select-chevron />
       </span>
     </label>
-    <label class="flex items-center gap-2 text-sm">
-      <span class="text-slate-500">Project</span>
+    <label class="flex items-center gap-3">
+      <span class="label-caps">Project</span>
       <span class="relative">
-        <select class="compact-select peer" (change)="projectId.set($any($event.target).value)">
+        <select class="pill-select peer" (change)="projectId.set($any($event.target).value)">
           <option value="" [selected]="projectId() === ''">All projects</option>
           @for (project of projects(); track project.id) {
             <option [value]="project.id" [selected]="project.id === projectId()">{{ project.name }}</option>
@@ -33,7 +33,7 @@ import { SelectChevron } from '../../shared/select-chevron';
       </span>
     </label>
     @if (assigneeId() || projectId()) {
-      <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" (click)="clear()">
+      <button type="button" class="btn-quiet" (click)="clear()">
         Clear
       </button>
     }

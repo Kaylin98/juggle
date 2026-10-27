@@ -6,11 +6,11 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | Phase 3 - Schedule, read |
-| Phase status | Done (Phase 4 not started; waiting for the go-ahead) |
-| Last completed task | Phase 3 approved |
-| Next task | 4.1 `AllocationService`, once the user says to start Phase 4 |
-| Blockers / open questions | Waiting for the user to start Phase 4 |
+| Current phase | Schedule layout (between Phase 3 and Phase 4) |
+| Phase status | In progress (Phase 4 not started) |
+| Last completed task | Design pass approved and committed |
+| Next task | Schedule layout (resource-planner pattern) |
+| Blockers / open questions | The dev database needs `--reset-demo` for the new seed |
 | Last updated | 2026-10-27 |
 
 ## Phase overview
@@ -21,6 +21,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 1 | Mon | Scaffold + demo login | Done |
 | 2 | Tue | Board | Done |
 | 3 | Wed | Schedule (read) | Done |
+| D | Tue | Design pass | Done |
 | 4 | Thu am | Schedule interactions | Not started |
 | 5 | Thu pm | Requests + triage | Not started |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
@@ -74,6 +75,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D34 Moving a bar can change its dates and its person (drop on another row in the same team)
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 - D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
+- D37 (2026-10-27, design pass) Schedule cells show no hours free. Load colour (D15) is shown on each person's utilisation for the days shown (D14), and a day over capacity is tinted red with the hours over ("+2h")
 
 **Seed**
 
@@ -319,6 +321,44 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 ---
 
+## Design pass (between Phase 3 and Phase 4)
+
+**Status:** Done
+**Done when:** the app looks calm, soft and consistent, built only from the design tokens; Schedule and Board screenshots reviewed at 1440px
+
+Requested by the user on 2026-10-27, with `docs/design-reference.png` for mood only. UI only: no API, route or behaviour change. The one data change (approved) is the seed colours, which move to the 8-hue palette.
+
+**Tasks**
+
+- [x] D.1 Tokens in one `@theme` block in `styles.css`: colours, radius, shadows, fonts, caps tracking; Tailwind's default palette cleared so only tokens can be used
+- [x] D.2 Space Grotesk and Manrope, self-hosted with `@fontsource-variable/*` (OFL)
+- [x] D.3 Shared classes: `panel`, `label-caps`, `page-title`, buttons (primary, secondary, quiet, pill), inputs, `pill-select`, `empty-state`; `hue-*` utilities for data colours
+- [x] D.4 Seed colours from the palette (projects, avatars, teams); logo on the new accent
+- [x] D.5 Shell: lighter sidebar, clear active nav, header without borders, caps team switcher
+- [x] D.6 Board: white columns with an amber bar and "N CARDS", soft cards with a project dot, empty column state
+- [x] D.7 Schedule: tinted bars with a coloured edge and "Project · 4h/day", utilisation column, over-capacity tint with "+2h", today line, no "Xh free" pill (D37)
+- [x] D.8 Drawer, toasts, login and placeholder pages on the tokens
+- [x] D.9 "Design" section in `CLAUDE.md`
+
+**Notes and deviations**
+
+- D37 Schedule cells no longer show hours free. Load colour (D15) moves to each person's utilisation figure for the days shown (D14), and a red day is tinted with the hours over ("+2h"). The day tooltip still shows "6h of 8h booked". The brief's acceptance criterion was updated to match
+- The initial bundle warning budget went from 500 kB to 600 kB. The JS was already 472 kB, and the fonts and new classes took the total to 504 kB. Phases 4 to 6 add more code
+- The today line is one element across the rows, behind the bars, so it stays continuous; person rows are placed explicitly so it can span them
+- Bars use a 6px radius (`rounded-bar`) so the 3px coloured edge reads as a straight edge
+- Screenshots were taken against a separate copy of the API on its own database (`juggle_screenshots`), so the running dev API and its data were left alone. Run `--reset-demo` on the dev database to pick up the new seed colours
+
+**Review gate**
+
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Screenshots of Schedule and Board at 1440px reviewed and fixed
+- [x] Committed as `Design pass: calm, soft UI from tokens`
+- [x] "Where we left off" and status updated to Awaiting review
+- [x] **STOP** for review
+- [x] Approved by user (2026-10-27)
+
+---
+
 ## Phase 4 - Schedule interactions (Thu am)
 
 **Status:** Not started
@@ -506,3 +546,5 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - 2026-10-27: Phase 1 approved. Schedule rename (D35) and team dropdown fix. Phase 2 built and verified (10 API tests, 10 web unit tests, headless-browser walkthrough of columns, cards, drag between and within columns, filtered drag, filters, drawer edit, Marketing board, Member restrictions). Committed; awaiting review.
 - 2026-10-27: Phase 2 review fixes (D36 admin-only reassign, disabled field styling, toast position); reassign setting recorded under Later. Phase 2 approved. Phase 3 built and verified (18 API tests, 19 web unit tests, headless-browser walkthrough of 1/2/4 weeks, paging, load colours, leave and holidays, greyed cross-team bars, All teams, Marketing, Member view). Committed; awaiting review.
 - 2026-10-27: Phase 3 review fix (team name in allocation tooltips). Phase 3 approved; Phase 4 on hold until the user says to start.
+- 2026-10-27: Design pass built (tokens, fonts, shell, Board, Schedule with utilisation and over-capacity tint, drawer, toasts, login; seed colours on the palette; D37). Build, lint, 18 API tests and 21 web tests pass; screenshots at 1440px reviewed and fixed (today line placement, active nav, bar edge, name column width). Awaiting review.
+- 2026-10-27: Design pass approved and committed. Starting the schedule layout rework (resource-planner pattern).

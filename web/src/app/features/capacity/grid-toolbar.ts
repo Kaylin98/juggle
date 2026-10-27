@@ -15,7 +15,7 @@ const WEEK_OPTIONS: Weeks[] = [1, 2, 4];
     <div class="flex">
       <button
         type="button"
-        class="rounded-l-md border border-slate-300 bg-white p-1.5 text-slate-600 hover:bg-slate-50"
+        class="flex h-9 items-center rounded-l-control border border-line-strong bg-surface px-2 text-ink-muted hover:bg-page hover:text-ink focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
         aria-label="Previous"
         (click)="move(-1)"
       >
@@ -30,7 +30,7 @@ const WEEK_OPTIONS: Weeks[] = [1, 2, 4];
       </button>
       <button
         type="button"
-        class="-ml-px rounded-r-md border border-slate-300 bg-white p-1.5 text-slate-600 hover:bg-slate-50"
+        class="-ml-px flex h-9 items-center rounded-r-control border border-line-strong bg-surface px-2 text-ink-muted hover:bg-page hover:text-ink focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
         aria-label="Next"
         (click)="move(1)"
       >
@@ -44,13 +44,13 @@ const WEEK_OPTIONS: Weeks[] = [1, 2, 4];
         </svg>
       </button>
     </div>
-    <span class="min-w-40 text-sm font-medium">{{ start() | date: 'd MMM' }} &ndash; {{ end() | date: 'd MMM y' }}</span>
-    <div class="inline-flex rounded-md border border-slate-300 bg-white p-0.5" role="group" aria-label="Weeks shown">
+    <span class="min-w-40 font-display text-sm font-semibold">{{ start() | date: 'd MMM' }} &ndash; {{ end() | date: 'd MMM y' }}</span>
+    <div class="inline-flex rounded-full border border-line bg-surface p-1 shadow-soft" role="group" aria-label="Weeks shown">
       @for (option of weekOptions; track option) {
         <button
           type="button"
-          class="rounded px-2.5 py-1 text-sm font-medium"
-          [class]="option === weeks() ? 'bg-accent-600 text-white' : 'text-slate-600 hover:bg-slate-100'"
+          class="rounded-full px-3 py-1 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
+          [class]="option === weeks() ? 'bg-accent-600 text-white' : 'text-ink-muted hover:text-ink'"
           [attr.aria-pressed]="option === weeks()"
           (click)="weeks.set(option)"
         >

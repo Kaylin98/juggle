@@ -17,7 +17,7 @@ export const routes: Routes = [
         path: 't/:teamId',
         canActivate: [teamMemberGuard],
         children: [
-          { path: 'capacity', component: PlaceholderPage, title: 'Capacity' },
+          { path: 'capacity', component: PlaceholderPage, title: 'Schedule' },
           { path: 'board', component: PlaceholderPage, title: 'Board' },
           { path: 'triage', component: PlaceholderPage, title: 'Triage', canActivate: [teamAdminGuard] },
           { path: 'dashboard', component: PlaceholderPage, title: 'Dashboard', canActivate: [teamAdminGuard] },

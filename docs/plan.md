@@ -20,8 +20,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 0 | Mon | Plan approved | Done |
 | 1 | Mon | Scaffold + demo login | Awaiting review |
 | 2 | Tue | Board | Not started |
-| 3 | Wed | Capacity grid (read) | Not started |
-| 4 | Thu am | Capacity grid interactions | Not started |
+| 3 | Wed | Schedule (read) | Not started |
+| 4 | Thu am | Schedule interactions | Not started |
 | 5 | Thu pm | Requests + triage | Not started |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
 
@@ -63,15 +63,16 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D24 Permissions:
   - Org Admin can do everything in every team
   - Team Admin can do everything in their team
-  - Member sees the board and capacity grid of their own teams, but only edits tasks assigned to them (including drag). The grid is read-only for Members
+  - Member sees the board and schedule of their own teams, but only edits tasks assigned to them (including drag). The grid is read-only for Members
   - Requester sees only the request form
 - D25 Allocations from another team show greyed and cannot be edited from the current team's grid. "All teams" (Org Admin only, grid only) shows every person and every bar is editable
-- D26 Landing pages: admins go to the capacity grid, Members to the board, Requesters to the request form
+- D26 Landing pages: admins go to the schedule, Members to the board, Requesters to the request form
 - D27 Dashboard: per person, one bar for this week and one for the next 4 weeks combined. "Over capacity this week" = at least one red day this week. "Work by department" counts open (not Done) tasks of the current team, grouped by the project's department
-- D28 "Book on capacity grid" opens a small form: start date (default next working day), number of working days, hours/day (default estimate / days). It creates an allocation linked to the task
+- D28 "Book on schedule" opens a small form: start date (default next working day), number of working days, hours/day (default estimate / days). It creates an allocation linked to the task
 - D29 Add allocation delete (button in the bar's edit popover), so a wrong drag during the demo can be undone. Small addition beyond the brief
 - D30 The request confirmation page shows the request's title and status (New). No "My requests" list (in Later)
 - D34 Moving a bar can change its dates and its person (drop on another row in the same team)
+- D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 
 **Seed**
 
@@ -232,7 +233,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - [ ] Cards show title, project colour, assignee avatar, due date (red if overdue), review cycle
 - [ ] Drag between and within columns persists order and status
 - [ ] Filter by assignee and project
-- [ ] Clicking a card opens a drawer: edit title, description, assignee, estimate, due date, link ("Book on capacity grid" is built in Phase 4)
+- [ ] Clicking a card opens a drawer: edit title, description, assignee, estimate, due date, link ("Book on schedule" is built in Phase 4)
 
 **Review gate**
 
@@ -245,7 +246,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 
 ---
 
-## Phase 3 - Capacity grid, read (Wed)
+## Phase 3 - Schedule, read (Wed)
 
 **Status:** Not started
 **Done when:** the grid shows seeded load correctly, including cross-team people
@@ -281,20 +282,20 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - [ ] Each cell shows load colour (green under 80%, amber 80 to 100%, red over 100%) and hours free
 - [ ] Time off and public holidays show as hatched blocks and reduce capacity
 - [ ] Load includes allocations from other teams (shown greyed)
-- [ ] Org Admin sees a team switcher option "All teams" on the capacity grid
+- [ ] Org Admin sees a team switcher option "All teams" on the schedule
 
 **Review gate**
 
 - [ ] Build passes with no warnings, lint passes, smoke tests pass
 - [ ] Acceptance criteria ticked
-- [ ] Committed as `Phase 3: Capacity grid`
+- [ ] Committed as `Phase 3: Schedule`
 - [ ] "Where we left off" and status updated to Awaiting review
 - [ ] **STOP** for review
 - [ ] Approved by user
 
 ---
 
-## Phase 4 - Capacity grid interactions (Thu am)
+## Phase 4 - Schedule interactions (Thu am)
 
 **Status:** Not started
 **Done when:** allocations can be changed by drag and survive reload
@@ -320,20 +321,20 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - [ ] 4.5 Resize a bar by its edge
 - [ ] 4.6 Click a bar: edit popover (hours/day, notes, delete)
 - [ ] 4.7 Clash warning toast
-- [ ] 4.8 "Book on capacity grid" dialog in the task drawer (D28)
+- [ ] 4.8 "Book on schedule" dialog in the task drawer (D28)
 - [ ] 4.9 Grid read-only for Members
 
 **Acceptance criteria**
 
 - [ ] Drag on empty cells to create an allocation (pick project, hours/day); drag a bar to move it; drag its edge to resize
 - [ ] Saving an allocation that pushes a day over capacity shows a clash warning, but still allows it
-- [ ] Task drawer: "Book on capacity grid" creates an allocation for the assignee
+- [ ] Task drawer: "Book on schedule" creates an allocation for the assignee
 
 **Review gate**
 
 - [ ] Build passes with no warnings, lint passes, smoke tests pass
 - [ ] Acceptance criteria ticked
-- [ ] Committed as `Phase 4: Capacity grid interactions`
+- [ ] Committed as `Phase 4: Schedule interactions`
 - [ ] "Where we left off" and status updated to Awaiting review
 - [ ] **STOP** for review
 - [ ] Approved by user
@@ -420,9 +421,9 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 - [ ] 6.10 Rehearse the demo script:
   - [ ] Sign in as a Sales requester and submit "Sales deck for Q1 roadshow"
   - [ ] Switch to the Head of Design; triage badge shows the new request
-  - [ ] Capacity grid shows a red day, a person on leave, an under-loaded designer
+  - [ ] Schedule shows a red day, a person on leave, an under-loaded designer
   - [ ] Accept the request to the under-loaded designer (16 h); it appears in To Do
-  - [ ] "Book on capacity grid" 4 h/day over 4 days; load turns green to amber
+  - [ ] "Book on schedule" 4 h/day over 4 days; load turns green to amber
   - [ ] Drag an allocation onto a full day; clash warning appears
   - [ ] Drag a card to Internal Review, then Changes Requested; review cycle increases
   - [ ] Dashboard shows utilisation, overdue tasks, triage queue one shorter
@@ -450,7 +451,7 @@ Copied into each phase below. Nothing in the next phase starts until the last bo
 ## If time runs short, cut in this order
 
 1. Board filters
-2. Resize on the capacity grid (keep create and move)
+2. Resize on the schedule (keep create and move)
 3. Work by department on the dashboard
 4. Reject with reason (keep accept)
 

@@ -39,7 +39,7 @@ export class Nav {
     const items: NavItem[] = [];
     if (teamId) {
       items.push(
-        { label: 'Capacity', link: ['/t', teamId, 'capacity'], icon: ICONS.capacity },
+        { label: 'Schedule', link: ['/t', teamId, 'capacity'], icon: ICONS.capacity },
         { label: 'Board', link: ['/t', teamId, 'board'], icon: ICONS.board },
       );
       if (this.auth.roleIn(teamId) === 'TeamAdmin') {

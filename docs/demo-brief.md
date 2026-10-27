@@ -8,8 +8,8 @@ A working, clickable demo of the platform by Oct 30, 2026, built in the planned 
 
 The demo must prove one thing: a team lead can see who is busy, who is free and what is waiting, in one place, for any department.
 
-- **Story:** a request comes in, the Head of Design triages it, plans it on the board, books a designer on the capacity grid, and sees utilisation update on the dashboard
-- **Hero feature:** the capacity grid. This is the "Resource Guru" half that a Kanban board alone can't show
+- **Story:** a request comes in, the Head of Design triages it, plans it on the board, books a designer on the schedule, and sees utilisation update on the dashboard
+- **Hero feature:** the schedule (a capacity grid). This is the "Resource Guru" half that a Kanban board alone can't show
 - **Department-agnostic proof:** two seeded teams (Design and Marketing) with a team switcher, each with its own workflow columns
 - **Quality bar:** looks like a real product, runs reliably on a laptop, realistic data. Not production-ready
 
@@ -19,7 +19,7 @@ Six features are in; everything else waits until after the demo.
 
 **In the demo (priority order)**
 
-1. **Capacity grid:** people x days, allocations in hours/day, load colours, drag to create/move/resize, clash warning, time off shown
+1. **Schedule:** a capacity grid of people x days, allocations in hours/day, load colours, drag to create/move/resize, clash warning, time off shown
 2. **Kanban board:** per-team workflow columns, drag-drop between columns, task drawer to edit
 3. **Request intake + triage:** a request form, a triage inbox, accept turns a request into a task
 4. **Team dashboard:** utilisation per person (this week, next 4 weeks), overdue tasks, triage queue size
@@ -103,7 +103,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 - [ ] Lists seeded users with name, role and team; clicking one signs in
 - [ ] Header shows the user and a "Switch user" action
 
-**2. Capacity grid (default landing page for admins)**
+**2. Schedule (default landing page for admins)**
 
 - [ ] Rows = people in the current team; columns = weekdays; view 1, 2 or 4 weeks; previous/next/today
 - [ ] Allocation bars show project colour, name and hours/day; one person can have several bars per day
@@ -119,7 +119,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 - [ ] Cards show title, project colour, assignee avatar, due date (red if overdue), review cycle
 - [ ] Drag between and within columns persists order and status
 - [ ] Filter by assignee and project
-- [ ] Clicking a card opens a drawer: edit title, description, assignee, estimate, due date, link; "Book on capacity grid" creates an allocation for the assignee
+- [ ] Clicking a card opens a drawer: edit title, description, assignee, estimate, due date, link; "Book on schedule" creates an allocation for the assignee
 
 **4. Request form**
 
@@ -141,7 +141,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 **Roles**
 
 - [ ] Members can't see Triage or Dashboard, and can only edit their own tasks
-- [ ] Org Admin sees a team switcher option "All teams" on the capacity grid
+- [ ] Org Admin sees a team switcher option "All teams" on the schedule
 
 ## Seed data
 
@@ -168,21 +168,21 @@ Realistic, fictional data that tells the story; dates are relative to the curren
 
 ## Build order
 
-One milestone per day, each ending with something runnable. The capacity grid gets the most time because it's the hero.
+One milestone per day, each ending with something runnable. The schedule gets the most time because it's the hero.
 
 | Day | Milestone | Done when |
 | --- | --- | --- |
 | Mon | Scaffold: repo, Docker Compose Postgres, .NET API, Angular shell with Tailwind, entities, migrations, seeder, demo login | App opens, a seeded user signs in, team switcher works |
 | Tue | Board: statuses per team, task cards, drag-drop, task drawer, filters | Design and Marketing boards differ; moves persist after reload |
-| Wed | Capacity grid: layout, bars, load colours, time off, week navigation | Grid shows seeded load correctly, including cross-team people |
-| Thu (am) | Capacity grid interactions: create, move, resize, clash warning, "Book on grid" from task drawer | Allocations can be changed by drag and survive reload |
+| Wed | Schedule: layout, bars, load colours, time off, week navigation | Schedule shows seeded load correctly, including cross-team people |
+| Thu (am) | Schedule interactions: create, move, resize, clash warning, "Book on schedule" from task drawer | Allocations can be changed by drag and survive reload |
 | Thu (pm) | Request form, triage inbox, accept/reject | Submitted request can be accepted into a board task |
 | Fri | Dashboard, role checks, polish, empty states, seed reset, rehearse the demo script | Full demo script runs start to finish without errors |
 
 **If time runs short, cut in this order**
 
 1. Board filters
-2. Resize on the capacity grid (keep create and move)
+2. Resize on the schedule (keep create and move)
 3. Work by department on the dashboard
 4. Reject with reason (keep accept)
 
@@ -192,9 +192,9 @@ About 10 minutes, following one request from submission to booked capacity.
 
 1. **Sign in as a requester** (Sales). Submit a request: "Sales deck for Q1 roadshow", due in 2 weeks
 2. **Switch to the Head of Design.** The triage badge shows a new request. Open the triage inbox
-3. **Check capacity first:** open the capacity grid. Point out the red day (someone over capacity), the person on leave, and the under-loaded designer
+3. **Check capacity first:** open the schedule. Point out the red day (someone over capacity), the person on leave, and the under-loaded designer
 4. **Accept the request:** assign it to the under-loaded designer, estimate 16 h, set a committed due date. It appears on the board in To Do
-5. **Book it:** from the task drawer, "Book on capacity grid" for 4 h/day over 4 days. Back on the grid, their load turns from green to amber
+5. **Book it:** from the task drawer, "Book on schedule" for 4 h/day over 4 days. Back on the schedule, their load turns from green to amber
 6. **Show a clash:** drag another allocation onto a full day; the clash warning appears
 7. **Move work on the board:** drag a card to Internal Review, then to Changes Requested; the review cycle increases
 8. **Dashboard:** utilisation per person, overdue tasks, triage queue now one shorter

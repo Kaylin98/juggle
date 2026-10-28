@@ -118,3 +118,20 @@ export interface Schedule {
   people: SchedulePerson[];
   allocations: Allocation[];
 }
+
+/** Creates or replaces an allocation. Dates are inclusive. */
+export interface SaveAllocation {
+  personId: string;
+  projectId: string;
+  taskId: string | null;
+  startDate: string;
+  endDate: string;
+  hoursPerDay: number;
+  notes: string | null;
+}
+
+export interface SavedAllocation extends SaveAllocation {
+  id: string;
+  /** Days of this allocation on which the person is now booked over capacity (D16). */
+  clashDays: string[];
+}

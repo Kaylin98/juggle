@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { Schedule } from '../../core/models';
+import { firstValueFrom, forkJoin } from 'rxjs';
+import { Project, Schedule } from '../../core/models';
 
 export type Weeks = 1 | 2 | 4 | 8;
 
@@ -14,5 +14,11 @@ export class CapacityService {
     return firstValueFrom(
       this.http.get<Schedule>('/api/capacity', { params: { teamId, start, weeks } }),
     );
+  }
+
+  /** The projects that can be booked from the schedule: one team's, or every team's on "All teams". */
+  async projects(teamIds: string[]): Promise<Project[]> {
+    const perTeam = await firstValueFrom(forkJoin(teamIds.map((id) => this.http.get<Project[]>(`/api/teams/${id}/projects`))));
+    return perTeam.flat();
   }
 }

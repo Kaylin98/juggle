@@ -3,12 +3,17 @@ import { Allocation, DayLoad } from '../../core/models';
 /** Weekdays in a week. The grid adds one narrow weekend column after each week. */
 const WORKDAYS = 5;
 
-/** A piece of a booking on the grid: first and last weekday (0-based index into the days shown) and its lane. */
+/**
+ * A piece of a booking on the grid: first and last weekday (0-based index into the days shown) and its lane.
+ * First and last mark the pieces that hold the booking's visible start and end, where its resize handles go.
+ */
 export interface PlacedBar {
   allocation: Allocation;
   start: number;
   end: number;
   lane: number;
+  first: boolean;
+  last: boolean;
 }
 
 /** Days off with the same reason, cut at weekends. From and to are the dates of the whole run, for the label. */
@@ -70,7 +75,7 @@ export function placeBars(allocations: Allocation[], days: DayLoad[]): PlacedBar
       let lane = laneEnds.findIndex((end) => end < runs[0][0]);
       if (lane === -1) lane = laneEnds.length;
       laneEnds[lane] = runs.at(-1)![1];
-      return runs.map(([start, end]) => ({ allocation, start, end, lane }));
+      return runs.map(([start, end], i) => ({ allocation, start, end, lane, first: i === 0, last: i === runs.length - 1 }));
     });
 }
 

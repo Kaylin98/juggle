@@ -1,15 +1,27 @@
 <app-drawer heading="Task" (closed)="closed.emit()">
+  <!-- Outside the task form: the booking has its own form, and forms cannot nest. -->
+  <div class="space-y-4 px-6 pt-2">
+    <div class="flex items-center gap-2 text-sm text-ink-muted" [style.--hue]="card().project.colour">
+      <span class="hue-dot size-2 rounded-full"></span>
+      <span>{{ card().project.name }} &middot; {{ card().project.department }}</span>
+      @if (card().task.reviewCycle > 1) {
+        <span class="ml-auto rounded-full bg-warn-50 px-2 py-0.5 text-xs font-semibold text-warn-700">
+          Review cycle {{ card().task.reviewCycle }}
+        </span>
+      }
+    </div>
+
+    @if (canBook() && assignee(); as assignee) {
+      @if (booking()) {
+        <app-book-on-schedule [task]="card().task" [assignee]="assignee" (closed)="booking.set(false)" />
+      } @else {
+        <button type="button" class="btn-secondary w-full" (click)="booking.set(true)">Book on schedule</button>
+      }
+    }
+  </div>
+
   <form class="flex min-h-full flex-col" novalidate (submit)="save($event)">
-    <div class="flex-1 space-y-6 px-6 pt-2 pb-6">
-      <div class="flex items-center gap-2 text-sm text-ink-muted" [style.--hue]="card().project.colour">
-        <span class="hue-dot size-2 rounded-full"></span>
-        <span>{{ card().project.name }} &middot; {{ card().project.department }}</span>
-        @if (card().task.reviewCycle > 1) {
-          <span class="ml-auto rounded-full bg-warn-50 px-2 py-0.5 text-xs font-semibold text-warn-700">
-            Review cycle {{ card().task.reviewCycle }}
-          </span>
-        }
-      </div>
+    <div class="flex-1 space-y-6 px-6 pt-6 pb-6">
 
       @if (!card().canEdit) {
         <p class="rounded-control bg-surface-muted px-4 py-3 text-sm text-ink-muted">You can only edit tasks assigned to you.</p>

@@ -42,6 +42,11 @@ describe('placeBars', () => {
     expect(pieces(placeBars([allocation('a', '2026-10-20', '2026-11-10')], days()))).toEqual(['a:0-4@0', 'a:5-6@0']);
   });
 
+  it('marks the pieces that hold the start and the end', () => {
+    const bars = placeBars([allocation('a', '2026-11-04', '2026-11-11')], days());
+    expect(bars.map((b) => [b.first, b.last])).toEqual([[true, false], [false, true]]);
+  });
+
   it('splits a booking around days off', () => {
     expect(pieces(placeBars([allocation('a', '2026-11-02', '2026-11-06')], days({ 2: 'Leave' })))).toEqual([
       'a:0-1@0',

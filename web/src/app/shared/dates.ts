@@ -31,3 +31,19 @@ export function isoWeek(date: string): number {
   const firstOfYear = Date.UTC(thursday.getUTCFullYear(), 0, 1);
   return Math.floor((thursday.getTime() - firstOfYear) / 86_400_000 / 7) + 1;
 }
+
+export function isWeekend(date: string): boolean {
+  return parse(date).getUTCDay() % 6 === 0;
+}
+
+/** Moves by working days (Monday to Friday), skipping weekends. A weekend date first moves to the next Monday. */
+export function addWeekdays(date: string, weekdays: number): string {
+  let result = date;
+  while (isWeekend(result)) result = addDays(result, 1);
+  const step = Math.sign(weekdays);
+  for (let left = Math.abs(weekdays); left > 0; left--) {
+    do result = addDays(result, step);
+    while (isWeekend(result));
+  }
+  return result;
+}

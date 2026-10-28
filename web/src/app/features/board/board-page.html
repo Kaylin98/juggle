@@ -46,5 +46,6 @@
     [card]="card"
     [people]="data()?.people ?? []"
     [canReassign]="teamContext.isTeamAdmin()"
+    [canBook]="teamContext.isTeamAdmin()"
     (closed)="openTaskId.set(null)" (saved)="onSaved($event)" />
 }

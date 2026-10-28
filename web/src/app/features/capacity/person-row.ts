@@ -18,11 +18,12 @@ import { TimeOffBlock, dayColumn, placeBars, timeOffBlocks } from './grid-layout
 /**
  * One person: a sticky name and utilisation cell, then their days on the parent grid's columns (subgrid).
  * Timeline rows: a spacer, the availability strip, one lane per stacked booking, a spacer.
+ * Day cells carry their index and the row its person id, so the grid can tell which cell is under the pointer.
  */
 @Component({
   selector: 'app-person-row',
   imports: [Avatar, AllocationBar],
-  host: { class: 'col-span-full grid grid-cols-subgrid border-b border-line' },
+  host: { class: 'col-span-full grid grid-cols-subgrid border-b border-line', '[attr.data-person-id]': 'person().id' },
   template: `
     <div class="sticky left-0 z-20 flex items-center gap-3 border-r border-line bg-surface px-4 py-3">
       <app-avatar [name]="person().name" [colour]="person().avatarColour" />
@@ -39,7 +40,7 @@ import { TimeOffBlock, dayColumn, placeBars, timeOffBlocks } from './grid-layout
       </div>
     </div>
 
-    <div class="col-[2/-1] grid grid-cols-subgrid gap-y-1" [style.grid-template-rows]="rows()">
+    <div class="col-[2/-1] grid grid-cols-subgrid gap-y-1" [class.cursor-cell]="editable()" [style.grid-template-rows]="rows()">
       @for (day of person().days; track day.date; let i = $index) {
         <div
           class="row-span-full border-l"
@@ -47,6 +48,7 @@ import { TimeOffBlock, dayColumn, placeBars, timeOffBlocks } from './grid-layout
           [class.bg-over-50]="dayState(day) === 'over'"
           [style.grid-column]="dayColumn(i) + 1"
           [attr.title]="day.timeOff ?? describe(day)"
+          [attr.data-day-index]="i"
         ></div>
         <!-- A mini fill bar: booked hours in a neutral tone, free hours in green; all red when over capacity. -->
         @if (dayState(day) !== 'off') {
@@ -66,9 +68,20 @@ import { TimeOffBlock, dayColumn, placeBars, timeOffBlocks } from './grid-layout
         <div class="row-span-full bg-surface-muted" [style.grid-column]="column"></div>
       }
 
+      @if (selection(); as selection) {
+        <div
+          class="z-0 mx-0.5 rounded-bar border border-dashed border-accent-500 bg-accent-50"
+          [style.grid-column]="span(selection.start, selection.end)"
+          [style.grid-row]="'3 / span ' + lanes()"
+        ></div>
+      }
+
       @for (bar of bars(); track bar.allocation.id + ':' + bar.start) {
         <app-allocation-bar
           [allocation]="bar.allocation"
+          [editable]="editable() && !bar.allocation.otherTeam"
+          [first]="bar.first"
+          [last]="bar.last"
           [style.grid-column]="span(bar.start, bar.end)"
           [style.grid-row]="bar.lane + 3"
         />
@@ -99,6 +112,10 @@ export class PersonRow {
 
   readonly person = input.required<SchedulePerson>();
   readonly allocations = input.required<Allocation[]>();
+  /** The viewer can book and change this team's work (D24). */
+  readonly editable = input(false);
+  /** Days picked for a new booking, highlighted until it is saved or cancelled. */
+  readonly selection = input<{ start: number; end: number } | null>(null);
 
   protected readonly utilisationText = UTILISATION_TEXT;
   protected readonly utilisationBar = UTILISATION_BAR;

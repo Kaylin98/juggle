@@ -20,9 +20,36 @@
       class="panel scroll-thin mx-8 mb-8 min-h-0 overflow-auto transition-opacity"
       [class.opacity-60]="schedule.isLoading()"
     >
-      <app-capacity-grid [schedule]="data" [today]="today" />
+      <app-capacity-grid
+        [schedule]="data"
+        [today]="today"
+        [editable]="editable()"
+        [pending]="pending()"
+        (created)="openNew($event)"
+        (opened)="openExisting($event)"
+        (changed)="onChanged($event)"
+      />
     </div>
   } @else {
     <p class="empty-state mx-8">Loading the schedule...</p>
   }
 </div>
+
+@if (popover(); as draft) {
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="draft.origin"
+    [cdkConnectedOverlayOpen]="true"
+    [cdkConnectedOverlayPositions]="popoverPositions"
+    (overlayOutsideClick)="popover.set(null)"
+    (overlayKeydown)="$event.key === 'Escape' && popover.set(null)"
+  >
+    <app-allocation-popover
+      [draft]="draft"
+      [projects]="projects.hasValue() ? projects.value() : []"
+      (saved)="onPopoverSaved($event)"
+      (deleted)="onPopoverDeleted()"
+      (closed)="popover.set(null)"
+    />
+  </ng-template>
+}

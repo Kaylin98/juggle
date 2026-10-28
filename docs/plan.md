@@ -6,11 +6,11 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | Schedule layout (between Phase 3 and Phase 4) |
-| Phase status | Done (Phase 4 not started; waiting for the go-ahead) |
-| Last completed task | Schedule layout and follow-ups (L.1 to L.13) approved and committed |
-| Next task | 4.1 `AllocationService`, once the user says to start Phase 4 |
-| Blockers / open questions | Waiting for the user to start Phase 4 |
+| Current phase | 4 - Schedule interactions |
+| Phase status | Awaiting review |
+| Last completed task | Phase 4 tasks 4.1 to 4.9, committed as `Phase 4: Schedule interactions` |
+| Next task | 5.1 `RequestService`, once the user approves Phase 4 |
+| Blockers / open questions | Waiting for the Phase 4 review |
 | Last updated | 2026-10-28 |
 
 ## Phase overview
@@ -23,7 +23,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 3 | Wed | Schedule (read) | Done |
 | D | Tue | Design pass | Done |
 | L | Tue | Schedule layout | Done |
-| 4 | Thu am | Schedule interactions | Not started |
+| 4 | Thu am | Schedule interactions | Awaiting review |
 | 5 | Thu pm | Requests + triage | Not started |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
 
@@ -77,6 +77,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 - D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
 - D37 (2026-10-27, design pass) Schedule cells show no hours free. Load colour (D15) is shown on each person's utilisation for the days shown (D14), and a day over capacity is tinted red with the hours over ("+2h")
+- D39 (2026-10-28, Phase 4) Schedule drags use pointer events for create, move and resize alike, with a hit test on the day cells, instead of CDK drag for moves: CDK drag does not snap to CSS grid cells or move between rows. A move shifts both dates by working days, so a booking keeps its length across a weekend. "Book on schedule" defaults: start on the next working day; days = estimate / 4h, at least 1; hours/day = estimate / days to the nearest half hour, or 4h without an estimate (16h books 4 days at 4h/day, as in the demo script)
 - D38 (2026-10-27, schedule layout) Fixed-width day columns with narrow weekend columns and week labels; 1, 2, 4 or 8 weeks, opening on 4; an availability strip per row; two-line bookings split at weekends and days off; time off as solid ink blocks; today tinted; utilisation under 50% shown as available. The capacity API accepts `weeks=8` and sends each allocation's project department
 
 **Seed**
@@ -410,7 +411,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 ## Phase 4 - Schedule interactions (Thu am)
 
-**Status:** Not started
+**Status:** Awaiting review
 **Done when:** allocations can be changed by drag and survive reload
 
 **Files**
@@ -427,29 +428,39 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 **Tasks**
 
-- [ ] 4.1 `AllocationService`: create, update, delete; input validation; permission by the project's team; clash days (D16)
-- [ ] 4.2 `AllocationsController`; smoke test `AllocationsTests`
-- [ ] 4.3 Drag across empty cells to pick a date range (pointer events), then popover: project, hours/day
-- [ ] 4.4 Move a bar with CDK drag, snapped to cells (dates and person, D34)
-- [ ] 4.5 Resize a bar by its edge
-- [ ] 4.6 Click a bar: edit popover (hours/day, notes, delete)
-- [ ] 4.7 Clash warning toast
-- [ ] 4.8 "Book on schedule" dialog in the task drawer (D28)
-- [ ] 4.9 Grid read-only for Members
+- [x] 4.1 `AllocationService`: create, update, delete; input validation; permission by the project's team; clash days (D16)
+- [x] 4.2 `AllocationsController`; smoke test `AllocationsTests`
+- [x] 4.3 Drag across empty cells to pick a date range (pointer events), then popover: project, hours/day
+- [x] 4.4 Move a bar with CDK drag, snapped to cells (dates and person, D34)
+- [x] 4.5 Resize a bar by its edge
+- [x] 4.6 Click a bar: edit popover (hours/day, notes, delete)
+- [x] 4.7 Clash warning toast
+- [x] 4.8 "Book on schedule" dialog in the task drawer (D28)
+- [x] 4.9 Grid read-only for Members
 
 **Acceptance criteria**
 
-- [ ] Drag on empty cells to create an allocation (pick project, hours/day); drag a bar to move it; drag its edge to resize
-- [ ] Saving an allocation that pushes a day over capacity shows a clash warning, but still allows it
-- [ ] Task drawer: "Book on schedule" creates an allocation for the assignee
+- [x] Drag on empty cells to create an allocation (pick project, hours/day); drag a bar to move it; drag its edge to resize
+- [x] Saving an allocation that pushes a day over capacity shows a clash warning, but still allows it
+- [x] Task drawer: "Book on schedule" creates an allocation for the assignee
+
+**Notes and deviations**
+
+- Moves use pointer events, not CDK drag (D39); the web files are `schedule-drag.ts` (tested drag rules), `allocation-popover.ts`, and resize handles inside `allocation-bar.ts`; the drawer form is `book-on-schedule.ts`
+- The API returns `SavedAllocationDto` (the allocation and its clash days) rather than the schedule's `AllocationDto`, which depends on the team being viewed. After each save the schedule reloads, so load and utilisation come from the server. A moved or resized booking shows in its new place at once, before the save answers
+- Validation: end on or after start, at most a year, 0.5 to 24 h/day, the person in the project's team, the task in the project. Changing a booking needs Team Admin on its project's team (the old and the new project); Org Admins can change any
+- A click on a booking opens its popover (project, hours/day, notes, delete); Enter does the same from the keyboard. The days picked for a new booking stay highlighted while its popover is open
+- "All teams" lists every team's projects when booking; the API rejects a person who is not in the project's team with a clear message
+- Board and Schedule pages are now lazy-loaded: the initial bundle had passed the 600 kB budget (603 kB) because every page was in it; it is now 448 kB
+- Checked in Chromium at 1920 against a separate API and web server on a throwaway database (`juggle_check`, dropped afterwards), so the demo data was untouched: create, move to another person, resize, reload, clash warning, edit, delete, Escape, "Book on schedule", and a Member's read-only grid and drawer. No console errors
 
 **Review gate**
 
-- [ ] Build passes with no warnings, lint passes, smoke tests pass
-- [ ] Acceptance criteria ticked
-- [ ] Committed as `Phase 4: Schedule interactions`
-- [ ] "Where we left off" and status updated to Awaiting review
-- [ ] **STOP** for review
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Acceptance criteria ticked
+- [x] Committed as `Phase 4: Schedule interactions`
+- [x] "Where we left off" and status updated to Awaiting review
+- [x] **STOP** for review
 - [ ] Approved by user
 
 ---
@@ -603,7 +614,8 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - 2026-10-27: Board tweaks (L.11): 240px minimum, edge fade, collapsible columns remembered per team (Done starts collapsed). Build, lint and 28 web tests pass; checked at 1440px (fade at start, middle and end of scroll; drop on a collapsed strip; collapse kept after reload). Awaiting review.
 - 2026-10-27: Board column collapse is now automatic: the last Done-category column collapses only when the columns do not fit at 240px, recalculated on resize; manual choices override it and are remembered per team. Build, lint and 33 web tests pass; checked Design at 1920 (all expanded), 1440 and 1280 (Done collapsed), plus reload and resize with manual overrides. Awaiting review.
 - 2026-10-28: Board automatic collapse now applies to any column: while the columns do not fit at 240px they collapse one at a time, Done-category columns first, then from the edges inward, keeping at least one expanded. Build, lint and 40 web tests pass. Awaiting review.
-- 2026-10-28: Board collapse rules revised: manual collapses remembered per user (not per team), manual expands not remembered, clicks hold until the next resize or page load, old keys cleared. Fixed while testing: expanding a column at 1280 collapsed another one instead of letting the board scroll. Build, lint and 44 web tests pass; checked in Chromium at 1920, 1440 and 1280 with live resizes, and with Ethan and Lerato on the same browser. Awaiting review.
+- 2026-10-28: Board collapse rules revised: manual collapses remembered per user (not per team), manual expands not remembered, clicks hold until the next resize or page load, old keys cleared. Fixed while testing: expanding a column at 1280 collapsed another one instead of letting the board scroll. Build, lint and 44 web tests pass; checked in Chromium at 1920, 1440 and 1280 with live resizes, and with Ethan and Lerato on the same browser. Approved and committed (285e835).
+- 2026-10-28: Phase 4 built: allocations API (create, update, delete, clash days, permissions by the project's team), drag to create, move and resize on the schedule, edit popover with delete, clash warning toasts, "Book on schedule" in the task drawer, read-only grid for Members (D39). Board and Schedule lazy-loaded to stay inside the bundle budget. Build with no warnings, lint, 24 API tests and 57 web tests pass; checked end to end in Chromium. Awaiting review.
 - 2026-10-27: Availability strip segments are now fill bars (L.12), so a fully booked day reads as full, not empty. Build, lint and 34 web tests pass; every segment fill checked against its tooltip in the running app. Awaiting review.
 - 2026-10-27: Shared select (L.13) on CDK Overlay + Listbox replaces all native selects. Build, lint and 38 web tests pass; checked in the running app: team switcher, assignee filter (search + Enter), drawer assignee (keyboard open, arrows, type-ahead, Escape and outside click close only the panel). Awaiting review.
 - 2026-10-27: Schedule layout block (L.1 to L.13) approved and committed. Phase 4 on hold until the user says to start.

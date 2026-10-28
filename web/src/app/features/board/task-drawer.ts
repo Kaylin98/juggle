@@ -5,6 +5,7 @@ import { Drawer } from '../../shared/drawer';
 import { Select, SelectOption } from '../../shared/select';
 import { ToastService } from '../../shared/toast.service';
 import { BoardService } from './board.service';
+import { BookOnSchedule } from './book-on-schedule';
 import { BoardCard } from './task-card';
 
 /** Form fields as the inputs hold them: empty strings for blank values. */
@@ -41,7 +42,7 @@ function toUpdate(value: TaskForm): UpdateTask {
 
 @Component({
   selector: 'app-task-drawer',
-  imports: [Drawer, FormField, Select],
+  imports: [BookOnSchedule, Drawer, FormField, Select],
   templateUrl: './task-drawer.html',
 })
 export class TaskDrawer {
@@ -52,6 +53,8 @@ export class TaskDrawer {
   readonly people = input.required<Person[]>();
   /** Only Team Admins change the assignee (D36); planned to become a per-team setting after the MVP. */
   readonly canReassign = input.required<boolean>();
+  /** Team Admins book the assignee on the schedule from here (D28). */
+  readonly canBook = input.required<boolean>();
   readonly closed = output<void>();
   readonly saved = output<Task>();
 
@@ -59,6 +62,12 @@ export class TaskDrawer {
     { value: '', label: 'Unassigned' },
     ...this.people().map((p) => ({ value: p.id, label: p.name, avatarColour: p.avatarColour })),
   ]);
+
+  /** The saved assignee, who a booking is for. */
+  protected readonly assignee = computed(() => this.people().find((p) => p.id === this.card().task.assigneePersonId) ?? null);
+
+  /** The booking form is open. Closes when another task opens. */
+  protected readonly booking = linkedSignal({ source: () => this.card().task.id, computation: () => false });
 
   protected readonly model = linkedSignal(() => toForm(this.card().task));
 

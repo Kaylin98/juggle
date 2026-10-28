@@ -1,26 +1,41 @@
 import { Injectable } from '@angular/core';
-import { ColumnOverrides } from './column-collapse';
 
-const KEY_PREFIX = 'juggle.board.columns.';
+const KEY_PREFIX = 'juggle.board.collapsed.';
+const OLD_KEY_PREFIX = 'juggle.board.columns.';
 
-/** The viewer's own collapse and expand choices for board columns, remembered per team in this browser only. */
+/** The board columns a user collapsed by hand, remembered per user in this browser only. */
 @Injectable({ providedIn: 'root' })
 export class BoardPrefsService {
-  columnOverrides(teamId: string): ColumnOverrides {
+  constructor() {
+    this.clearOldKeys();
+  }
+
+  collapsedColumns(userId: string): Set<string> {
     try {
-      const saved = localStorage.getItem(KEY_PREFIX + teamId);
-      if (saved !== null) return JSON.parse(saved) as ColumnOverrides;
+      const saved = localStorage.getItem(KEY_PREFIX + userId);
+      if (saved !== null) return new Set(JSON.parse(saved) as string[]);
     } catch {
       // Storage can be blocked (private windows, site settings); fall back to the automatic behaviour.
     }
-    return {};
+    return new Set();
   }
 
-  saveColumnOverrides(teamId: string, overrides: ColumnOverrides): void {
+  saveCollapsedColumns(userId: string, statusIds: ReadonlySet<string>): void {
     try {
-      localStorage.setItem(KEY_PREFIX + teamId, JSON.stringify(overrides));
+      localStorage.setItem(KEY_PREFIX + userId, JSON.stringify([...statusIds]));
     } catch {
       // Not saved; the choice still applies until the page reloads.
+    }
+  }
+
+  /** Earlier versions saved collapse and expand choices per team under another key. */
+  private clearOldKeys(): void {
+    try {
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith(OLD_KEY_PREFIX))
+        .forEach((key) => localStorage.removeItem(key));
+    } catch {
+      // Storage is blocked, so there is nothing to clear.
     }
   }
 }

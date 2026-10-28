@@ -8,7 +8,7 @@ import { BoardColumn } from './board-column';
 import { BoardFilters } from './board-filters';
 import { BoardPrefsService } from './board-prefs.service';
 import { BoardService } from './board.service';
-import { collapsedColumns } from './column-collapse';
+import { collapsedColumns, toggleColumn } from './column-collapse';
 import { columnWithout, moveTask, toColumnIndex } from './move-task';
 import { BoardCard } from './task-card';
 import { TaskDrawer } from './task-drawer';
@@ -45,8 +45,17 @@ export class BoardPage {
     computation: () => null,
   });
 
-  /** The viewer's own collapse and expand choices for this team's columns. */
-  private readonly overrides = linkedSignal(() => this.prefs.columnOverrides(this.teamId()));
+  /** Columns the viewer collapsed by hand; they stay collapsed at any width and are remembered per user. */
+  private readonly manuallyCollapsed = linkedSignal(() => {
+    const userId = this.auth.me()?.id;
+    return userId ? this.prefs.collapsedColumns(userId) : new Set<string>();
+  });
+
+  /** The columns as the viewer last left them by clicking; kept (the board scrolls) until the width changes. */
+  private readonly heldByClick = linkedSignal<string, ReadonlySet<string> | null>({
+    source: this.teamId,
+    computation: () => null,
+  });
 
   /** The board area's content width, kept up to date as the window resizes. */
   private readonly area = viewChild<ElementRef<HTMLElement>>('area');
@@ -56,7 +65,11 @@ export class BoardPage {
     effect((onCleanup) => {
       const area = this.area()?.nativeElement;
       if (!area) return;
-      const observer = new ResizeObserver(([entry]) => this.areaWidth.set(entry.contentRect.width));
+      const observer = new ResizeObserver(([entry]) => {
+        if (entry.contentRect.width === this.areaWidth()) return;
+        this.areaWidth.set(entry.contentRect.width);
+        this.heldByClick.set(null);
+      });
       observer.observe(area);
       onCleanup(() => observer.disconnect());
     });
@@ -86,9 +99,14 @@ export class BoardPage {
     }));
   });
 
-  /** Status ids of the collapsed columns: the viewer's choices, plus Done collapsed when the columns do not fit. */
-  protected readonly collapsed = computed(() =>
-    collapsedColumns((this.data()?.statuses ?? []).slice(1), this.overrides(), this.areaWidth()),
+  /**
+   * Status ids of the collapsed columns: the viewer's own, plus as many more as it takes for the columns to fit.
+   * After a click, the columns stay as the viewer left them until the next resize or page load.
+   */
+  protected readonly collapsed = computed(
+    () =>
+      this.heldByClick() ??
+      collapsedColumns((this.data()?.statuses ?? []).slice(1), this.manuallyCollapsed(), this.areaWidth()),
   );
 
   protected readonly openCard = computed(
@@ -115,11 +133,12 @@ export class BoardPage {
     }
   }
 
-  /** A manual collapse or expand overrides the automatic choice for that column, and is remembered. */
+  /** A manual collapse is remembered for this user; a manual expand holds only until the next resize. */
   protected toggleColumn(statusId: string): void {
-    const overrides = { ...this.overrides(), [statusId]: !this.collapsed().has(statusId) };
-    this.overrides.set(overrides);
-    this.prefs.saveColumnOverrides(this.teamId(), overrides);
+    const next = toggleColumn(this.collapsed(), this.manuallyCollapsed(), statusId);
+    this.heldByClick.set(next.collapsed);
+    this.manuallyCollapsed.set(next.manual);
+    this.prefs.saveCollapsedColumns(this.auth.me()!.id, next.manual);
   }
 
   protected onSaved(task: Task): void {

@@ -11,7 +11,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | Last completed task | Schedule layout and follow-ups (L.1 to L.13) approved and committed |
 | Next task | 4.1 `AllocationService`, once the user says to start Phase 4 |
 | Blockers / open questions | Waiting for the user to start Phase 4 |
-| Last updated | 2026-10-27 |
+| Last updated | 2026-10-28 |
 
 ## Phase overview
 
@@ -380,7 +380,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - [x] L.8 Seed: realistic bookings (2 days to 3 weeks, mid-week starts, gaps, lighter further out, weeks -1 to 5); Sipho's leave added, over a weekend
 - [x] L.9 Layout helpers tested: `dayColumn`, `placeBars`, `timeOffBlocks`, `isoWeek`, `utilisationLevel`, `dayState`
 - [x] L.10 Responsive (2026-10-27): schedule days flex from 56px (weekend fixed) and scroll only below that; board columns share the width equally (272 to 360px), fill the height and scroll their own cards; only the board area or schedule panel scrolls sideways, never the page; thin, quiet scrollbars
-- [x] L.11 Board tweaks (2026-10-27): column minimum 240px; soft fade on an edge with more to scroll to (CSS scroll-driven mask); collapsible columns (narrow strip with name and card count, still a drop target), remembered per team in localStorage. Automatic collapse: all columns expanded when they fit at their minimum width; otherwise the last Done-category column collapses; recalculated as the board area resizes; a manual collapse or expand overrides it
+- [x] L.11 Board tweaks (2026-10-27): column minimum 240px; soft fade on an edge with more to scroll to (CSS scroll-driven mask); collapsible columns (narrow strip with name and card count, still a drop target). Automatic collapse: all columns expanded when they fit at their minimum width; otherwise columns collapse one at a time until they fit (Done-category columns first, last first, then from the edges inward; one always stays expanded); recalculated as the board area resizes. Collapse rules (2026-10-28): a manual collapse holds at any width and is remembered per user (`juggle.board.collapsed.<userId>`, a list of column ids); a manual expand is not remembered; after any click the columns stay as the user left them (the board scrolls) until the next resize or page load, then the automatic rules apply again; widening re-expands only automatically collapsed columns. The old `juggle.board.columns.*` keys are cleared on load
 - [x] L.12 Availability strip as mini fill bars: booked share in `ink-faint`, free share in `ok-500`, all `over-500` when over capacity, no segment on days off; strip 6px tall
 - [x] L.13 Shared `<app-select>` (CDK Overlay + Listbox, ControlValueAccessor) replaces every native select: team switcher, board filters, task drawer. Text, avatar and colour-dot options; search box above 8 options; keyboard, type-ahead, Escape and outside click; works in the drawer. The request and triage forms (Phase 5) will use it
 
@@ -393,7 +393,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - CSS cannot nest `repeat()`, so the grid columns repeat a six-track list per week
 - The 8-week view failed against the running dev API with 400 ("The Weeks field does not equal any of the values specified in AllowedValuesAttribute"). Root cause: that API process was started before `weeks=8` was allowed and was never restarted (its responses still had the old seed colours). The code is correct (the API test and the screenshot copy return 40 days); restart the API with `--reset-demo`
 - `main` never scrolls sideways (`overflow-x-hidden`); the schedule panel and the board area scroll inside themselves
-- A card dropped on a collapsed column goes to the top of it. Only manual choices are saved (per team, in localStorage, not shared between viewers); the automatic collapse is worked out from the board width each time
+- A card dropped on a collapsed column goes to the top of it. Only manual collapses are saved (per user, in localStorage, so not across devices); the automatic collapse is worked out from the board width each time
 - The edge fade uses a scroll-driven animation; browsers without scroll timelines show no fade, and nothing else changes
 - The select works with Signal Forms `[formField]` through its ControlValueAccessor (Angular uses the accessor before a `value` model). ESLint knows `app-select` as a form control for `<label>` association. Fixed while testing: the CDK listbox throws in dev mode when its value has no matching option, which a search would cause; the listbox now gets the value only while that option is shown
 
@@ -583,6 +583,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
   - Where: a settings page that works per department (team), which could also hold the other settings above
   - Code to change: the assignee check in `TasksService.UpdateAsync` (API) and the `canReassign` input of the task drawer (web)
 - Comments, audit log, notifications, email
+- Store board column preferences per user in the database, so they follow the user across devices (today they are in localStorage, per browser)
 - SSO (Entra ID, Google) behind `IDemoAuth`
 - Azure deployment
 - Multiple assignees per task
@@ -601,6 +602,8 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - 2026-10-27: Schedule and Board made responsive (L.10). 8-week failure traced to a stale dev API process (400 from the old weeks validation). Screenshots at 1280, 1440 and 1920px checked: no page overflow, schedule fills the width, board columns equal and full height. Awaiting review.
 - 2026-10-27: Board tweaks (L.11): 240px minimum, edge fade, collapsible columns remembered per team (Done starts collapsed). Build, lint and 28 web tests pass; checked at 1440px (fade at start, middle and end of scroll; drop on a collapsed strip; collapse kept after reload). Awaiting review.
 - 2026-10-27: Board column collapse is now automatic: the last Done-category column collapses only when the columns do not fit at 240px, recalculated on resize; manual choices override it and are remembered per team. Build, lint and 33 web tests pass; checked Design at 1920 (all expanded), 1440 and 1280 (Done collapsed), plus reload and resize with manual overrides. Awaiting review.
+- 2026-10-28: Board automatic collapse now applies to any column: while the columns do not fit at 240px they collapse one at a time, Done-category columns first, then from the edges inward, keeping at least one expanded. Build, lint and 40 web tests pass. Awaiting review.
+- 2026-10-28: Board collapse rules revised: manual collapses remembered per user (not per team), manual expands not remembered, clicks hold until the next resize or page load, old keys cleared. Fixed while testing: expanding a column at 1280 collapsed another one instead of letting the board scroll. Build, lint and 44 web tests pass; checked in Chromium at 1920, 1440 and 1280 with live resizes, and with Ethan and Lerato on the same browser. Awaiting review.
 - 2026-10-27: Availability strip segments are now fill bars (L.12), so a fully booked day reads as full, not empty. Build, lint and 34 web tests pass; every segment fill checked against its tooltip in the running app. Awaiting review.
 - 2026-10-27: Shared select (L.13) on CDK Overlay + Listbox replaces all native selects. Build, lint and 38 web tests pass; checked in the running app: team switcher, assignee filter (search + Enter), drawer assignee (keyboard open, arrows, type-ahead, Escape and outside click close only the panel). Awaiting review.
 - 2026-10-27: Schedule layout block (L.1 to L.13) approved and committed. Phase 4 on hold until the user says to start.

@@ -41,7 +41,7 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
     private async Task<Allocation> FindManageableAsync(Guid id, CancellationToken ct)
     {
         var allocation = await db.Allocations.Include(a => a.Project).FirstOrDefaultAsync(a => a.Id == id, ct)
-            ?? throw new NotFoundException("Allocation not found.");
+            ?? throw new NotFoundException("Booking not found.");
         await teamAccess.EnsureCanManageAsync(allocation.Project.TeamId, ct);
         return allocation;
     }
@@ -55,7 +55,7 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
         }
         if (request.EndDate.DayNumber - request.StartDate.DayNumber >= MaxDays)
         {
-            throw new BadRequestException("An allocation can be at most a year long.");
+            throw new BadRequestException("A booking can be at most a year long.");
         }
 
         var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == request.ProjectId, ct)

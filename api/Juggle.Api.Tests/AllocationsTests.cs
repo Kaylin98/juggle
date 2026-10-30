@@ -4,6 +4,7 @@ using Juggle.Api.Common;
 using Juggle.Api.Features.Allocations;
 using Juggle.Api.Features.Capacity;
 using Juggle.Api.Features.Teams;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Juggle.Api.Tests;
 
@@ -106,6 +107,20 @@ public sealed class AllocationsTests(ApiFactory api)
             var response = await client.PostAsJsonAsync("/api/allocations", request, ApiFactory.Json, _ct);
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
+    }
+
+    [Fact]
+    public async Task Errors_shown_to_users_say_booking()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var (person, project) = await DesignPersonAndProjectAsync(client, "Sipho Ndlovu");
+
+        var tooLong = await client.PostAsJsonAsync(
+            "/api/allocations", Booking(person, project, 4) with { EndDate = _monday.AddYears(2) }, ApiFactory.Json, _ct);
+        var missing = await client.DeleteAsync($"/api/allocations/{Guid.CreateVersion7()}", _ct);
+
+        Assert.Equal("A booking can be at most a year long.", (await tooLong.Content.ReadFromJsonAsync<ProblemDetails>(_ct))!.Detail);
+        Assert.Equal("Booking not found.", (await missing.Content.ReadFromJsonAsync<ProblemDetails>(_ct))!.Detail);
     }
 
     private SaveAllocationRequest Booking(Guid personId, Guid projectId, decimal hoursPerDay) =>

@@ -43,6 +43,16 @@ describe('Nav', () => {
     expect(group().textContent).not.toContain('3');
   });
 
+  it('gives each request page a small icon of its own, and the group a different one', async () => {
+    const { element, group } = await render('TeamAdmin', '/requests');
+    const path = (el: Element) => el.querySelector('svg path')!.getAttribute('d');
+    const items = [...element.querySelectorAll('#nav-requests a')];
+
+    expect(items.map((a) => a.querySelector('svg')!.classList.contains('size-4'))).toEqual([true, true, true]);
+    expect(new Set(items.map(path)).size).toBe(3);
+    expect(items.map(path)).not.toContain(path(group()));
+  });
+
   it('opens the group on one of its pages', async () => {
     const { group } = await render('TeamAdmin', '/requests/r1');
     expect(group().getAttribute('aria-expanded')).toBe('true');

@@ -6,11 +6,11 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | Post-Phase 5 round (5 items) |
-| Phase status | Awaiting review |
-| Last completed task | P.5 Polish (post-Phase 5 round complete; demo data reset) |
-| Next task | User review of the post-Phase 5 round; then 6.1 when the user says to start Phase 6 |
-| Blockers / open questions | Phase 6 on hold until the user says to start |
+| Current phase | 6 - Dashboard, roles, polish, rehearsal |
+| Phase status | In progress |
+| Last completed task | 6.11 Requests group icons |
+| Next task | 6.12 Booking wording, then 6.1 to 6.3 Dashboard |
+| Blockers / open questions | None |
 | Last updated | 2026-10-30 |
 
 ## Phase overview
@@ -25,8 +25,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | L | Tue | Schedule layout | Done |
 | 4 | Thu am | Schedule interactions | Done |
 | 5 | Thu pm | Requests + triage | Done |
-| P | Fri | Post-Phase 5 round | Awaiting review |
-| 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
+| P | Fri | Post-Phase 5 round | Done |
+| 6 | Fri | Dashboard, roles, polish, rehearsal | In progress |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
 
@@ -75,7 +75,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D29 Add allocation delete (button in the bar's edit popover), so a wrong drag during the demo can be undone. Small addition beyond the brief
 - D30 (changed 2026-10-30, Phase 5 review) Every user has a "My requests" page: their own requests, newest first, each opening a detail page with all fields, the status, and the rejection reason or, once accepted, the assignee and committed due date (from the task, so it follows reassignment). Sending a request opens its detail page, which replaces the confirmation page. The request form keeps to about 720px with a sticky 320px "What happens next" and tips panel beside it, centred together in the page (below 1100px the panel goes under the form), an exception to the full-width page rule. Request pages hide the header team switcher; the form's team starts as the last team viewed
 - D42 (2026-10-30, post-Phase 5 round) Tasks can be added on the board: "Add task" at the bottom of each column and in the board header (the first column after Triage). Title and project are required; assignee, estimate, due date and link are optional; no description (added later in the task drawer). The task goes at the end of the column. Team Admins (and Org Admins) assign anyone in the team or no one; Members must assign the task to themselves, since they can only edit their own tasks (D24). Enforced in the API (`POST /api/teams/{teamId}/tasks`: 403 for non-members and for a Member assigning anyone else, 400 for Triage or another team's project or status). People outside the team still use New request
-- D43 (2026-10-30, post-Phase 5 round) Side menu: Schedule, Board and Dashboard (admins), then a "Requests" group with My requests, New request and Triage (admins). The group opens whenever one of its pages is shown and otherwise stays as the user left it (not saved); the Triage count shows on the group while it is closed. A toggle at the bottom shrinks the menu to a 64px icon rail (width eased over 150ms, none under reduced motion), remembered per user in this browser (`juggle.nav.collapsed.<userId>`); in the rail, labels become tooltips, the count becomes a dot, and the group opens as a CDK Menu flyout. Tooltips are a shared `appTooltip` directive on CDK Overlay
+- D43 (2026-10-30, post-Phase 5 round) Side menu: Schedule, Board and Dashboard (admins), then a "Requests" group with My requests, New request and Triage (admins). The group opens whenever one of its pages is shown and otherwise stays as the user left it (not saved); the Triage count shows on the group while it is closed. A toggle at the bottom shrinks the menu to a 64px icon rail (width eased over 150ms, none under reduced motion), remembered per user in this browser (`juggle.nav.collapsed.<userId>`); in the rail, labels become tooltips, the count becomes a dot, and the group opens as a CDK Menu flyout. The group has a paper-airplane icon; each item in it has its own 16px icon (list, plus-circle, inbox), starting where the group's label starts, in the menu and the flyout alike. Tooltips are a shared `appTooltip` directive on CDK Overlay
 - D34 Moving a bar can change its dates and its person (drop on another row in the same team)
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 - D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
@@ -536,7 +536,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 ## Post-Phase 5 round (Fri)
 
-**Status:** Awaiting review
+**Status:** Done
 **Done when:** the five items below are built, checked in the browser against the dev API with screenshots at 1440px (and 1920px for P.1, P.3 and P.4), and committed one per item on `main`
 
 Requested by the user on 2026-10-30, after Phase 5 was approved.
@@ -564,13 +564,13 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - [x] One commit per item on `main`
 - [x] "Where we left off" and status updated to Awaiting review
 - [x] **STOP** for review
-- [ ] Approved by user
+- [x] Approved by user (2026-10-30)
 
 ---
 
 ## Phase 6 - Dashboard, roles, polish, rehearsal (Fri)
 
-**Status:** Not started
+**Status:** In progress
 **Done when:** the full demo script runs start to finish without errors
 
 **Files**
@@ -605,6 +605,11 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
   - [ ] Drag a card to Internal Review, then Changes Requested; review cycle increases
   - [ ] Dashboard shows utilisation, overdue tasks, triage queue one shorter
   - [ ] Switch to Marketing: different columns and people; shared designer's load includes Design work
+- [x] 6.11 Requests group icons (D43): My requests, New request and Triage get their icons back at 16px, starting where the group's label starts; the group gets a paper-airplane icon instead of Triage's inbox; the rail flyout shows the same icons
+
+**Notes and deviations**
+
+- 6.11 checked in Chromium at 1440 and 1920 as Naledi: each item's icon starts at x54, the same as the "Requests" label, and the label at x80; the active item (Triage, My requests, New request in the flyout) uses the top-level active style, icon included. Fixed while checking: the flyout's "REQUESTS" caption sat 2px right of the item icons. Tests: 1 web (icon per item, small, none shared with the group)
 
 **Acceptance criteria**
 
@@ -697,3 +702,4 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 2026-10-30: Post-Phase 5 round, item 3 (D43): side menu with a "Requests" group and a collapsible icon rail (tooltips, dots, flyout, remembered per user, eased width). Build with no warnings, lint and 74 web tests pass; checked in Chromium at 1440 and 1920 (board and schedule re-fit, reduced motion, keyboard flyout, Member view).
 - 2026-10-30: Post-Phase 5 round, item 4: request form layout checked against the spec at 1000, 1440 and 1920 (and 560px tall for the sticky panel); it was already built in the Phase 5 review (D30), so only the plan changed.
 - 2026-10-30: Post-Phase 5 round, item 5: select audit (team colour dots on the request form, `$any` removed), review round tooltips, single-team switcher as text. Build with no warnings, lint, 35 API tests and 77 web tests pass; checked in Chromium at 1440. Demo data reset with `--reset-demo`. Round awaiting review.
+- 2026-10-30: Post-Phase 5 round approved. Phase 6 started. Item 6.11: Requests group icons (16px item icons aligned under the group label, paper-airplane for the group, same icons in the rail flyout). Build with no warnings, lint and 78 web tests pass; checked in Chromium at 1440 and 1920, menu expanded and collapsed.

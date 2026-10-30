@@ -26,14 +26,33 @@ describe('collapsedColumns', () => {
     expect(ids(collapsedColumns(statuses, none, 1295))).toEqual(['published']);
   });
 
-  it('keeps collapsing as the width shrinks: Done columns, then from the edges inward', () => {
+  it('keeps collapsing as the width shrinks: Done columns, then right to left', () => {
     expect(ids(collapsedColumns(statuses, none, 1111))).toEqual(['published', 'scheduled']);
-    expect(ids(collapsedColumns(statuses, none, 927))).toEqual(['published', 'scheduled', 'planned']);
-    expect(ids(collapsedColumns(statuses, none, 743))).toEqual(['published', 'scheduled', 'planned', 'review']);
+    expect(ids(collapsedColumns(statuses, none, 927))).toEqual(['published', 'scheduled', 'review']);
+    expect(ids(collapsedColumns(statuses, none, 743))).toEqual(['published', 'scheduled', 'review', 'writing']);
   });
 
-  it('always leaves one column expanded', () => {
-    expect(ids(collapsedColumns(statuses, none, 300))).toEqual(['published', 'scheduled', 'planned', 'review']);
+  it('always leaves the first column expanded', () => {
+    expect(ids(collapsedColumns(statuses, none, 300))).toEqual(['published', 'scheduled', 'review', 'writing']);
+  });
+
+  it('collapses Done first even when it is not the last column', () => {
+    const doneInMiddle = [status('todo', 'Todo'), status('done', 'Done'), status('later', 'Todo')];
+    // Expanded: 3 x 240 + 2 x 24 = 768px.
+    expect(ids(collapsedColumns(doneInMiddle, none, 767))).toEqual(['done']);
+  });
+
+  it('keeps To Do open on the Design board at 1440px', () => {
+    // Design without Triage. A 1440px window leaves 1136px for the board (240px nav, 32px padding each side).
+    const design = [
+      status('todo', 'Todo'),
+      status('in-design', 'InProgress'),
+      status('internal-review', 'Review'),
+      status('with-requester', 'Review'),
+      status('changes', 'InProgress'),
+      status('done', 'Done'),
+    ];
+    expect(ids(collapsedColumns(design, none, 1136))).toEqual(['done', 'changes', 'with-requester']);
   });
 
   it('keeps a column the viewer collapsed collapsed at any width', () => {

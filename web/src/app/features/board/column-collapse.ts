@@ -8,8 +8,8 @@ const GAP = 24;
 /**
  * Which columns are collapsed for a width. Columns the viewer collapsed (`manual`) stay collapsed at any width.
  * While the columns would not fit at their minimum, the others collapse one at a time: Done-category columns
- * first (last first), then from the edges inward, so the work in the middle stays open longest. One column
- * always stays expanded. A width of 0 means not measured yet, so nothing collapses automatically.
+ * first, then the columns closest to Done (right to left), so To Do and the early work stay open longest. One
+ * column always stays expanded. A width of 0 means not measured yet, so nothing collapses automatically.
  */
 export function collapsedColumns(statuses: WorkflowStatus[], manual: ReadonlySet<string>, width: number): Set<string> {
   const collapsed = new Set(statuses.filter((s) => manual.has(s.id)).map((s) => s.id));
@@ -47,14 +47,8 @@ export function toggleColumn(
   return next;
 }
 
-/** Done-category columns from the right, then the rest alternately from the left and right edges inward. */
+/** Done-category columns from the right, then the rest from the right. */
 function collapseOrder(statuses: WorkflowStatus[]): WorkflowStatus[] {
-  const done = statuses.filter((s) => s.category === 'Done').reverse();
-  const rest = statuses.filter((s) => s.category !== 'Done');
-  const edgesIn: WorkflowStatus[] = [];
-  while (rest.length > 0) {
-    edgesIn.push(rest.shift()!);
-    if (rest.length > 0) edgesIn.push(rest.pop()!);
-  }
-  return [...done, ...edgesIn];
+  const fromRight = [...statuses].reverse();
+  return [...fromRight.filter((s) => s.category === 'Done'), ...fromRight.filter((s) => s.category !== 'Done')];
 }

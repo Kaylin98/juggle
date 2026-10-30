@@ -44,7 +44,7 @@ public sealed class DashboardTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Seeded_story_has_Sipho_over_capacity_this_week_and_Lerato_next_week()
+    public async Task Seeded_story_has_the_demo_loads()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
         var designId = await GetTeamIdAsync(client, "Design");
@@ -52,9 +52,17 @@ public sealed class DashboardTests(ApiFactory api)
         var dashboard = await GetDashboardAsync(client, designId.ToString());
         var nextWeek = await client.GetFromJsonAsync<CapacityDto>(
             $"/api/capacity?teamId={designId}&start={_monday.AddDays(7):yyyy-MM-dd}&weeks=1", ApiFactory.Json, _ct);
+        var fourWeeks = await client.GetFromJsonAsync<CapacityDto>(
+            $"/api/capacity?teamId={designId}&start={_monday:yyyy-MM-dd}&weeks=4", ApiFactory.Json, _ct);
 
+        // Sipho is over this week (dashboard) and Lerato from Tuesday next week (the clash step).
         Assert.Equal(["Sipho Ndlovu"], dashboard.People.Where(p => p.OverThisWeek).Select(p => p.Name));
         Assert.Contains(nextWeek!.People.Single(p => p.Name == "Lerato Mokoena").Days, d => d.Allocated > d.Capacity);
+
+        // Priya shows as available over 4 weeks; next week she is at 50%, so the demo's 16h booking turns her amber.
+        var priya = Total(fourWeeks!.People.Single(p => p.Name == "Priya Naidoo").Days);
+        Assert.True(priya.Allocated / priya.Capacity < 0.5m);
+        Assert.Equal(new LoadDto(20, 40), Total(nextWeek.People.Single(p => p.Name == "Priya Naidoo").Days));
     }
 
     [Fact]

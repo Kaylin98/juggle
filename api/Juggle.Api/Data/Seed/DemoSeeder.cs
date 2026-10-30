@@ -275,9 +275,11 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         Allocate(ruben, hrOnboarding, 2, 0, 3, 1, 3);
         Allocate(ruben, annualReport, 4, 0, 5, 4, 2);
 
-        // Priya is the under-loaded designer the demo assigns new work to.
+        // Priya is the under-loaded designer the demo assigns new work to. Next week she is at 50% (green), so the
+        // demo's 16h booking (4h/day, Monday to Thursday) takes her to 90% (amber) while her 4 weeks stay under 50%.
         Allocate(priya, websiteRefresh, 0, 0, 1, 4, 2);
         Allocate(priya, salesDeck, 0, 1, 0, 2, 2);
+        Allocate(priya, annualReport, 1, 0, 1, 4, 2);
         Allocate(priya, hrOnboarding, 2, 0, 2, 4, 2);
         Allocate(priya, websiteRefresh, 3, 2, 4, 1, 3);
 

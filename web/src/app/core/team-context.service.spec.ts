@@ -80,3 +80,34 @@ describe('TeamContextService.showAllTeams', () => {
     expect(teamContext.allTeams()).toBe(false);
   });
 });
+
+describe('TeamContextService on the dashboard', () => {
+  it('shows every team on the dashboard, and keeps the dashboard when a team is picked', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    TestBed.inject(AuthService).teams.set([
+      { id: 'design', name: 'Design', colour: '#7c3aed', myRole: 'TeamAdmin' },
+      { id: 'marketing', name: 'Marketing', colour: '#0284c7', myRole: 'TeamAdmin' },
+    ]);
+    const router = TestBed.inject(Router);
+    const teamContext = TestBed.inject(TeamContextService);
+    await router.navigateByUrl('/t/design/dashboard');
+
+    teamContext.showAllTeams();
+    await vi.waitFor(() => expect(router.url).toBe('/t/design/dashboard?teams=all'));
+    expect(teamContext.allTeams()).toBe(true);
+
+    teamContext.switchTo('marketing');
+    await vi.waitFor(() => expect(router.url).toBe('/t/marketing/dashboard'));
+    expect(teamContext.allTeams()).toBe(false);
+  });
+
+  it('does not offer every team on the board', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()] });
+    await TestBed.inject(Router).navigateByUrl('/t/design/board?teams=all');
+    const teamContext = TestBed.inject(TeamContextService);
+    expect(teamContext.canShowAllTeams()).toBe(false);
+    expect(teamContext.allTeams()).toBe(false);
+  });
+});

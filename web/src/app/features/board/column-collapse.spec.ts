@@ -65,6 +65,12 @@ describe('collapsedColumns', () => {
     expect(ids(collapsedColumns(statuses, set('writing'), 1111))).toEqual(['writing', 'published']);
   });
 
+  it('collapses the columns a filter leaves empty first, then the usual order', () => {
+    const empty = set('planned', 'writing', 'scheduled');
+    expect(ids(collapsedColumns(statuses, none, 1111, empty))).toEqual(['scheduled', 'writing']);
+    expect(ids(collapsedColumns(statuses, none, 743, empty))).toEqual(['scheduled', 'writing', 'planned', 'published']);
+  });
+
   it('does not collapse anything automatically before the width is measured', () => {
     expect(ids(collapsedColumns(statuses, set('review'), 0))).toEqual(['review']);
   });

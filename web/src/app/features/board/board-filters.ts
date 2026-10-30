@@ -1,8 +1,13 @@
 import { Component, computed, input, model } from '@angular/core';
-import { Person, Project } from '../../core/models';
+import { Person, Project, Task } from '../../core/models';
 import { Select, SelectOption } from '../../shared/select';
 
-/** Assignee and project filters. An empty id means "all". */
+const DUE_OPTIONS: SelectOption[] = [
+  { value: '', label: 'Any date' },
+  { value: 'overdue', label: 'Overdue' },
+];
+
+/** Assignee, project and due date filters. An empty value means "all". */
 @Component({
   selector: 'app-board-filters',
   imports: [Select],
@@ -16,7 +21,11 @@ import { Select, SelectOption } from '../../shared/select';
       <span class="label-caps">Project</span>
       <app-select variant="pill" [options]="projectOptions()" [(value)]="projectId" />
     </label>
-    @if (assigneeId() || projectId()) {
+    <label class="flex items-center gap-3">
+      <span class="label-caps">Due</span>
+      <app-select variant="pill" [options]="dueOptions" [(value)]="due" />
+    </label>
+    @if (assigneeId() || projectId() || due()) {
       <button type="button" class="btn-quiet" (click)="clear()">Clear</button>
     }
   `,
@@ -26,6 +35,10 @@ export class BoardFilters {
   readonly projects = input.required<Project[]>();
   readonly assigneeId = model.required<string>();
   readonly projectId = model.required<string>();
+  /** "overdue" shows only tasks due before today that are not done. */
+  readonly due = model.required<string>();
+
+  protected readonly dueOptions = DUE_OPTIONS;
 
   protected readonly assigneeOptions = computed<SelectOption[]>(() => [
     { value: '', label: 'Everyone' },
@@ -40,5 +53,20 @@ export class BoardFilters {
   protected clear(): void {
     this.assigneeId.set('');
     this.projectId.set('');
+    this.due.set('');
   }
+}
+
+export interface TaskFilters {
+  assigneeId: string;
+  projectId: string;
+  due: string;
+}
+
+export function matchesFilters(task: Task, filters: TaskFilters): boolean {
+  return (
+    (!filters.assigneeId || task.assigneePersonId === filters.assigneeId) &&
+    (!filters.projectId || task.projectId === filters.projectId) &&
+    (filters.due !== 'overdue' || task.isOverdue)
+  );
 }

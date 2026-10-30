@@ -207,3 +207,41 @@ export interface AcceptRequest {
   estimateHours: number | null;
   dueDate: string | null;
 }
+
+/** Booked and available hours over a period; capacity is 0 when the person has no working days in it. */
+export interface PeriodLoad {
+  allocated: number;
+  capacity: number;
+}
+
+export interface PersonUtilisation {
+  id: string;
+  name: string;
+  avatarColour: string;
+  jobTitle: string;
+  thisWeek: PeriodLoad;
+  /** The four weeks after this one. */
+  nextFourWeeks: PeriodLoad;
+  /** At least one day this week is booked over capacity. */
+  overThisWeek: boolean;
+}
+
+export interface TeamCount {
+  teamId: string;
+  teamName: string;
+  count: number;
+}
+
+export interface DepartmentCount {
+  department: string;
+  count: number;
+}
+
+export interface Dashboard {
+  people: PersonUtilisation[];
+  /** One entry per team shown, so "All teams" can link to each team. */
+  overdueTasks: TeamCount[];
+  triageRequests: TeamCount[];
+  /** Open tasks by their project's department, most first. */
+  workByDepartment: DepartmentCount[];
+}

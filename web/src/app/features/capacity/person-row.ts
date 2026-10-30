@@ -1,7 +1,7 @@
-import { formatDate } from '@angular/common';
 import { Component, LOCALE_ID, computed, inject, input } from '@angular/core';
 import { Allocation, SchedulePerson } from '../../core/models';
 import { Avatar } from '../../shared/avatar';
+import { formatDateRange } from '../../shared/dates';
 import {
   Load,
   UTILISATION_BAR,
@@ -207,12 +207,8 @@ export class PersonRow {
     return `${formatHours(load.allocated)}h of ${formatHours(load.capacity)}h booked`;
   }
 
-  /** The whole run of days off: "16 Dec", "2–6 Nov" or "30 Oct – 3 Nov". */
+  /** The whole run of days off. */
   protected dateRange(block: TimeOffBlock): string {
-    const date = (d: string, format: string) => formatDate(d, format, this.locale);
-    if (block.from === block.to) return date(block.from, 'd MMM');
-    return block.from.slice(0, 7) === block.to.slice(0, 7)
-      ? `${date(block.from, 'd')}–${date(block.to, 'd MMM')}`
-      : `${date(block.from, 'd MMM')} – ${date(block.to, 'd MMM')}`;
+    return formatDateRange(block.from, block.to, this.locale);
   }
 }

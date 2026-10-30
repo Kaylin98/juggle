@@ -13,6 +13,7 @@
           [projects]="data.projects"
           [(assigneeId)]="assigneeFilter"
           [(projectId)]="projectFilter"
+          [(due)]="dueFilter"
         />
         <button type="button" class="btn-primary" (click)="addingTo.set(columns()[0].status)">Add task</button>
       </div>

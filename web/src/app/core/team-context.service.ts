@@ -37,13 +37,16 @@ export class TeamContextService {
 
   readonly isTeamAdmin = computed(() => this.team()?.myRole === 'TeamAdmin');
 
-  /** Org Admins can show every team on the schedule ("All teams"), kept in the URL as `?teams=all`. */
+  /** The pages that can show every team at once. */
+  readonly canShowAllTeams = computed(() => this.page() === 'capacity' || this.page() === 'dashboard');
+
+  /** Org Admins can show every team on the schedule and dashboard ("All teams"), kept in the URL as `?teams=all`. */
   readonly allTeams = computed(
-    () => this.page() === 'capacity' && this.router.parseUrl(this.url()).queryParams['teams'] === ALL_TEAMS,
+    () => this.canShowAllTeams() && this.router.parseUrl(this.url()).queryParams['teams'] === ALL_TEAMS,
   );
 
   showAllTeams(): void {
-    void this.router.navigate(['/t', this.teamId(), 'capacity'], { queryParams: { teams: ALL_TEAMS } });
+    void this.router.navigate(['/t', this.teamId(), this.page()], { queryParams: { teams: ALL_TEAMS } });
   }
 
   /** Opens the same page in another team, falling back to the role's landing page. */

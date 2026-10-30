@@ -7,10 +7,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | 6 - Dashboard, roles, polish, rehearsal |
-| Phase status | In progress |
-| Last completed task | 6.12 Booking wording |
-| Next task | 6.1 to 6.3 Dashboard |
-| Blockers / open questions | None |
+| Phase status | In progress (6.11, 6.12 and the dashboard awaiting review) |
+| Last completed task | 6.1 to 6.3 Dashboard |
+| Next task | User review of 6.11, 6.12 and the dashboard; then 6.4 Role audit |
+| Blockers / open questions | Restart the API on 5268 to serve `/api/dashboard` (it runs a build from before the dashboard) |
 | Last updated | 2026-10-30 |
 
 ## Phase overview
@@ -79,6 +79,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D34 Moving a bar can change its dates and its person (drop on another row in the same team)
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 - D44 (2026-10-30) User-facing text, including API error messages, calls allocations "bookings" and uses "book", never "allocation" or "allocate". Code, routes and API names keep "allocation" (as D35 does for capacity)
+- D45 (2026-10-30, Phase 6) Dashboard: `GET /api/dashboard?teamId=<id>|all` (shaped like `/api/capacity`, since "all" is not a team route); Team Admins of the team, or Org Admins; "All teams" only for Org Admins, offered by the team switcher on the dashboard as on the schedule. "This week" is Monday to Friday of the current week and "next 4 weeks" the four weeks after it (D27), computed by `CapacityService`, so leave, holidays and other teams' bookings count as on the schedule. Summary cards link to the board with `?due=overdue` (a new "Due: Any date / Overdue" board filter), to Triage and to the schedule; with "All teams" the overdue and triage cards link to each team on its own line, since the board and triage are per team. Utilisation lists the busiest this week first, in the schedule's colours (available, green, amber, red) with a legend. Work by department uses one neutral bar colour (`ink-faint`). Board collapse (L.11): while a filter is on, the columns it leaves empty collapse before the usual order, so the matching cards stay in view
 - D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
 - D37 (2026-10-27, design pass) Schedule cells show no hours free. Load colour (D15) is shown on each person's utilisation for the days shown (D14), and a day over capacity is tinted red with the hours over ("+2h")
 - D41 (2026-10-30, Phase 4 review) The schedule reacts live while dragging, as Resource Guru does. The dragged booking is its own preview: the grid shows the bookings as the drop would leave them, snapped to whole days, and recomputes every day's booked hours from them in the client (the same rule as the API), so stacking, availability strips, utilisation and "Overbooked" update live with no API calls until the drop. Each snap eases over 120ms (FLIP with the Web Animations API) and row height over 150ms (every row has the same number of lane tracks, unused ones 0 high, so `grid-template-rows` can interpolate); both are off under `prefers-reduced-motion`. A drop or popover save that puts someone over capacity opens a "Booking clash" dialog (Cancel puts it back; "Book with overtime" saves) in place of the warning toast. Drag on empty days opens the popover with "Booking" and "Time off" tabs; "Time off" is disabled because the API cannot create time off
@@ -583,13 +584,13 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 
 **Endpoints**
 
-- `GET /api/teams/{teamId}/dashboard` -> utilisation per person, overdue tasks, triage count, people over capacity, work by department
+- `GET /api/dashboard?teamId=<id>|all` -> utilisation per person (this week, next 4 weeks, over this week), overdue tasks and New requests per team, open tasks by department (D45)
 
 **Tasks**
 
-- [ ] 6.1 `DashboardService` and controller (D27)
-- [ ] 6.2 Smoke test: `DashboardTests`
-- [ ] 6.3 Dashboard page: utilisation bars, summary cards, work by department
+- [x] 6.1 `DashboardService` and controller (D27, D45): reuses `CapacityService` for 5 weeks from this Monday and sums each person's days; `TeamScope` parses `teamId` for the schedule and dashboard
+- [x] 6.2 Smoke test: `DashboardTests` (utilisation matches the schedule, counts match the board and triage, All teams, 403 for a Member and another team's admin)
+- [x] 6.3 Dashboard page: summary cards linking to the filtered board, triage and schedule; utilisation per person in the schedule colours; work by department; "All teams" for Org Admins
 - [ ] 6.4 Role audit on the server; `AccessTests` (Member gets 403 on triage and dashboard, cannot edit others' tasks)
 - [ ] 6.5 Role audit in the UI: nav and route guards
 - [ ] 6.6 Empty states
@@ -613,12 +614,13 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 
 - 6.11 checked in Chromium at 1440 and 1920 as Naledi: each item's icon starts at x54, the same as the "Requests" label, and the label at x80; the active item (Triage, My requests, New request in the flyout) uses the top-level active style, icon included. Fixed while checking: the flyout's "REQUESTS" caption sat 2px right of the item icons. Tests: 1 web (icon per item, small, none shared with the group)
 - 6.12 searched every template, inline template, aria-label, title, tooltip, toast and API error message: the web app already said Booking, New booking, Book and "6h of 8h booked"; only the two API errors (shown in toasts) said allocation. The seed has no user-facing allocation text. Tests: 1 API (both messages)
+- 6.1 to 6.3 checked in Chromium at 1440 and 1920 (menu expanded and collapsed) with the demo data, against the new API build on port 5269 on the dev database (the API on 5268 was not restarted): Design shows 3 overdue, 5 in triage, 0 over capacity this week (the seed puts Lerato over next week), Ruben 90% and Amahle 85% (amber), Priya 35% (available); "All teams" shows Design 3 and Marketing 1 overdue, Design 5 and Marketing 2 in triage, and all 11 people; Marketing shows Jason's Design work in his load. The overdue card opens the board with Due set to Overdue (3 cards, all overdue), the triage card opens Triage, the schedule card the schedule; Megan (Marketing admin, one team) sees no "All teams"; Jason (Member) is sent to the board and gets 403 from the API; no page overflow, no console errors. Fixed while checking: on the filtered board at 1440 the three overdue cards sat in auto-collapsed columns while empty columns stayed open (D45 now collapses columns a filter leaves empty first); the utilisation header labels were not on one baseline; the subtitle repeated the week dates. Tests: 4 API, 7 web (team links, utilisation order and colours, board due filter, collapse with a filter, All teams on the dashboard)
 
 **Acceptance criteria**
 
-- [ ] Utilisation bar per person for this week and the next 4 weeks
-- [ ] Cards: overdue tasks, requests waiting in triage, people over capacity this week
-- [ ] Work by department (task count)
+- [x] Utilisation bar per person for this week and the next 4 weeks
+- [x] Cards: overdue tasks, requests waiting in triage, people over capacity this week
+- [x] Work by department (task count)
 - [ ] Members can't see Triage or Dashboard, and can only edit their own tasks
 - [ ] Full demo script runs start to finish without errors
 
@@ -707,3 +709,4 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 2026-10-30: Post-Phase 5 round, item 5: select audit (team colour dots on the request form, `$any` removed), review round tooltips, single-team switcher as text. Build with no warnings, lint, 35 API tests and 77 web tests pass; checked in Chromium at 1440. Demo data reset with `--reset-demo`. Round awaiting review.
 - 2026-10-30: Post-Phase 5 round approved. Phase 6 started. Item 6.11: Requests group icons (16px item icons aligned under the group label, paper-airplane for the group, same icons in the rail flyout). Build with no warnings, lint and 78 web tests pass; checked in Chromium at 1440 and 1920, menu expanded and collapsed.
 - 2026-10-30: Item 6.12 (D44): "booking" in all user-facing text; two API error messages fixed, rule in `CLAUDE.md`. Build with no warnings and 36 API tests pass.
+- 2026-10-30: Phase 6 dashboard (6.1 to 6.3, D45): `GET /api/dashboard` reusing the schedule rules, dashboard page with summary cards, utilisation and work by department, "All teams" for Org Admins, board "Due" filter, filtered board keeps matching columns open. Build with no warnings, lint, 40 API tests and 87 web tests pass; checked in Chromium at 1440 and 1920 against the new API build on the dev database. Awaiting review.

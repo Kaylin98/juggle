@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, landingGuard, teamAdminGuard, teamMemberGuard } from './core/guards';
 import { LoginPage } from './features/login/login-page';
-import { PlaceholderPage } from './features/placeholder-page';
 import { Shell } from './layout/shell';
 
 export const routes: Routes = [
@@ -47,7 +46,12 @@ export const routes: Routes = [
             title: 'Triage',
             canActivate: [teamAdminGuard],
           },
-          { path: 'dashboard', component: PlaceholderPage, title: 'Dashboard', canActivate: [teamAdminGuard] },
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
+            title: 'Dashboard',
+            canActivate: [teamAdminGuard],
+          },
           { path: '', pathMatch: 'full', redirectTo: 'board' },
         ],
       },

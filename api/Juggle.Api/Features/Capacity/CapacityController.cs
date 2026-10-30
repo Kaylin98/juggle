@@ -7,14 +7,7 @@ namespace Juggle.Api.Features.Capacity;
 [Route("api/capacity")]
 public sealed class CapacityController(CapacityService capacity) : ControllerBase
 {
-    public const string AllTeams = "all";
-
     [HttpGet]
-    public Task<CapacityDto> Get([FromQuery] CapacityQuery query, CancellationToken ct)
-    {
-        Guid? teamId = query.TeamId == AllTeams
-            ? null
-            : Guid.TryParse(query.TeamId, out var id) ? id : throw new BadRequestException("teamId must be a team id or \"all\".");
-        return capacity.GetAsync(teamId, query.Start!.Value, query.Weeks, ct);
-    }
+    public Task<CapacityDto> Get([FromQuery] CapacityQuery query, CancellationToken ct) =>
+        capacity.GetAsync(TeamScope.Parse(query.TeamId), query.Start!.Value, query.Weeks, ct);
 }

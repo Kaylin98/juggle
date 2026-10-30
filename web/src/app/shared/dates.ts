@@ -1,3 +1,5 @@
+import { formatDate } from '@angular/common';
+
 // Dates are ISO date strings (yyyy-MM-dd), the same as the API's DateOnly.
 // Arithmetic runs in UTC so daylight saving never shifts a day.
 
@@ -46,4 +48,13 @@ export function addWeekdays(date: string, weekdays: number): string {
     while (isWeekend(result));
   }
   return result;
+}
+
+/** A run of days: "16 Dec", "2–6 Nov" or "30 Oct – 3 Nov". */
+export function formatDateRange(from: string, to: string, locale: string): string {
+  const date = (d: string, format: string) => formatDate(d, format, locale);
+  if (from === to) return date(from, 'd MMM');
+  return from.slice(0, 7) === to.slice(0, 7)
+    ? `${date(from, 'd')}–${date(to, 'd MMM')}`
+    : `${date(from, 'd MMM')} – ${date(to, 'd MMM')}`;
 }

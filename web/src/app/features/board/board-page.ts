@@ -5,7 +5,7 @@ import { Task, WorkflowStatus } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { ToastService } from '../../shared/toast.service';
 import { BoardColumn } from './board-column';
-import { BoardFilters } from './board-filters';
+import { BoardFilters, matchesFilters } from './board-filters';
 import { BoardPrefsService } from './board-prefs.service';
 import { BoardService } from './board.service';
 import { collapsedColumns, toggleColumn } from './column-collapse';
@@ -29,6 +29,9 @@ export class BoardPage {
   /** From the `/t/:teamId/board` route. */
   readonly teamId = input.required<string>();
 
+  /** `?due=overdue` (from the dashboard) opens the board showing only overdue tasks. */
+  readonly due = input<string>();
+
   protected readonly board = resource({
     params: () => this.teamId(),
     loader: ({ params }) => this.boardService.load(params),
@@ -41,6 +44,10 @@ export class BoardPage {
 
   protected readonly assigneeFilter = linkedSignal({ source: this.teamId, computation: () => '' });
   protected readonly projectFilter = linkedSignal({ source: this.teamId, computation: () => '' });
+  protected readonly dueFilter = linkedSignal({
+    source: () => ({ teamId: this.teamId(), due: this.due() }),
+    computation: ({ due }): string => (due === 'overdue' ? due : ''),
+  });
   protected readonly openTaskId = linkedSignal<string, string | null>({
     source: this.teamId,
     computation: () => null,
@@ -116,8 +123,14 @@ export class BoardPage {
   protected readonly collapsed = computed(
     () =>
       this.heldByClick() ??
-      collapsedColumns((this.data()?.statuses ?? []).slice(1), this.manuallyCollapsed(), this.areaWidth()),
+      collapsedColumns((this.data()?.statuses ?? []).slice(1), this.manuallyCollapsed(), this.areaWidth(), this.emptyWhileFiltered()),
   );
+
+  /** Columns a filter leaves empty; they collapse first so the matching cards stay in view. */
+  private readonly emptyWhileFiltered = computed(() => {
+    const filtered = this.assigneeFilter() || this.projectFilter() || this.dueFilter();
+    return new Set(filtered ? this.columns().filter((c) => c.cards.length === 0).map((c) => c.status.id) : []);
+  });
 
   protected readonly openCard = computed(
     () => this.cards().find((card) => card.task.id === this.openTaskId()) ?? null,
@@ -170,9 +183,7 @@ export class BoardPage {
   }
 
   private matchesFilters(task: Task): boolean {
-    const assignee = this.assigneeFilter();
-    const project = this.projectFilter();
-    return (!assignee || task.assigneePersonId === assignee) && (!project || task.projectId === project);
+    return matchesFilters(task, { assigneeId: this.assigneeFilter(), projectId: this.projectFilter(), due: this.dueFilter() });
   }
 
   private replaceTask(saved: Task): void {

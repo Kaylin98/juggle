@@ -10,8 +10,14 @@ const GAP = 24;
  * While the columns would not fit at their minimum, the others collapse one at a time: Done-category columns
  * first, then the columns closest to Done (right to left), so To Do and the early work stay open longest. One
  * column always stays expanded. A width of 0 means not measured yet, so nothing collapses automatically.
+ * While a filter is on, the columns it leaves empty (`empty`) collapse before the rest, so the matches stay in view.
  */
-export function collapsedColumns(statuses: WorkflowStatus[], manual: ReadonlySet<string>, width: number): Set<string> {
+export function collapsedColumns(
+  statuses: WorkflowStatus[],
+  manual: ReadonlySet<string>,
+  width: number,
+  empty: ReadonlySet<string> = new Set(),
+): Set<string> {
   const collapsed = new Set(statuses.filter((s) => manual.has(s.id)).map((s) => s.id));
   if (width <= 0) return collapsed;
 
@@ -19,7 +25,7 @@ export function collapsedColumns(statuses: WorkflowStatus[], manual: ReadonlySet
     statuses.reduce((sum, s) => sum + (collapsed.has(s.id) ? COLLAPSED : EXPANDED_MIN), 0) +
     GAP * Math.max(0, statuses.length - 1);
 
-  for (const status of collapseOrder(statuses.filter((s) => !collapsed.has(s.id)))) {
+  for (const status of collapseOrder(statuses.filter((s) => !collapsed.has(s.id)), empty)) {
     if (needed() <= width || collapsed.size >= statuses.length - 1) break;
     collapsed.add(status.id);
   }
@@ -47,8 +53,9 @@ export function toggleColumn(
   return next;
 }
 
-/** Done-category columns from the right, then the rest from the right. */
-function collapseOrder(statuses: WorkflowStatus[]): WorkflowStatus[] {
+/** Empty columns first, then Done-category columns from the right, then the rest from the right. */
+function collapseOrder(statuses: WorkflowStatus[], empty: ReadonlySet<string>): WorkflowStatus[] {
   const fromRight = [...statuses].reverse();
-  return [...fromRight.filter((s) => s.category === 'Done'), ...fromRight.filter((s) => s.category !== 'Done')];
+  const order = [...fromRight.filter((s) => s.category === 'Done'), ...fromRight.filter((s) => s.category !== 'Done')];
+  return [...order.filter((s) => empty.has(s.id)), ...order.filter((s) => !empty.has(s.id))];
 }

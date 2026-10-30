@@ -1,0 +1,102 @@
+using System.Net;
+using System.Net.Http.Json;
+using Juggle.Api.Common;
+using Juggle.Api.Data.Entities;
+using Juggle.Api.Features.Capacity;
+using Juggle.Api.Features.Dashboard;
+using Juggle.Api.Features.Requests;
+using Juggle.Api.Features.Tasks;
+using Juggle.Api.Features.Teams;
+
+namespace Juggle.Api.Tests;
+
+// Other test classes add tasks and requests in parallel, so these run on their own and compare against the live data.
+[CollectionDefinition(DisableParallelization = true)]
+public sealed class RunsAlone;
+
+[Collection(typeof(RunsAlone))]
+public sealed class DashboardTests(ApiFactory api)
+{
+    private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
+    private readonly DateOnly _monday = new OrgClock(TimeProvider.System).Today.StartOfWeek();
+
+    [Fact]
+    public async Task Utilisation_matches_the_schedule_for_this_week_and_the_next_four()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var designId = await GetTeamIdAsync(client, "Design");
+
+        var dashboard = await GetDashboardAsync(client, designId.ToString());
+        var schedule = await client.GetFromJsonAsync<CapacityDto>(
+            $"/api/capacity?teamId={designId}&start={_monday:yyyy-MM-dd}&weeks=8", ApiFactory.Json, _ct);
+
+        Assert.Equal(schedule!.People.Select(p => p.Id), dashboard.People.Select(p => p.Id));
+        foreach (var person in schedule.People)
+        {
+            var thisWeek = person.Days.Where(d => d.Date < _monday.AddDays(7)).ToList();
+            var nextFour = person.Days.Where(d => d.Date >= _monday.AddDays(7) && d.Date < _monday.AddDays(35));
+            var expected = (Total(thisWeek), Total(nextFour), thisWeek.Any(d => d.Allocated > d.Capacity));
+
+            var shown = dashboard.People.Single(p => p.Id == person.Id);
+            Assert.Equal(expected, (shown.ThisWeek, shown.NextFourWeeks, shown.OverThisWeek));
+        }
+        Assert.Contains(dashboard.People, p => p.NextFourWeeks.Allocated > 0);
+    }
+
+    [Fact]
+    public async Task Counts_match_the_board_and_the_triage_inbox()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var designId = await GetTeamIdAsync(client, "Design");
+        var tasks = (await client.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{designId}/tasks", ApiFactory.Json, _ct))!;
+        var statuses = await client.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{designId}/statuses", ApiFactory.Json, _ct);
+        var inbox = await client.GetFromJsonAsync<List<RequestDto>>($"/api/teams/{designId}/requests?status=New", ApiFactory.Json, _ct);
+        var done = statuses!.Where(s => s.Category == StatusCategory.Done).Select(s => s.Id).ToHashSet();
+
+        var dashboard = await GetDashboardAsync(client, designId.ToString());
+
+        Assert.Equal([new TeamCountDto(designId, "Design", tasks.Count(t => t.IsOverdue))], dashboard.OverdueTasks);
+        Assert.Equal([new TeamCountDto(designId, "Design", inbox!.Count)], dashboard.TriageRequests);
+        Assert.True(dashboard.OverdueTasks[0].Count > 0);
+        Assert.Equal(tasks.Count(t => !done.Contains(t.StatusId)), dashboard.WorkByDepartment.Sum(d => d.Count));
+        Assert.Equal(dashboard.WorkByDepartment.OrderByDescending(d => d.Count), dashboard.WorkByDepartment);
+    }
+
+    [Fact]
+    public async Task Org_admin_sees_every_team_and_everyone()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var schedule = await client.GetFromJsonAsync<CapacityDto>(
+            $"/api/capacity?teamId=all&start={_monday:yyyy-MM-dd}&weeks=1", ApiFactory.Json, _ct);
+
+        var dashboard = await GetDashboardAsync(client, "all");
+
+        Assert.Equal(["Design", "Marketing"], dashboard.OverdueTasks.Select(t => t.TeamName));
+        Assert.Equal(["Design", "Marketing"], dashboard.TriageRequests.Select(t => t.TeamName));
+        Assert.Equal(schedule!.People.Count, dashboard.People.Count);
+    }
+
+    [Fact]
+    public async Task Members_and_other_teams_admins_get_403()
+    {
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var designId = await GetTeamIdAsync(naledi, "Design");
+        var jason = await api.SignInAsAsync("Jason van Wyk");
+        var megan = await api.SignInAsAsync("Megan Botha");
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await jason.GetAsync($"/api/dashboard?teamId={designId}", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await megan.GetAsync($"/api/dashboard?teamId={designId}", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await megan.GetAsync("/api/dashboard?teamId=all", _ct)).StatusCode);
+    }
+
+    private static LoadDto Total(IEnumerable<DayLoad> days) => new(days.Sum(d => d.Allocated), days.Sum(d => d.Capacity));
+
+    private async Task<DashboardDto> GetDashboardAsync(HttpClient client, string teamId) =>
+        (await client.GetFromJsonAsync<DashboardDto>($"/api/dashboard?teamId={teamId}", ApiFactory.Json, _ct))!;
+
+    private async Task<Guid> GetTeamIdAsync(HttpClient client, string name)
+    {
+        var teams = await client.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct);
+        return teams!.Single(t => t.Name == name).Id;
+    }
+}

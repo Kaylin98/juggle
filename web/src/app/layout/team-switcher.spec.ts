@@ -15,7 +15,7 @@ async function render(teams: Team[]): Promise<HTMLElement> {
       { provide: AuthService, useValue: { teams: signal(teams), isOrgAdmin: signal(false) } },
       {
         provide: TeamContextService,
-        useValue: { page: signal('board'), allTeams: signal(false), teamId: signal('design') },
+        useValue: { canShowAllTeams: signal(false), allTeams: signal(false), teamId: signal('design') },
       },
     ],
   });

@@ -44,6 +44,20 @@ public sealed class DashboardTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task Seeded_story_has_Sipho_over_capacity_this_week_and_Lerato_next_week()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var designId = await GetTeamIdAsync(client, "Design");
+
+        var dashboard = await GetDashboardAsync(client, designId.ToString());
+        var nextWeek = await client.GetFromJsonAsync<CapacityDto>(
+            $"/api/capacity?teamId={designId}&start={_monday.AddDays(7):yyyy-MM-dd}&weeks=1", ApiFactory.Json, _ct);
+
+        Assert.Equal(["Sipho Ndlovu"], dashboard.People.Where(p => p.OverThisWeek).Select(p => p.Name));
+        Assert.Contains(nextWeek!.People.Single(p => p.Name == "Lerato Mokoena").Days, d => d.Allocated > d.Capacity);
+    }
+
+    [Fact]
     public async Task Counts_match_the_board_and_the_triage_inbox()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");

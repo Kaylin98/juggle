@@ -281,9 +281,11 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         Allocate(priya, hrOnboarding, 2, 0, 2, 4, 2);
         Allocate(priya, websiteRefresh, 3, 2, 4, 1, 3);
 
+        // Sipho is over capacity on Thursday and Friday this week (10h of 8h), so the dashboard shows one person over.
         Allocate(sipho, annualReport, -1, 0, 1, 4, 3);
         Allocate(sipho, hrOnboarding, 0, 0, 2, 2, 2);
         Allocate(sipho, websiteRefresh, 0, 3, 1, 1, 2);
+        Allocate(sipho, q1Campaign, 0, 3, 0, 4, 3);
         Allocate(sipho, annualReport, 3, 2, 5, 1, 4);
 
         Allocate(megan, caseStudies, -1, 0, 1, 4, 3);

@@ -4,7 +4,7 @@ import { firstValueFrom, forkJoin } from 'rxjs';
 import { AcceptRequest, CreateRequest, Person, Project, RequestOptions, WorkRequest } from './models';
 import { TeamContextService } from './team-context.service';
 
-/** Work intake: the request form, and the triage inbox with its nav badge. */
+/** Work intake: the request form and the user's own requests, and the triage inbox with its nav badge. */
 @Injectable({ providedIn: 'root' })
 export class RequestsService {
   private readonly http = inject(HttpClient);
@@ -26,6 +26,11 @@ export class RequestsService {
 
   create(request: CreateRequest): Promise<WorkRequest> {
     return firstValueFrom(this.http.post<WorkRequest>('/api/requests', request));
+  }
+
+  /** The signed-in user's own requests, newest first. */
+  mine(): Promise<WorkRequest[]> {
+    return firstValueFrom(this.http.get<WorkRequest[]>('/api/requests/mine'));
   }
 
   get(id: string): Promise<WorkRequest> {

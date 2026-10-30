@@ -61,6 +61,27 @@ public sealed class RequestsTests(ApiFactory api)
         Assert.Equal("To Do", statuses!.Single(s => s.Id == task.StatusId).Name);
         Assert.Equal(("Onboarding video storyboard", priya.Id, 16m, _today.AddDays(10)), (task.Title, task.AssigneePersonId, task.EstimateHours, task.DueDate));
         Assert.DoesNotContain(await GetInboxAsync(naledi), r => r.Id == request.Id);
+
+        // The requester sees who took it on and the date the team committed to.
+        var kyle = await api.SignInAsAsync("Kyle Govender");
+        var seen = await kyle.GetFromJsonAsync<RequestDto>($"/api/requests/{request.Id}", ApiFactory.Json, _ct);
+        Assert.Equal(("Priya Naidoo", _today.AddDays(10)), (seen!.AssigneeName, seen.CommittedDueDate));
+    }
+
+    [Fact]
+    public async Task My_requests_lists_only_the_users_own_requests_newest_first()
+    {
+        var older = await SubmitAsync("Fatima Patel", "Fatima's first");
+        var newer = await SubmitAsync("Fatima Patel", "Fatima's second");
+        var someoneElses = await SubmitAsync("David Cohen", "David's own");
+        var fatima = await api.SignInAsAsync("Fatima Patel");
+
+        var mine = await fatima.GetFromJsonAsync<List<RequestDto>>("/api/requests/mine", ApiFactory.Json, _ct);
+
+        Assert.All(mine!, r => Assert.Equal("Fatima Patel", r.RequesterName));
+        Assert.DoesNotContain(mine!, r => r.Id == someoneElses.Id);
+        Assert.True(mine!.FindIndex(r => r.Id == newer.Id) < mine.FindIndex(r => r.Id == older.Id));
+        Assert.Equal(mine.OrderByDescending(r => r.CreatedAt).Select(r => r.Id), mine.Select(r => r.Id));
     }
 
     [Fact]

@@ -63,7 +63,17 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         {
             await teamAccess.EnsureCanManageAsync(request.TeamId, ct);
         }
-        return ToDto(request);
+        return await ToDtoAsync(request, ct);
+    }
+
+    /// <summary>The signed-in user's own requests, newest first, to every team.</summary>
+    public async Task<IReadOnlyList<RequestDto>> GetMineAsync(CancellationToken ct)
+    {
+        var requests = await Requests()
+            .Where(r => r.RequesterUserId == currentUser.UserId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync(ct);
+        return await ToDtosAsync(requests, ct);
     }
 
     /// <summary>A team's requests, newest first, for its triage inbox.</summary>
@@ -74,7 +84,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
             .Where(r => r.TeamId == teamId && (status == null || r.Status == status))
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(ct);
-        return requests.Select(ToDto).ToList();
+        return await ToDtosAsync(requests, ct);
     }
 
     /// <summary>Makes a task from the request, at the end of the first column after Triage (D18).</summary>
@@ -115,7 +125,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         request.Status = RequestStatus.Accepted;
         request.TaskId = task.Id;
         await db.SaveChangesAsync(ct);
-        return ToDto(request);
+        return await ToDtoAsync(request, ct);
     }
 
     public async Task<RequestDto> RejectAsync(Guid id, RejectRequestRequest reject, CancellationToken ct)
@@ -129,7 +139,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         request.Status = RequestStatus.Rejected;
         request.RejectionReason = reject.Reason.Trim();
         await db.SaveChangesAsync(ct);
-        return ToDto(request);
+        return await ToDtoAsync(request, ct);
     }
 
     private async Task<Request> FindNewAsync(Guid id, CancellationToken ct)
@@ -150,7 +160,24 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         .Include(r => r.Requester)
         .AsNoTracking();
 
-    private static RequestDto ToDto(Request r) => new(
+    private async Task<RequestDto> ToDtoAsync(Request request, CancellationToken ct) => (await ToDtosAsync([request], ct))[0];
+
+    /// <summary>Maps requests to DTOs, with the assignee and due date of the tasks made from accepted ones.</summary>
+    private async Task<IReadOnlyList<RequestDto>> ToDtosAsync(IReadOnlyList<Request> requests, CancellationToken ct)
+    {
+        var taskIds = requests.Where(r => r.TaskId != null).Select(r => r.TaskId!.Value).ToList();
+        var tasks = await db.Tasks
+            .Where(t => taskIds.Contains(t.Id))
+            .Select(t => new { t.Id, Assignee = t.Assignee == null ? null : t.Assignee.User.Name, t.DueDate })
+            .ToDictionaryAsync(t => t.Id, ct);
+        return requests.Select(r =>
+        {
+            var task = r.TaskId is { } id ? tasks.GetValueOrDefault(id) : null;
+            return ToDto(r, task?.Assignee, task?.DueDate);
+        }).ToList();
+    }
+
+    private static RequestDto ToDto(Request r, string? assigneeName, DateOnly? committedDueDate) => new(
         r.Id,
         r.TeamId,
         r.Team.Name,
@@ -164,5 +191,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         r.Status,
         r.TaskId,
         r.RejectionReason,
-        r.CreatedAt);
+        r.CreatedAt,
+        assigneeName,
+        committedDueDate);
 }

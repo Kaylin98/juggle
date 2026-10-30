@@ -13,6 +13,8 @@ public sealed record RequestOptionsDto(
     IReadOnlyList<Priority> Priorities,
     Guid? MyDepartmentId);
 
+/// <param name="AssigneeName">Once accepted: who does the work, from the task (it follows reassignment).</param>
+/// <param name="CommittedDueDate">Once accepted: the task's due date, which the team committed to.</param>
 public sealed record RequestDto(
     Guid Id,
     Guid TeamId,
@@ -27,7 +29,9 @@ public sealed record RequestDto(
     RequestStatus Status,
     Guid? TaskId,
     string? RejectionReason,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string? AssigneeName,
+    DateOnly? CommittedDueDate);
 
 public sealed record CreateRequestRequest(
     Guid TeamId,

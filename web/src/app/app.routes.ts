@@ -18,8 +18,13 @@ export const routes: Routes = [
         title: 'New request',
       },
       {
+        path: 'requests',
+        loadComponent: () => import('./features/requests/my-requests').then((m) => m.MyRequestsPage),
+        title: 'My requests',
+      },
+      {
         path: 'requests/:id',
-        loadComponent: () => import('./features/requests/request-confirmation').then((m) => m.RequestConfirmationPage),
+        loadComponent: () => import('./features/requests/request-detail').then((m) => m.RequestDetailPage),
         title: 'Request',
       },
       {

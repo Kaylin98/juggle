@@ -7,10 +7,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | 5 - Requests + triage |
-| Phase status | Awaiting review |
-| Last completed task | Phase 5 tasks 5.1 to 5.8, committed as `Phase 5: Requests and triage` |
-| Next task | 6.1, once the user approves Phase 5 |
-| Blockers / open questions | Waiting for the Phase 5 review |
+| Phase status | Done |
+| Last completed task | Phase 5 approved and committed (review fixes: "My requests", request form layout) |
+| Next task | 6.1, when the user says to start Phase 6 |
+| Blockers / open questions | Phase 6 on hold until the user says to start |
 | Last updated | 2026-10-30 |
 
 ## Phase overview
@@ -24,7 +24,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | D | Tue | Design pass | Done |
 | L | Tue | Schedule layout | Done |
 | 4 | Thu am | Schedule interactions | Done |
-| 5 | Thu pm | Requests + triage | Awaiting review |
+| 5 | Thu pm | Requests + triage | Done |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
@@ -68,11 +68,11 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
   - Member sees the board and schedule of their own teams, but only edits tasks assigned to them (including drag). The grid is read-only for Members
   - Requester sees only the request form
 - D25 Allocations from another team show greyed and cannot be edited from the current team's grid. "All teams" (Org Admin only, grid only) shows every person and every bar is editable
-- D26 Landing pages: admins go to the schedule, Members to the board, Requesters to the request form
+- D26 Landing pages: admins go to the schedule, Members to the board, Requesters to "My requests" (changed 2026-10-30, Phase 5 review; was the request form)
 - D27 Dashboard: per person, one bar for this week and one for the next 4 weeks combined. "Over capacity this week" = at least one red day this week. "Work by department" counts open (not Done) tasks of the current team, grouped by the project's department
 - D28 "Book on schedule" opens a small form: start date (default next working day), number of working days, hours/day (default estimate / days). It creates an allocation linked to the task
 - D29 Add allocation delete (button in the bar's edit popover), so a wrong drag during the demo can be undone. Small addition beyond the brief
-- D30 The request confirmation page shows the request's title and status (New). No "My requests" list (in Later)
+- D30 (changed 2026-10-30, Phase 5 review) Every user has a "My requests" page: their own requests, newest first, each opening a detail page with all fields, the status, and the rejection reason or, once accepted, the assignee and committed due date (from the task, so it follows reassignment). Sending a request opens its detail page, which replaces the confirmation page. The request form keeps to about 720px with a sticky 320px "What happens next" and tips panel beside it, centred together in the page (below 1100px the panel goes under the form), an exception to the full-width page rule. Request pages hide the header team switcher; the form's team starts as the last team viewed
 - D34 Moving a bar can change its dates and its person (drop on another row in the same team)
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 - D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
@@ -472,7 +472,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 ## Phase 5 - Requests + triage (Thu pm)
 
-**Status:** Awaiting review
+**Status:** Done
 **Done when:** a submitted request can be accepted into a board task
 
 **Files**
@@ -512,6 +512,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 **Notes and deviations**
 
 - `RequestsService` lives in `core/` (next to `allocations.service`), not `features/requests/`, because the nav, the request form and triage all use it. It holds the current team's inbox as one resource, so the nav badge and the triage page always agree and both refresh after an accept or reject
+- Review fix (D30, D26): "My requests" for every user (`features/requests/{my-requests, request-detail, status-pill}`, `GET /api/requests/mine`, only the user's own). Requesters land there; sending a request opens its detail page with a "Request sent." toast; the request form is about 720px wide. Request DTOs now carry the accepted task's assignee and due date. Tests: 2 API (own requests only, newest first; assignee and committed date shown to the requester) and 2 web (rows and links; empty state). Checked in Edge as David: list with New, Accepted and Rejected, send, detail for each status, and the empty state as Naledi
 - Accept and reject are forms in the shared drawer (`features/triage/{accept-dialog, reject-dialog, request-summary}`), so the request stays in view while deciding. The confirmation page is `/requests/:id`
 - Accept needs a project; assignee, estimate and date are optional, and the committed date starts as the requested date. The task goes at the end of the first column after Triage (D18). A request can be triaged once (a second accept or reject is a 400)
 - The requested due date can't be in the past (form check and 400). The request's own requester and the team's admins can open a request; anyone else gets 403
@@ -526,7 +527,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - [x] Committed as `Phase 5: Requests and triage`
 - [x] "Where we left off" and status updated to Awaiting review
 - [x] **STOP** for review
-- [ ] Approved by user
+- [x] Approved by user (2026-10-30, after the "My requests" and request form review fixes)
 
 ---
 
@@ -617,7 +618,6 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - Duplicate booking: copy a booking to another person or other dates, so repeated work is quick to plan
 - Total hours bookings: enter the total hours and the dates, and hours/day is worked out, since work is often estimated as a total rather than per day
 - Tentative bookings: pencilled-in bookings shown in a lighter style and left out of (or flagged in) utilisation, so likely work can be planned before it is confirmed
-- "My requests" list for requesters
 - Settings screens (statuses, request types, teams)
 - **Members reassigning tasks becomes a setting** (requested by the product owner, 2026-10-27)
   - Today (D36): only Team Admins and Org Admins can change a task's assignee; Members cannot, even on their own tasks
@@ -650,6 +650,8 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - 2026-10-30: Phase 4 review fix, fluid schedule drags (D40): immediate lift on press, 3px click threshold, the booking follows the pointer pixel by pixel with a snapped drop outline and target row tint, smooth resize and create, Esc cancels. Build, lint and 60 web tests pass; checked mid-move, mid-resize, mid-shrink and mid-create in Edge. Awaiting review.
 - 2026-10-30: Live schedule drag (D41): the dragged booking is the preview, snapping per day with a 120ms ease; strips, utilisation and stacking update live from client-side loads; rows animate height; "Booking clash" dialog replaces the clash toast; create popover gains "Booking" and a disabled "Time off" tab. Future development ideas added to "Later". Build, lint and 62 web tests pass; recorded in Edge. Phase 4 approved and committed; Phase 5 started.
 - 2026-10-30: Phase 5 built: requests API (options, create, get, team inbox, accept into the first column after Triage, reject with reason; requester or team admin access), request form and confirmation page, triage inbox newest first with a nav badge, accept and reject in the drawer. Build with no warnings, lint, 30 API tests and 62 web tests pass; checked end to end in Edge. Awaiting review.
+- 2026-10-30: Phase 5 review fix: "My requests" page and request detail (D30), requesters land there (D26), request form 720px wide. Build, lint, 31 API tests and 64 web tests pass; checked in Edge as David. Awaiting review.
+- 2026-10-30: Request form review fix: centred two-column layout (form about 720px, sticky "What happens next" and tips panel, stacked under 1100px), header team switcher hidden on request pages, team pre-filled from the last team viewed. Phase 5 approved and committed. Phase 6 on hold until the user says to start.
 - 2026-10-30: Drop outline fixed: one booking tall in the lane it will take, full length, split as the real layout, no ghost fill. Build, lint and 58 web tests pass; outline matched the landed booking for move, resize start and end, and create. Awaiting review.
 - 2026-10-27: Availability strip segments are now fill bars (L.12), so a fully booked day reads as full, not empty. Build, lint and 34 web tests pass; every segment fill checked against its tooltip in the running app. Awaiting review.
 - 2026-10-27: Shared select (L.13) on CDK Overlay + Listbox replaces all native selects. Build, lint and 38 web tests pass; checked in the running app: team switcher, assignee filter (search + Enter), drawer assignee (keyboard open, arrows, type-ahead, Escape and outside click close only the panel). Awaiting review.

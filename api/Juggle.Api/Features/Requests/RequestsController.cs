@@ -16,6 +16,9 @@ public sealed class RequestsController(RequestService requests) : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
+    [HttpGet("api/requests/mine")]
+    public Task<IReadOnlyList<RequestDto>> GetMine(CancellationToken ct) => requests.GetMineAsync(ct);
+
     [HttpGet("api/requests/{id:guid}")]
     public Task<RequestDto> Get(Guid id, CancellationToken ct) => requests.GetAsync(id, ct);
 

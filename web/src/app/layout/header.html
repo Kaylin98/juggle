@@ -1,6 +1,7 @@
 <header class="flex h-18 items-center justify-between bg-page px-8">
   <div>
-    @if (auth.teams().length > 0) {
+    <!-- Only on team pages: the request pages are not about one team (the form starts on the last team viewed). -->
+    @if (auth.teams().length > 0 && teamContext.page()) {
       <app-team-switcher />
     }
   </div>

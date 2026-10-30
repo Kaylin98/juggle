@@ -169,6 +169,10 @@ export interface WorkRequest {
   taskId: string | null;
   rejectionReason: string | null;
   createdAt: string;
+  /** Once accepted: who does the work, from the task (it follows reassignment). */
+  assigneeName: string | null;
+  /** Once accepted: the task's due date, which the team committed to. */
+  committedDueDate: string | null;
 }
 
 export interface CreateRequest {

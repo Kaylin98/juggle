@@ -8,7 +8,7 @@ import { BoardColumn } from './board-column';
 import { BoardFilters, matchesFilters } from './board-filters';
 import { BoardPrefsService } from './board-prefs.service';
 import { BoardService } from './board.service';
-import { collapsedColumns, toggleColumn } from './column-collapse';
+import { collapsedColumns, expandOnDrop, toggleColumn } from './column-collapse';
 import { columnWithout, moveTask, toColumnIndex } from './move-task';
 import { BoardCard } from './task-card';
 import { NewTaskDrawer } from './new-task-drawer';
@@ -142,6 +142,10 @@ export class BoardPage {
     const statusId = event.container.data;
     if (event.previousContainer === event.container && event.previousIndex === event.currentIndex) {
       return;
+    }
+
+    if (this.collapsed().has(statusId)) {
+      this.heldByClick.set(expandOnDrop(this.collapsed(), statusId));
     }
 
     const column = columnWithout(this.tasks(), statusId, task.id);

@@ -53,6 +53,16 @@ export function toggleColumn(
   return next;
 }
 
+/**
+ * A card dropped on a collapsed column opens that column, so the card stays in view. Like a manual expand it holds
+ * only until the next resize or page load; the viewer's saved collapsed columns are not changed.
+ */
+export function expandOnDrop(collapsed: ReadonlySet<string>, statusId: string): Set<string> {
+  const next = new Set(collapsed);
+  next.delete(statusId);
+  return next;
+}
+
 /** Empty columns first, then Done-category columns from the right, then the rest from the right. */
 function collapseOrder(statuses: WorkflowStatus[], empty: ReadonlySet<string>): WorkflowStatus[] {
   const fromRight = [...statuses].reverse();

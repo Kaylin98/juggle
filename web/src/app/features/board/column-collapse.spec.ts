@@ -1,5 +1,5 @@
 import { StatusCategory, WorkflowStatus } from '../../core/models';
-import { collapsedColumns, toggleColumn } from './column-collapse';
+import { collapsedColumns, expandOnDrop, toggleColumn } from './column-collapse';
 
 const status = (id: string, category: StatusCategory): WorkflowStatus => ({ id, name: id, order: 0, category });
 
@@ -96,5 +96,22 @@ describe('toggleColumn', () => {
       collapsed: set('published'),
       manual: none,
     });
+  });
+});
+
+describe('expandOnDrop', () => {
+  it('opens the column the card was dropped on and leaves the others as they are', () => {
+    const collapsed = set('scheduled', 'published');
+
+    expect(ids(expandOnDrop(collapsed, 'scheduled'))).toEqual(['published']);
+    expect(ids(collapsed)).toEqual(['scheduled', 'published']);
+  });
+
+  it('does not touch the columns the viewer collapsed, so nothing is saved and the next resize applies the rules again', () => {
+    const manual = set('scheduled');
+    const opened = expandOnDrop(collapsedColumns(statuses, manual, 1296), 'scheduled');
+
+    expect(ids(opened)).toEqual([]);
+    expect(ids(collapsedColumns(statuses, manual, 1296))).toEqual(['scheduled']);
   });
 });

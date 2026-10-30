@@ -45,7 +45,7 @@ const CHEVRON_RIGHT =
         <h2 class="mt-2 text-base font-semibold">{{ status().name }}</h2>
       </div>
       <div
-        class="scroll-quiet flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4"
+        class="scroll-quiet flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-2"
         cdkDropList
         [cdkDropListData]="status().id"
         (cdkDropListDropped)="dropped.emit($event)"
@@ -65,6 +65,21 @@ const CHEVRON_RIGHT =
             No cards
           </p>
         }
+      </div>
+      <div class="px-4 pb-4">
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 rounded-control px-2 py-2 text-sm font-semibold text-ink-muted hover:bg-surface-muted hover:text-ink focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
+          (click)="added.emit()"
+        >
+          <!-- Heroicons plus (mini, MIT) -->
+          <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path
+              d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"
+            />
+          </svg>
+          Add task
+        </button>
       </div>
     }
 
@@ -90,6 +105,8 @@ export class BoardColumn {
   readonly dropped = output<CdkDragDrop<string, string, Task>>();
   readonly opened = output<Task>();
   readonly toggled = output<void>();
+  /** "Add task" at the bottom of the column. */
+  readonly added = output<void>();
 
   protected readonly chevronLeft = CHEVRON_LEFT;
   protected readonly chevronRight = CHEVRON_RIGHT;

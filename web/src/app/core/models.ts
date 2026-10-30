@@ -69,6 +69,17 @@ export interface Task {
   link: string | null;
 }
 
+/** A task added from the board. With no status it goes in the first column after Triage. */
+export interface CreateTask {
+  title: string;
+  projectId: string;
+  statusId: string | null;
+  assigneePersonId: string | null;
+  estimateHours: number | null;
+  dueDate: string | null;
+  link: string | null;
+}
+
 export interface UpdateTask {
   title: string;
   description: string | null;

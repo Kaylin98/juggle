@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom, forkJoin } from 'rxjs';
-import { Person, Project, Task, UpdateTask, WorkflowStatus } from '../../core/models';
+import { CreateTask, Person, Project, Task, UpdateTask, WorkflowStatus } from '../../core/models';
 
 export interface Board {
   statuses: WorkflowStatus[];
@@ -23,6 +23,10 @@ export class BoardService {
         tasks: this.http.get<Task[]>(`/api/teams/${teamId}/tasks`),
       }),
     );
+  }
+
+  createTask(teamId: string, task: CreateTask): Promise<Task> {
+    return firstValueFrom(this.http.post<Task>(`/api/teams/${teamId}/tasks`, task));
   }
 
   updateTask(id: string, changes: UpdateTask): Promise<Task> {

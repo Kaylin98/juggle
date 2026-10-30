@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Juggle.Api.Features.Tasks;
 
-public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, OrgClock clock)
+public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, CurrentUser currentUser, OrgClock clock)
 {
     public async Task<IReadOnlyList<TaskDto>> GetTeamTasksAsync(Guid teamId, CancellationToken ct)
     {
@@ -20,6 +20,52 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, OrgC
         return tasks.Select(ToDto).ToList();
     }
 
+    /// <summary>
+    /// Adds a task to a board column (the first after Triage when none is given), at the end of it.
+    /// Team Admins assign anyone in the team or no one; Members only themselves, so they can edit it afterwards (D24).
+    /// </summary>
+    public async Task<TaskDto> CreateAsync(Guid teamId, CreateTaskRequest request, CancellationToken ct)
+    {
+        var role = await teamAccess.GetRoleAsync(teamId, ct)
+            ?? throw new ForbiddenException("You are not a member of this team.");
+        var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == request.ProjectId && p.TeamId == teamId, ct)
+            ?? throw new BadRequestException("Choose a project in this team.");
+
+        // The first status, Triage, is for requests (D18), so it is not a board column.
+        var columns = await db.WorkflowStatuses.Where(s => s.TeamId == teamId).OrderBy(s => s.Order).Skip(1).ToListAsync(ct);
+        var status = request.StatusId is { } statusId
+            ? columns.FirstOrDefault(s => s.Id == statusId) ?? throw new BadRequestException("Choose a board column in this team.")
+            : columns[0];
+
+        if (role == TeamRole.TeamAdmin)
+        {
+            await EnsureAssigneeInTeamAsync(request.AssigneePersonId, teamId, ct);
+        }
+        else if (request.AssigneePersonId is not { } personId
+            || !await db.People.AnyAsync(p => p.Id == personId && p.UserId == currentUser.UserId, ct))
+        {
+            throw new ForbiddenException("Members can only add tasks assigned to themselves.");
+        }
+
+        var lastInColumn = await db.Tasks.Where(t => t.StatusId == status.Id).MaxAsync(t => (int?)t.SortOrder, ct);
+        var task = new TaskItem
+        {
+            OrgId = project.OrgId,
+            TeamId = teamId,
+            ProjectId = project.Id,
+            Title = request.Title.Trim(),
+            Status = status,
+            AssigneePersonId = request.AssigneePersonId,
+            EstimateHours = request.EstimateHours,
+            DueDate = request.DueDate,
+            Link = request.Link,
+            SortOrder = (lastInColumn ?? -1) + 1,
+        };
+        db.Tasks.Add(task);
+        await db.SaveChangesAsync(ct);
+        return ToDto(task);
+    }
+
     public async Task<TaskDto> UpdateAsync(Guid id, UpdateTaskRequest request, CancellationToken ct)
     {
         var task = await FindEditableAsync(id, ct);
@@ -30,11 +76,7 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, OrgC
             throw new ForbiddenException("Only team admins can reassign tasks.");
         }
 
-        if (request.AssigneePersonId is { } personId
-            && !await db.People.AnyAsync(p => p.Id == personId && p.User.Memberships.Any(m => m.TeamId == task.TeamId), ct))
-        {
-            throw new BadRequestException("The assignee is not in this team.");
-        }
+        await EnsureAssigneeInTeamAsync(request.AssigneePersonId, task.TeamId, ct);
 
         task.Title = request.Title.Trim();
         task.Description = request.Description;
@@ -82,6 +124,14 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, OrgC
             ?? throw new NotFoundException("Task not found.");
         await teamAccess.EnsureCanEditTaskAsync(task, ct);
         return task;
+    }
+
+    private async Task EnsureAssigneeInTeamAsync(Guid? personId, Guid teamId, CancellationToken ct)
+    {
+        if (personId is { } id && !await db.People.AnyAsync(p => p.Id == id && p.User.Memberships.Any(m => m.TeamId == teamId), ct))
+        {
+            throw new BadRequestException("The assignee is not in this team.");
+        }
     }
 
     private TaskDto ToDto(TaskItem task) => new(

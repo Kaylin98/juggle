@@ -6,10 +6,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | 5 - Requests + triage |
-| Phase status | Done |
-| Last completed task | Phase 5 approved and committed (review fixes: "My requests", request form layout) |
-| Next task | 6.1, when the user says to start Phase 6 |
+| Current phase | Post-Phase 5 round (5 items) |
+| Phase status | In progress |
+| Last completed task | P.2 "+ Add task" on the board |
+| Next task | P.3 Side menu |
 | Blockers / open questions | Phase 6 on hold until the user says to start |
 | Last updated | 2026-10-30 |
 
@@ -25,6 +25,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | L | Tue | Schedule layout | Done |
 | 4 | Thu am | Schedule interactions | Done |
 | 5 | Thu pm | Requests + triage | Done |
+| P | Fri | Post-Phase 5 round | In progress |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
@@ -73,6 +74,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D28 "Book on schedule" opens a small form: start date (default next working day), number of working days, hours/day (default estimate / days). It creates an allocation linked to the task
 - D29 Add allocation delete (button in the bar's edit popover), so a wrong drag during the demo can be undone. Small addition beyond the brief
 - D30 (changed 2026-10-30, Phase 5 review) Every user has a "My requests" page: their own requests, newest first, each opening a detail page with all fields, the status, and the rejection reason or, once accepted, the assignee and committed due date (from the task, so it follows reassignment). Sending a request opens its detail page, which replaces the confirmation page. The request form keeps to about 720px with a sticky 320px "What happens next" and tips panel beside it, centred together in the page (below 1100px the panel goes under the form), an exception to the full-width page rule. Request pages hide the header team switcher; the form's team starts as the last team viewed
+- D42 (2026-10-30, post-Phase 5 round) Tasks can be added on the board: "Add task" at the bottom of each column and in the board header (the first column after Triage). Title and project are required; assignee, estimate, due date and link are optional; no description (added later in the task drawer). The task goes at the end of the column. Team Admins (and Org Admins) assign anyone in the team or no one; Members must assign the task to themselves, since they can only edit their own tasks (D24). Enforced in the API (`POST /api/teams/{teamId}/tasks`: 403 for non-members and for a Member assigning anyone else, 400 for Triage or another team's project or status). People outside the team still use New request
 - D34 Moving a bar can change its dates and its person (drop on another row in the same team)
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 - D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
@@ -531,6 +533,28 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 ---
 
+## Post-Phase 5 round (Fri)
+
+**Status:** In progress
+**Done when:** the five items below are built, checked in the browser against the dev API with screenshots at 1440px (and 1920px for P.1, P.3 and P.4), and committed one per item on `main`
+
+Requested by the user on 2026-10-30, after Phase 5 was approved.
+
+**Tasks**
+
+- [x] P.1 Board column collapse order: Done first, then right to left, so To Do stays open longest (L.11). The 240px minimum and 360px maximum were already in place
+- [x] P.2 "+ Add task" on the board (D42): `NewTaskDrawer` (the task drawer's create mode, its own component because the edit drawer is built around an existing task), `POST /api/teams/{teamId}/tasks`
+- [ ] P.3 Side menu: "Requests" nav group, collapsible icon rail
+- [ ] P.4 Request form layout (built in the Phase 5 review, D30): check against the spec
+- [ ] P.5 Polish: shared select audit, review round tooltip, single-team switcher as text
+
+**Notes and deviations**
+
+- Git: the `phase-5-requests-triage` and `schedule-live-drag` branches were fast-forwarded into `main` and deleted; work now happens on `main` only (`CLAUDE.md`, "Git")
+- P.2 checked in Chromium against the dev API: Naledi adds to In Design for Priya (last in the column, kept after reload); the header button opens on To Do; Ethan's assignee is locked to himself, his task lands at the end of To Do and is draggable; Ethan assigning Lerato through the API gets 403. Tests: 3 API (admin, Member, refusals), 3 web (locked assignee, required fields, payload)
+
+---
+
 ## Phase 6 - Dashboard, roles, polish, rehearsal (Fri)
 
 **Status:** Not started
@@ -657,3 +681,4 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - 2026-10-27: Shared select (L.13) on CDK Overlay + Listbox replaces all native selects. Build, lint and 38 web tests pass; checked in the running app: team switcher, assignee filter (search + Enter), drawer assignee (keyboard open, arrows, type-ahead, Escape and outside click close only the panel). Awaiting review.
 - 2026-10-27: Schedule layout block (L.1 to L.13) approved and committed. Phase 4 on hold until the user says to start.
 - 2026-10-30: Post-Phase 5 round, item 1: board columns auto-collapse Done first, then right to left (240px minimum and 360px maximum unchanged; manual rules unchanged). Branches merged into `main` (fast-forward) and deleted; Git rule added to `CLAUDE.md`. Build, lint and 66 web tests pass; checked against the dev API: Design at 1440 keeps To Do, In Design and Internal Review open, Marketing folds only Published, everything open at 1920.
+- 2026-10-30: Post-Phase 5 round, item 2 (D42): "Add task" on the board (each column and the header) opens the new task drawer; `POST /api/teams/{teamId}/tasks` with Members limited to themselves. Build with no warnings, lint, 34 API tests and 69 web tests pass; checked in Chromium as Naledi and Ethan.

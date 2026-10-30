@@ -7,12 +7,15 @@
       }
     </div>
     @if (data(); as data) {
-      <app-board-filters
-        [people]="data.people"
-        [projects]="data.projects"
-        [(assigneeId)]="assigneeFilter"
-        [(projectId)]="projectFilter"
-      />
+      <div class="flex flex-wrap items-center gap-6">
+        <app-board-filters
+          [people]="data.people"
+          [projects]="data.projects"
+          [(assigneeId)]="assigneeFilter"
+          [(projectId)]="projectFilter"
+        />
+        <button type="button" class="btn-primary" (click)="addingTo.set(columns()[0].status)">Add task</button>
+      </div>
     }
   </div>
 
@@ -33,6 +36,7 @@
           (dropped)="drop($event)"
           (opened)="openTaskId.set($event.id)"
           (toggled)="toggleColumn(column.status.id)"
+          (added)="addingTo.set(column.status)"
         />
       }
     </div>
@@ -48,4 +52,16 @@
     [canReassign]="teamContext.isTeamAdmin()"
     [canBook]="teamContext.isTeamAdmin()"
     (closed)="openTaskId.set(null)" (saved)="onSaved($event)" />
+}
+
+@if (addingTo(); as status) {
+  <app-new-task-drawer
+    [teamId]="teamId()"
+    [status]="status"
+    [projects]="data()?.projects ?? []"
+    [people]="data()?.people ?? []"
+    [ownPersonId]="teamContext.isTeamAdmin() ? null : (auth.me()?.personId ?? null)"
+    (closed)="addingTo.set(null)"
+    (created)="onCreated($event)"
+  />
 }

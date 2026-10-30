@@ -1,7 +1,7 @@
 import { CdkDragDrop, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { Component, ElementRef, computed, effect, inject, input, linkedSignal, resource, signal, viewChild } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
-import { Task } from '../../core/models';
+import { Task, WorkflowStatus } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { ToastService } from '../../shared/toast.service';
 import { BoardColumn } from './board-column';
@@ -11,17 +11,18 @@ import { BoardService } from './board.service';
 import { collapsedColumns, toggleColumn } from './column-collapse';
 import { columnWithout, moveTask, toColumnIndex } from './move-task';
 import { BoardCard } from './task-card';
+import { NewTaskDrawer } from './new-task-drawer';
 import { TaskDrawer } from './task-drawer';
 
 @Component({
   selector: 'app-board-page',
-  imports: [CdkDropListGroup, BoardColumn, BoardFilters, TaskDrawer],
+  imports: [CdkDropListGroup, BoardColumn, BoardFilters, NewTaskDrawer, TaskDrawer],
   templateUrl: './board-page.html',
 })
 export class BoardPage {
   private readonly boardService = inject(BoardService);
   private readonly prefs = inject(BoardPrefsService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   protected readonly teamContext = inject(TeamContextService);
 
@@ -41,6 +42,15 @@ export class BoardPage {
   protected readonly assigneeFilter = linkedSignal({ source: this.teamId, computation: () => '' });
   protected readonly projectFilter = linkedSignal({ source: this.teamId, computation: () => '' });
   protected readonly openTaskId = linkedSignal<string, string | null>({
+    source: this.teamId,
+    computation: () => null,
+  });
+
+  /**
+   * The column a new task is being added to, or null. Everyone who can see a board is in its team (Org Admins act
+   * as Team Admins), so everyone here can add tasks; Members only for themselves.
+   */
+  protected readonly addingTo = linkedSignal<string, WorkflowStatus | null>({
     source: this.teamId,
     computation: () => null,
   });
@@ -145,6 +155,12 @@ export class BoardPage {
     this.replaceTask(task);
     this.openTaskId.set(null);
     this.toast.show('Task saved.');
+  }
+
+  protected onCreated(task: Task): void {
+    this.tasks.update((tasks) => [...tasks, task]);
+    this.addingTo.set(null);
+    this.toast.show('Task added.');
   }
 
   /** Team Admins edit every task; Members only their own (D24). The API enforces the same rule. */

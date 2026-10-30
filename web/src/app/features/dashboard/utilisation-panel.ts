@@ -35,13 +35,13 @@ const LEGEND: { level: UtilisationLevel; label: string }[] = [
     <div class="mt-6 grid grid-cols-[minmax(13rem,1fr)_minmax(0,1.5fr)_minmax(0,1.5fr)] gap-x-10">
       <div class="col-span-3 grid grid-cols-subgrid items-baseline pb-3">
         <span class="label-caps">Person</span>
-        <div>
-          <span class="label-caps">This week</span>
-          <span class="ml-2 text-xs text-ink-muted">{{ thisWeekDates() }}</span>
+        <div class="flex flex-wrap items-baseline gap-x-2">
+          <span class="label-caps whitespace-nowrap">This week</span>
+          <span class="text-xs whitespace-nowrap text-ink-muted">{{ thisWeekDates() }}</span>
         </div>
-        <div>
-          <span class="label-caps">Next 4 weeks</span>
-          <span class="ml-2 text-xs text-ink-muted">{{ nextFourWeeksDates() }}</span>
+        <div class="flex flex-wrap items-baseline gap-x-2">
+          <span class="label-caps whitespace-nowrap">Next 4 weeks</span>
+          <span class="text-xs whitespace-nowrap text-ink-muted">{{ nextFourWeeksDates() }}</span>
         </div>
       </div>
 

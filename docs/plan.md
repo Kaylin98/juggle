@@ -8,8 +8,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | 6 - Dashboard, roles, polish, rehearsal |
 | Phase status | In progress (6.11, 6.12 and the dashboard awaiting review) |
-| Last completed task | 6.6 Empty states |
-| Next task | 6.7 Visual polish at 1280px |
+| Last completed task | 6.7 Visual polish at 1280px |
+| Next task | 6.8 Seed reset and README |
 | Blockers / open questions | None |
 | Last updated | 2026-10-30 |
 
@@ -594,7 +594,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - [x] 6.4 Role audit on the server; `AccessTests` (Member gets 403 on triage and dashboard, cannot edit others' tasks)
 - [x] 6.5 Role audit in the UI: nav and route guards
 - [x] 6.6 Empty states
-- [ ] 6.7 Visual polish at 1280 px
+- [x] 6.7 Visual polish at 1280 px
 - [ ] 6.8 Verify the seed reset command and README
 - [ ] 6.9 Optional: Playwright happy path
 - [ ] 6.10 Rehearse the demo script:
@@ -619,6 +619,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 6.4 server audit: every endpoint except demo login needs a signed-in user (fallback policy); team reads check membership, admin actions (triage, dashboard, bookings, reassign) check Team Admin, Members edit and move only their own tasks, bookings check the project's team before and after a change, a request is visible to its requester or the team's admins, and `OrgId` comes from the global query filters. No gaps found, so no code change. `AccessTests` (4): signed out gets 401; a Requester gets 403 on every team endpoint and on other people's requests; a Member gets 403 on triage, accept, reject, the dashboard, "All teams", booking and changing others' tasks, and 200 on the board and schedule; another team's admin gets 403 on Design
 - 6.5 UI audit in Chromium against the dev API: David (Requester) lands on My requests, sees only the Requests group and no team switcher, is sent back from team URLs, and gets "This request could not be loaded" on someone else's request; Ethan (Member) sees no Dashboard or Triage (their URLs send him to the board), can drag only his own card, sees others' cards read-only, has Save but no "Book on schedule" and no assignee change on his own, and a read-only schedule (no editable bookings, no new booking on drag); Megan (Marketing admin) sees Marketing only. Fixed: a non-Org Admin opening `?teams=all` stayed in "All teams" and the schedule failed with the API's 403; `allTeams` now also needs an Org Admin, so they see their own team. Tests: 1 web (Member ignores `?teams=all`)
 - 6.6 empty states: every page already had loading, empty and error states (board columns, schedule with no people, triage, My requests with a New request button, the dashboard panels, login, request form) except the dashboard, which showed only its header while loading (now "Loading the dashboard..."). The request detail error now says why ("It may not exist, or it was sent by someone else"). A board filter that matches nothing showed "No cards" in every column, as if the board were empty; columns now say "No matching cards" while a filter is on. Checked in Chromium (dashboard loading with a slowed API, Marketing board filtered to Overdue)
+- 6.7 at 1280x800 in Chromium: login, schedule (Design and All teams), board, task drawer, dashboard, triage and the accept drawer, My requests, New request and a request detail (as Naledi and as David); no page scrolls sideways and nothing is clipped. Fixed on the dashboard: the utilisation header broke "2–27 Nov" across lines (labels and dates now wrap as whole units), and the triage card's detail wrapped to two lines (now "New requests waiting for a decision"). Rechecked at 1280, 1440 and 1920
 
 **Acceptance criteria**
 

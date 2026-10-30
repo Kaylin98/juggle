@@ -37,7 +37,7 @@ import { UtilisationPanel } from './utilisation-panel';
             label="Requests in triage"
             tone="accent"
             [count]="total(data.triageRequests)"
-            detail="New requests waiting to be accepted or rejected"
+            detail="New requests waiting for a decision"
             [links]="triageLinks()"
           />
           <app-summary-card

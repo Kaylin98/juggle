@@ -127,10 +127,11 @@ export class BoardPage {
   );
 
   /** Columns a filter leaves empty; they collapse first so the matching cards stay in view. */
-  private readonly emptyWhileFiltered = computed(() => {
-    const filtered = this.assigneeFilter() || this.projectFilter() || this.dueFilter();
-    return new Set(filtered ? this.columns().filter((c) => c.cards.length === 0).map((c) => c.status.id) : []);
-  });
+  private readonly emptyWhileFiltered = computed(
+    () => new Set(this.filtered() ? this.columns().filter((c) => c.cards.length === 0).map((c) => c.status.id) : []),
+  );
+
+  protected readonly filtered = computed(() => !!(this.assigneeFilter() || this.projectFilter() || this.dueFilter()));
 
   protected readonly openCard = computed(
     () => this.cards().find((card) => card.task.id === this.openTaskId()) ?? null,

@@ -30,7 +30,9 @@ const NOTE: Record<RequestStatus, string> = {
       </a>
 
       @if (request.error()) {
-        <p class="empty-state mt-6 text-over-700">This request could not be loaded.</p>
+        <p class="empty-state mt-6 text-over-700">
+          This request could not be loaded. It may not exist, or it was sent by someone else.
+        </p>
       } @else if (request.value(); as request) {
         <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div class="min-w-0">

@@ -62,7 +62,7 @@ const CHEVRON_RIGHT =
           <p
             class="flex flex-1 items-center justify-center rounded-control border border-dashed border-line-strong text-sm text-ink-muted"
           >
-            No cards
+            {{ filtered() ? 'No matching cards' : 'No cards' }}
           </p>
         }
       </div>
@@ -102,6 +102,8 @@ export class BoardColumn {
   readonly status = input.required<WorkflowStatus>();
   readonly cards = input.required<BoardCard[]>();
   readonly collapsed = input(false);
+  /** A board filter is on, so an empty column has no matching cards rather than none at all. */
+  readonly filtered = input(false);
   readonly dropped = output<CdkDragDrop<string, string, Task>>();
   readonly opened = output<Task>();
   readonly toggled = output<void>();

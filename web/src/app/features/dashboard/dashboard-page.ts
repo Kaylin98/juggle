@@ -57,6 +57,8 @@ import { UtilisationPanel } from './utilisation-panel';
           />
           <app-department-panel [departments]="data.workByDepartment" />
         </div>
+      } @else {
+        <p class="empty-state mt-6">Loading the dashboard...</p>
       }
     </div>
   `,

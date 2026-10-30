@@ -8,8 +8,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | 6 - Dashboard, roles, polish, rehearsal |
 | Phase status | In progress (6.11, 6.12 and the dashboard awaiting review) |
-| Last completed task | 6.5 UI role audit |
-| Next task | 6.6 Empty states |
+| Last completed task | 6.6 Empty states |
+| Next task | 6.7 Visual polish at 1280px |
 | Blockers / open questions | None |
 | Last updated | 2026-10-30 |
 
@@ -593,7 +593,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - [x] 6.3 Dashboard page: summary cards linking to the filtered board, triage and schedule; utilisation per person in the schedule colours; work by department; "All teams" for Org Admins
 - [x] 6.4 Role audit on the server; `AccessTests` (Member gets 403 on triage and dashboard, cannot edit others' tasks)
 - [x] 6.5 Role audit in the UI: nav and route guards
-- [ ] 6.6 Empty states
+- [x] 6.6 Empty states
 - [ ] 6.7 Visual polish at 1280 px
 - [ ] 6.8 Verify the seed reset command and README
 - [ ] 6.9 Optional: Playwright happy path
@@ -618,6 +618,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - Seed (review of the dashboard, 2026-10-30): Sipho has a 3h Q1 Campaign booking on Thursday and Friday this week (10h of 8h on both days), so "Over capacity this week" shows 1. Lerato stays over from Tuesday next week for the clash step. Dates stay relative to the current week. Tests: 1 API (Sipho over this week, Lerato next week)
 - 6.4 server audit: every endpoint except demo login needs a signed-in user (fallback policy); team reads check membership, admin actions (triage, dashboard, bookings, reassign) check Team Admin, Members edit and move only their own tasks, bookings check the project's team before and after a change, a request is visible to its requester or the team's admins, and `OrgId` comes from the global query filters. No gaps found, so no code change. `AccessTests` (4): signed out gets 401; a Requester gets 403 on every team endpoint and on other people's requests; a Member gets 403 on triage, accept, reject, the dashboard, "All teams", booking and changing others' tasks, and 200 on the board and schedule; another team's admin gets 403 on Design
 - 6.5 UI audit in Chromium against the dev API: David (Requester) lands on My requests, sees only the Requests group and no team switcher, is sent back from team URLs, and gets "This request could not be loaded" on someone else's request; Ethan (Member) sees no Dashboard or Triage (their URLs send him to the board), can drag only his own card, sees others' cards read-only, has Save but no "Book on schedule" and no assignee change on his own, and a read-only schedule (no editable bookings, no new booking on drag); Megan (Marketing admin) sees Marketing only. Fixed: a non-Org Admin opening `?teams=all` stayed in "All teams" and the schedule failed with the API's 403; `allTeams` now also needs an Org Admin, so they see their own team. Tests: 1 web (Member ignores `?teams=all`)
+- 6.6 empty states: every page already had loading, empty and error states (board columns, schedule with no people, triage, My requests with a New request button, the dashboard panels, login, request form) except the dashboard, which showed only its header while loading (now "Loading the dashboard..."). The request detail error now says why ("It may not exist, or it was sent by someone else"). A board filter that matches nothing showed "No cards" in every column, as if the board were empty; columns now say "No matching cards" while a filter is on. Checked in Chromium (dashboard loading with a slowed API, Marketing board filtered to Overdue)
 
 **Acceptance criteria**
 

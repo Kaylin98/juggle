@@ -63,6 +63,10 @@ Calm, soft and easy on the eyes; nothing sharp or bright. Mood reference: `docs/
 - **Layout:** pages always use the full content width. Only a page's own area (a grid, the board) scrolls sideways, never the page; scroll areas use `scroll-thin`, or `scroll-quiet` to show the scrollbar on hover
 - **Accessibility:** text meets WCAG AA (4.5:1) on its background; every control has a visible `accent-200` focus ring
 
+## Git
+
+Work directly on main. One commit per completed item. Do not create branches unless asked.
+
 ## Working documentation
 
 - `docs/demo-brief.md`: source of truth for scope, data model, acceptance criteria and the demo script

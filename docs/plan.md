@@ -6,12 +6,12 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | 4 - Schedule interactions |
-| Phase status | Awaiting review |
-| Last completed task | Phase 4 tasks 4.1 to 4.9, committed as `Phase 4: Schedule interactions` |
-| Next task | 5.1 `RequestService`, once the user approves Phase 4 |
-| Blockers / open questions | Waiting for the Phase 4 review |
-| Last updated | 2026-10-28 |
+| Current phase | 5 - Requests + triage |
+| Phase status | In progress |
+| Last completed task | Phase 4 approved and committed (review fixes D40, D41) |
+| Next task | 5.1 `RequestService` |
+| Blockers / open questions | None |
+| Last updated | 2026-10-30 |
 
 ## Phase overview
 
@@ -23,8 +23,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 3 | Wed | Schedule (read) | Done |
 | D | Tue | Design pass | Done |
 | L | Tue | Schedule layout | Done |
-| 4 | Thu am | Schedule interactions | Awaiting review |
-| 5 | Thu pm | Requests + triage | Not started |
+| 4 | Thu am | Schedule interactions | Done |
+| 5 | Thu pm | Requests + triage | In progress |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
@@ -77,6 +77,8 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D35 The capacity grid page is called "Schedule" in all UI text. Routes (`/t/:teamId/capacity`), the API (`/api/capacity`) and code names keep "capacity"
 - D36 Only Team Admins (and Org Admins) change a task's assignee. Members edit every other field of their own tasks. Assigning work is a capacity decision for the lead, and a Member who reassigns a task would lose access to it. **Demo default only:** after the MVP this becomes a setting Team Admins and Org Admins can change (see "Members reassigning tasks" under Later)
 - D37 (2026-10-27, design pass) Schedule cells show no hours free. Load colour (D15) is shown on each person's utilisation for the days shown (D14), and a day over capacity is tinted red with the hours over ("+2h")
+- D41 (2026-10-30, Phase 4 review) The schedule reacts live while dragging, as Resource Guru does. The dragged booking is its own preview: the grid shows the bookings as the drop would leave them, snapped to whole days, and recomputes every day's booked hours from them in the client (the same rule as the API), so stacking, availability strips, utilisation and "Overbooked" update live with no API calls until the drop. Each snap eases over 120ms (FLIP with the Web Animations API) and row height over 150ms (every row has the same number of lane tracks, unused ones 0 high, so `grid-template-rows` can interpolate); both are off under `prefers-reduced-motion`. A drop or popover save that puts someone over capacity opens a "Booking clash" dialog (Cancel puts it back; "Book with overtime" saves) in place of the warning toast. Drag on empty days opens the popover with "Booking" and "Time off" tabs; "Time off" is disabled because the API cannot create time off
+- D40 (2026-10-30, Phase 4 review; replaced by D41) Schedule drags are drawn in two layers. The snapped result (a dashed outline, and the target row tinted) comes from signals that change only when the pointer crosses a cell. The outline is the drop laid out by `placeBars` with the row's other bookings, so it is one booking tall, in the lane the booking will take, its full length, and cut at weekends and days off exactly as after the drop; it has no fill. The movement in between is drawn once per animation frame with paint-only styles (`translate` for a move, `clip-path` for a resize or a new booking's days), so nothing lays out while the pointer moves. A press lifts a booking at once; it becomes a drag after 3px, so a click still opens it. Esc cancels; nothing is saved until release
 - D39 (2026-10-28, Phase 4) Schedule drags use pointer events for create, move and resize alike, with a hit test on the day cells, instead of CDK drag for moves: CDK drag does not snap to CSS grid cells or move between rows. A move shifts both dates by working days, so a booking keeps its length across a weekend. "Book on schedule" defaults: start on the next working day; days = estimate / 4h, at least 1; hours/day = estimate / days to the nearest half hour, or 4h without an estimate (16h books 4 days at 4h/day, as in the demo script)
 - D38 (2026-10-27, schedule layout) Fixed-width day columns with narrow weekend columns and week labels; 1, 2, 4 or 8 weeks, opening on 4; an availability strip per row; two-line bookings split at weekends and days off; time off as solid ink blocks; today tinted; utilisation under 50% shown as available. The capacity API accepts `weeks=8` and sends each allocation's project department
 
@@ -411,7 +413,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 ## Phase 4 - Schedule interactions (Thu am)
 
-**Status:** Awaiting review
+**Status:** Done
 **Done when:** allocations can be changed by drag and survive reload
 
 **Files**
@@ -453,6 +455,9 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - "All teams" lists every team's projects when booking; the API rejects a person who is not in the project's team with a clear message
 - Board and Schedule pages are now lazy-loaded: the initial bundle had passed the 600 kB budget (603 kB) because every page was in it; it is now 448 kB
 - Checked in Chromium at 1920 against a separate API and web server on a throwaway database (`juggle_check`, dropped afterwards), so the demo data was untouched: create, move to another person, resize, reload, clash warning, edit, delete, Escape, "Book on schedule", and a Member's read-only grid and drawer. No console errors
+- Review fix (D40): drags felt unresponsive because the pointer was reduced to a day index and the booking was redrawn by its grid columns, so nothing moved until a cell boundary. Now `drag-follow.ts` draws the pointer movement and the grid keeps the snapped state; resize grips show on hover. Checked in Edge against `juggle_check` (dropped afterwards): 40 pointer moves cost 3 layouts (one per cell crossed), no writes until the drop, one PUT on drop, Esc restores, a click still opens the popover
+- Review fix 3 (D41): live re-layout was blocked because day loads came only from the server, the drag never changed the data the grid drew (it was painted on top), and `repeat(lanes, …)` changed the track count, which CSS cannot animate. The outline and `drag-follow.ts` are gone; `live-load.ts` adds up day loads, `snap-animation.ts` eases snaps, `clash-dialog.ts` asks before overbooking. Checked in Edge against `juggle_check`: move, clash (Cancel and "Book with overtime"), resize, create and reduced motion; no writes until the drop
+- Review fix 2 (D40): the outline spanned every lane on top of other bookings, was the moved dates clipped to the days shown (a booking running off the window looked a different length from its outline), and had a faint fill that showed as a ghost beside the live bar. It is now laid out by `placeBars` like a real booking, with no fill. Checked in Edge for a move, a resize from each end and a create: each outline matched where the booking landed (same person, lane, days and size)
 
 **Review gate**
 
@@ -461,13 +466,13 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - [x] Committed as `Phase 4: Schedule interactions`
 - [x] "Where we left off" and status updated to Awaiting review
 - [x] **STOP** for review
-- [ ] Approved by user
+- [x] Approved by user (2026-10-30, after review fixes D40 and D41)
 
 ---
 
 ## Phase 5 - Requests + triage (Thu pm)
 
-**Status:** Not started
+**Status:** In progress
 **Done when:** a submitted request can be accepted into a board task
 
 **Files**
@@ -586,6 +591,22 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 ## Later
 
+**Future development:** Ideas captured during the demo build. Prioritise with the Head of Design after the demo; do not build without approval.
+
+- Booking clash, "Add to waiting list": a third choice in the clash dialog that parks the booking, plus a waiting list panel of unscheduled bookings, so work that does not fit is kept rather than forced in or lost
+- Booking clash, "Extend availability": a third choice that raises the person's capacity on the clashing days, so agreed extra hours show as capacity rather than overload; needs per-day capacity overrides in the data model
+- Overtime flag on allocations: bookings saved with "Book with overtime" are marked, shown as a marker on the bar and counted separately in reports, so overtime is visible instead of looking like a planning mistake
+- Time off from the schedule popover: the "Time off" tab (type and dates) is in place but disabled, because the API has no endpoint for creating time off yet
+- Project and team colour picker limited to the 8 palette hues, so colours set in the app always fit the design
+- Schedule filters by project, skill or department, so a lead can find who is free for a kind of work
+- Hover on a booking shows the linked task and its due date, so the schedule explains why someone is booked
+- Team workflow settings screen to add, rename, reorder and delete board columns, so teams can shape their own flow without a developer
+- Single-team users see the team name as text instead of a dropdown, since a one-item switcher is noise
+- Tooltip on review round badges (for example "Review round 2: sent back once"), so the badge explains itself
+- Split booking: hovering a booking shows a "Split" action at the day boundary under the pointer, and clicking splits it into two bookings there, so a booking can be broken up without deleting and re-creating it
+- Duplicate booking: copy a booking to another person or other dates, so repeated work is quick to plan
+- Total hours bookings: enter the total hours and the dates, and hours/day is worked out, since work is often estimated as a total rather than per day
+- Tentative bookings: pencilled-in bookings shown in a lighter style and left out of (or flagged in) utilisation, so likely work can be planned before it is confirmed
 - "My requests" list for requesters
 - Settings screens (statuses, request types, teams)
 - **Members reassigning tasks becomes a setting** (requested by the product owner, 2026-10-27)
@@ -594,7 +615,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
   - Where: a settings page that works per department (team), which could also hold the other settings above
   - Code to change: the assignee check in `TasksService.UpdateAsync` (API) and the `canReassign` input of the task drawer (web)
 - Comments, audit log, notifications, email
-- Store board column preferences per user in the database, so they follow the user across devices (today they are in localStorage, per browser)
+- Board column preferences stored per user in the database, so they follow the user across devices (today they are in localStorage, per browser)
 - SSO (Entra ID, Google) behind `IDemoAuth`
 - Azure deployment
 - Multiple assignees per task
@@ -616,6 +637,9 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - 2026-10-28: Board automatic collapse now applies to any column: while the columns do not fit at 240px they collapse one at a time, Done-category columns first, then from the edges inward, keeping at least one expanded. Build, lint and 40 web tests pass. Awaiting review.
 - 2026-10-28: Board collapse rules revised: manual collapses remembered per user (not per team), manual expands not remembered, clicks hold until the next resize or page load, old keys cleared. Fixed while testing: expanding a column at 1280 collapsed another one instead of letting the board scroll. Build, lint and 44 web tests pass; checked in Chromium at 1920, 1440 and 1280 with live resizes, and with Ethan and Lerato on the same browser. Approved and committed (285e835).
 - 2026-10-28: Phase 4 built: allocations API (create, update, delete, clash days, permissions by the project's team), drag to create, move and resize on the schedule, edit popover with delete, clash warning toasts, "Book on schedule" in the task drawer, read-only grid for Members (D39). Board and Schedule lazy-loaded to stay inside the bundle budget. Build with no warnings, lint, 24 API tests and 57 web tests pass; checked end to end in Chromium. Awaiting review.
+- 2026-10-30: Phase 4 review fix, fluid schedule drags (D40): immediate lift on press, 3px click threshold, the booking follows the pointer pixel by pixel with a snapped drop outline and target row tint, smooth resize and create, Esc cancels. Build, lint and 60 web tests pass; checked mid-move, mid-resize, mid-shrink and mid-create in Edge. Awaiting review.
+- 2026-10-30: Live schedule drag (D41): the dragged booking is the preview, snapping per day with a 120ms ease; strips, utilisation and stacking update live from client-side loads; rows animate height; "Booking clash" dialog replaces the clash toast; create popover gains "Booking" and a disabled "Time off" tab. Future development ideas added to "Later". Build, lint and 62 web tests pass; recorded in Edge. Phase 4 approved and committed; Phase 5 started.
+- 2026-10-30: Drop outline fixed: one booking tall in the lane it will take, full length, split as the real layout, no ghost fill. Build, lint and 58 web tests pass; outline matched the landed booking for move, resize start and end, and create. Awaiting review.
 - 2026-10-27: Availability strip segments are now fill bars (L.12), so a fully booked day reads as full, not empty. Build, lint and 34 web tests pass; every segment fill checked against its tooltip in the running app. Awaiting review.
 - 2026-10-27: Shared select (L.13) on CDK Overlay + Listbox replaces all native selects. Build, lint and 38 web tests pass; checked in the running app: team switcher, assignee filter (search + Enter), drawer assignee (keyboard open, arrows, type-ahead, Escape and outside click close only the panel). Awaiting review.
 - 2026-10-27: Schedule layout block (L.1 to L.13) approved and committed. Phase 4 on hold until the user says to start.

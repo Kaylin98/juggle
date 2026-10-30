@@ -3,12 +3,18 @@ import { Allocation, DayLoad } from '../../core/models';
 /** Weekdays in a week. The grid adds one narrow weekend column after each week. */
 const WORKDAYS = 5;
 
+/** What placing a booking needs: its dates. A drag's drop target is placed the same way as a booking. */
+export interface Dated {
+  startDate: string;
+  endDate: string;
+}
+
 /**
  * A piece of a booking on the grid: first and last weekday (0-based index into the days shown) and its lane.
  * First and last mark the pieces that hold the booking's visible start and end, where its resize handles go.
  */
-export interface PlacedBar {
-  allocation: Allocation;
+export interface PlacedBar<T extends Dated = Allocation> {
+  allocation: T;
   start: number;
   end: number;
   lane: number;
@@ -57,7 +63,7 @@ function runsWhere(days: DayLoad[], [start, end]: Run, test: (day: DayLoad) => b
  * Places bookings on the days shown. A booking keeps one lane (first fit) across its whole span, so it is easy
  * to follow, and is drawn as one piece per run of working days: it splits at weekends and at days off.
  */
-export function placeBars(allocations: Allocation[], days: DayLoad[]): PlacedBar[] {
+export function placeBars<T extends Dated>(allocations: T[], days: DayLoad[]): PlacedBar<T>[] {
   const laneEnds: number[] = [];
   return allocations
     .map((allocation) => {

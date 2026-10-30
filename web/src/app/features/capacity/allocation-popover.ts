@@ -45,6 +45,25 @@ const DEFAULT_HOURS_PER_DAY = 4;
       <h2 class="font-display text-base font-semibold">{{ heading() }}</h2>
       <p class="mt-1 text-sm text-ink-muted">{{ draft().personName }} &middot; {{ dates() }}</p>
 
+      <!-- Time off cannot be added yet: the API has no endpoint for it (see "Later" in docs/plan.md). -->
+      @if (!draft().allocation) {
+        <div class="mt-4 flex rounded-full border border-line bg-surface p-1" role="tablist" aria-label="What to add">
+          <button type="button" class="flex-1 rounded-full bg-accent-600 px-3 py-1 text-sm font-semibold text-white" role="tab" aria-selected="true">
+            Booking
+          </button>
+          <button
+            type="button"
+            class="flex-1 cursor-not-allowed rounded-full px-3 py-1 text-sm font-semibold text-ink-muted opacity-60"
+            role="tab"
+            aria-selected="false"
+            disabled
+            title="Time off can't be added from the schedule yet"
+          >
+            Time off
+          </button>
+        </div>
+      }
+
       <div class="mt-6 space-y-4">
         <div>
           <label class="form-label" for="booking-project">Project</label>

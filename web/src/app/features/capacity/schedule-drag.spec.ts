@@ -33,7 +33,7 @@ describe('selectedDays', () => {
 });
 
 describe('draggedAllocation', () => {
-  it('treats a move that ends where it started as a click', () => {
+  it('treats a move that ends where it started as no change', () => {
     expect(draggedAllocation({ kind: 'move', allocation: booking, personId: 'lerato', grab: 3, current: 3 }, days)).toBeNull();
   });
 

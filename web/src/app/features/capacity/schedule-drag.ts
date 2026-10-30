@@ -16,8 +16,8 @@ export function selectedDays(drag: Extract<ScheduleDrag, { kind: 'create' }>): {
 }
 
 /**
- * The booking as a move or resize would leave it, or null when nothing changes (a move that ends where it
- * started is a click). A move shifts both dates by working days, so the booking keeps its length.
+ * The booking as a move or resize would leave it, or null when nothing changes (it was dropped where it
+ * started). A move shifts both dates by working days, so the booking keeps its length.
  * A resize sets one end to the day under the pointer, but never past the other end.
  */
 export function draggedAllocation(

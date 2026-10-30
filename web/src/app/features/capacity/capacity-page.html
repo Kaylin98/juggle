@@ -25,6 +25,7 @@
         [today]="today"
         [editable]="editable()"
         [pending]="pending()"
+        [overbooked]="clash()?.personId ?? null"
         (created)="openNew($event)"
         (opened)="openExisting($event)"
         (changed)="onChanged($event)"
@@ -50,6 +51,27 @@
       (saved)="onPopoverSaved($event)"
       (deleted)="onPopoverDeleted()"
       (closed)="popover.set(null)"
+    />
+  </ng-template>
+}
+
+<!-- Over the popover when a booking from it clashes; a transparent backdrop keeps the grid still meanwhile. -->
+@if (clash(); as clash) {
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="clash.origin"
+    [cdkConnectedOverlayOpen]="true"
+    [cdkConnectedOverlayPositions]="popoverPositions"
+    [cdkConnectedOverlayHasBackdrop]="true"
+    cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+    (overlayOutsideClick)="cancelClash()"
+    (overlayKeydown)="$event.key === 'Escape' && cancelClash()"
+  >
+    <app-clash-dialog
+      [personName]="clash.personName"
+      [days]="clash.days"
+      (cancelled)="cancelClash()"
+      (confirmed)="confirmClash()"
     />
   </ng-template>
 }

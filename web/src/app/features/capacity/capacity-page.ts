@@ -1,16 +1,17 @@
 import { CdkConnectedOverlay, ConnectedPosition } from '@angular/cdk/overlay';
-import { Component, LOCALE_ID, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
 import { AllocationsService } from '../../core/allocations.service';
 import { AuthService } from '../../core/auth.service';
 import { Allocation, SaveAllocation, Schedule } from '../../core/models';
 import { ALL_TEAMS, TeamContextService } from '../../core/team-context.service';
-import { clashMessage } from '../../shared/clash-message';
 import { startOfWeek, today } from '../../shared/dates';
 import { ToastService } from '../../shared/toast.service';
 import { AllocationPopover, BookingDetails, BookingDraft } from './allocation-popover';
 import { CapacityGrid, NewBooking, PopoverOrigin } from './capacity-grid';
 import { CapacityService, Weeks } from './capacity.service';
+import { ClashDialog } from './clash-dialog';
 import { GridToolbar } from './grid-toolbar';
+import { clashDays, withBookings } from './live-load';
 
 // Beside the pointer or booking, flipping to the other side when there is no room.
 const POPOVER_POSITIONS: ConnectedPosition[] = [
@@ -22,7 +23,7 @@ const POPOVER_POSITIONS: ConnectedPosition[] = [
 
 @Component({
   selector: 'app-capacity-page',
-  imports: [AllocationPopover, CapacityGrid, CdkConnectedOverlay, GridToolbar],
+  imports: [AllocationPopover, CapacityGrid, CdkConnectedOverlay, ClashDialog, GridToolbar],
   templateUrl: './capacity-page.html',
 })
 export class CapacityPage {
@@ -30,7 +31,6 @@ export class CapacityPage {
   private readonly allocations = inject(AllocationsService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
-  private readonly locale = inject(LOCALE_ID);
   protected readonly teamContext = inject(TeamContextService);
 
   /** From the `/t/:teamId/capacity` route. */
@@ -74,6 +74,9 @@ export class CapacityPage {
 
   protected readonly popoverPositions = POPOVER_POSITIONS;
 
+  /** A booking that would put someone over capacity, waiting for Cancel or "Book with overtime". */
+  protected readonly clash = signal<Clash | null>(null);
+
   /** The days picked for a new booking stay highlighted while its popover is open. */
   protected readonly pending = computed<NewBooking | null>(() => {
     const popover = this.popover();
@@ -89,17 +92,36 @@ export class CapacityPage {
     this.popover.set({ allocation, personId, startDate, endDate, personName: this.personName(personId), origin });
   }
 
-  /** A booking moved or resized on the grid: shown at once, then saved. */
-  protected async onChanged(allocation: Allocation): Promise<void> {
-    this.data.update((data) => data && { ...data, allocations: data.allocations.map((a) => (a.id === allocation.id ? allocation : a)) });
-    await this.save(allocation.id, toSave(allocation), allocation.personId);
+  /**
+   * A booking moved or resized on the grid: shown at once, then saved. When it puts its person over capacity,
+   * it stays where it was dropped while the clash dialog asks; Cancel puts it back.
+   */
+  protected async onChanged({ allocation, origin }: { allocation: Allocation; origin: PopoverOrigin }): Promise<void> {
+    const previous = this.data()!.allocations.find((a) => a.id === allocation.id)!;
+    this.replace(allocation);
+    await this.saveUnlessClash({ ...allocation, origin }, () => this.save(allocation.id, toSave(allocation)), () => this.replace(previous));
   }
 
+  /** The popover stays open while the clash dialog asks, so Cancel goes back to it. */
   protected async onPopoverSaved(details: BookingDetails): Promise<void> {
-    const { allocation, personId, startDate, endDate } = this.popover()!;
-    this.popover.set(null);
+    const { allocation, personId, startDate, endDate, origin } = this.popover()!;
     const request = { personId, startDate, endDate, taskId: allocation?.taskId ?? null, ...details };
-    await this.save(allocation?.id ?? null, request, personId);
+    const book = async () => {
+      this.popover.set(null);
+      await this.save(allocation?.id ?? null, request);
+    };
+    await this.saveUnlessClash({ id: allocation?.id ?? null, ...request, origin }, book, () => undefined);
+  }
+
+  protected async confirmClash(): Promise<void> {
+    const clash = this.clash()!;
+    this.clash.set(null);
+    await clash.book();
+  }
+
+  protected cancelClash(): void {
+    this.clash()!.cancel();
+    this.clash.set(null);
   }
 
   protected async onPopoverDeleted(): Promise<void> {
@@ -114,21 +136,52 @@ export class CapacityPage {
     this.schedule.reload();
   }
 
-  /** Saves, warns when the person is now over capacity (D16), and reloads the schedule for the new load. */
-  private async save(id: string | null, request: SaveAllocation, personId: string): Promise<void> {
+  /**
+   * Books straight away, unless the booking would put its person over capacity on the days shown (D16): then the
+   * clash dialog asks first. Worked out from the schedule's data, so nothing is sent until the user decides.
+   */
+  private async saveUnlessClash(booking: BookingCheck, book: () => Promise<void>, cancel: () => void): Promise<void> {
+    const data = this.data()!;
+    const person = data.people.find((p) => p.id === booking.personId)!;
+    const others = data.allocations.filter((a) => a.personId === booking.personId && a.id !== booking.id);
+    const days = clashDays(booking, withBookings(person.days, [...others, booking]));
+    if (days.length === 0) return book();
+    this.clash.set({ personId: booking.personId, personName: person.name, days, origin: booking.origin, book, cancel });
+  }
+
+  /** Saves and reloads the schedule for the new load. */
+  private async save(id: string | null, request: SaveAllocation): Promise<void> {
     try {
-      const saved = id ? await this.allocations.update(id, request) : await this.allocations.create(request);
-      const clash = clashMessage(this.personName(personId), saved.clashDays, this.locale);
-      this.toast.show(clash ?? 'Booking saved.', clash ? 'warning' : 'success');
+      await (id ? this.allocations.update(id, request) : this.allocations.create(request));
+      this.toast.show('Booking saved.', 'success');
     } catch (error) {
       this.toast.error(error);
     }
     this.schedule.reload();
   }
 
+  private replace(allocation: Allocation): void {
+    this.data.update((data) => data && { ...data, allocations: data.allocations.map((a) => (a.id === allocation.id ? allocation : a)) });
+  }
+
   private personName(personId: string): string {
     return this.data()?.people.find((p) => p.id === personId)?.name ?? '';
   }
+}
+
+/** A booking to check for a clash before saving: its days and hours, and where to ask. */
+type BookingCheck = Pick<Allocation, 'personId' | 'startDate' | 'endDate' | 'hoursPerDay'> & {
+  id: string | null;
+  origin: PopoverOrigin;
+};
+
+interface Clash {
+  personId: string;
+  personName: string;
+  days: string[];
+  origin: PopoverOrigin;
+  book: () => Promise<void>;
+  cancel: () => void;
 }
 
 function toSave(allocation: Allocation): SaveAllocation {

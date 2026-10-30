@@ -1,5 +1,5 @@
 import { Allocation, DayLoad } from '../../core/models';
-import { dayColumn, placeBars, timeOffBlocks } from './grid-layout';
+import { PlacedBar, dayColumn, placeBars, timeOffBlocks } from './grid-layout';
 
 // Two weeks: Mon 2 Nov to Fri 13 Nov 2026.
 const dates = [
@@ -29,7 +29,7 @@ function allocation(id: string, startDate: string, endDate: string): Allocation 
   };
 }
 
-const pieces = (bars: ReturnType<typeof placeBars>) => bars.map((b) => `${b.allocation.id}:${b.start}-${b.end}@${b.lane}`);
+const pieces = (bars: PlacedBar[]) => bars.map((b) => `${b.allocation.id}:${b.start}-${b.end}@${b.lane}`);
 
 describe('dayColumn', () => {
   it('skips the weekend column after each week', () => {
@@ -64,6 +64,13 @@ describe('placeBars', () => {
       days(),
     );
     expect(pieces(bars)).toEqual(['a:0-4@0', 'b:0-1@1', 'c:2-4@1']);
+  });
+
+  it('places a drop target in the lane it will take, at its full length, cut at days off', () => {
+    const drop = { startDate: '2026-11-04', endDate: '2026-11-10' };
+    const bars = placeBars([allocation('a', '2026-11-02', '2026-11-04'), drop], days({ 3: 'Leave' }));
+    const placed = bars.filter((b) => b.allocation === drop).map((b) => `${b.start}-${b.end}@${b.lane}`);
+    expect(placed).toEqual(['2-2@1', '4-4@1', '5-6@1']);
   });
 
   it('leaves out bookings outside the days shown or only on days off', () => {

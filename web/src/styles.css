@@ -209,6 +209,11 @@
     @apply mt-2 text-sm text-over-700;
   }
 
+  /* A side menu row: 40px tall, the icon 10px in, so the 64px rail shows just the icon. Colours are per state. */
+  .nav-item {
+    @apply flex h-10 items-center gap-3 rounded-control px-2.5 text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-accent-200;
+  }
+
   /* Loading, empty and error messages in place of a page's content. */
   .empty-state {
     @apply rounded-card border border-dashed border-line-strong px-6 py-12 text-center text-sm text-ink-muted;

@@ -1,33 +1,163 @@
-<nav class="flex h-full w-60 flex-col bg-page px-4">
-  <div class="flex h-18 items-center gap-3 px-2">
-    <img [src]="branding.logoUrl" alt="" class="size-8" />
-    <span class="font-display text-lg font-semibold tracking-tight">{{ branding.productName }}</span>
+<!-- The width eases between the full menu and the icon rail; labels are clipped while it moves. -->
+<nav
+  class="flex h-full flex-col overflow-hidden bg-page px-3 pb-4 transition-[width] duration-150 ease-out motion-reduce:transition-none"
+  [class]="collapsed() ? 'w-16' : 'w-60'"
+>
+  <div class="flex h-18 shrink-0 items-center gap-3 px-1">
+    <img [src]="branding.logoUrl" alt="" class="size-8 shrink-0" />
+    <span class="font-display text-lg font-semibold tracking-tight whitespace-nowrap" [class.sr-only]="collapsed()">
+      {{ branding.productName }}
+    </span>
   </div>
 
   <ul class="mt-4 flex flex-col gap-1">
-    @for (item of items(); track item.label) {
+    @for (item of teamLinks(); track item.label) {
       <li>
         <a
           [routerLink]="item.link"
           routerLinkActive
           #link="routerLinkActive"
-          class="flex items-center gap-3 rounded-control px-3 py-2 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
+          class="nav-item"
           [class]="link.isActive ? 'bg-accent-100 text-accent-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
+          [appTooltip]="collapsed() ? item.label : ''"
+          appTooltipPlacement="right"
         >
-          <svg class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
-          </svg>
-          {{ item.label }}
-          @if (item.count) {
-            <span
-              class="ml-auto min-w-6 rounded-full bg-accent-600 px-2 py-0.5 text-center text-xs font-semibold text-white"
-              [attr.aria-label]="item.count + ' new'"
-            >
-              {{ item.count }}
-            </span>
-          }
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: item.icon }" />
+          <span class="whitespace-nowrap" [class.sr-only]="collapsed()">{{ item.label }}</span>
         </a>
       </li>
     }
+
+    <li>
+      @if (collapsed()) {
+        <button
+          type="button"
+          class="nav-item relative w-full"
+          [class]="inRequests() ? 'bg-accent-100 text-accent-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
+          aria-label="Requests"
+          [cdkMenuTriggerFor]="requestsMenu"
+          [cdkMenuPosition]="flyoutPositions"
+          appTooltip="Requests"
+          appTooltipPlacement="right"
+        >
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.requests }" />
+          @if (triageCount()) {
+            <span class="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent-600" [attr.aria-label]="triageCount() + ' new'"></span>
+          }
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="nav-item w-full"
+          [class]="inRequests() && !requestsOpen() ? 'text-accent-700 hover:bg-surface-muted' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
+          [attr.aria-expanded]="requestsOpen()"
+          aria-controls="nav-requests"
+          (click)="requestsOpen.set(!requestsOpen())"
+        >
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.requests }" />
+          <span class="whitespace-nowrap">Requests</span>
+          <span class="ml-auto flex items-center gap-2">
+            @if (triageCount() && !requestsOpen()) {
+              <ng-container *ngTemplateOutlet="badge; context: { $implicit: triageCount() }" />
+            }
+            <!-- Heroicons chevron-down (mini, MIT) -->
+            <svg
+              class="size-4 text-ink-faint transition-transform duration-150 motion-reduce:transition-none"
+              [class.rotate-180]="requestsOpen()"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </span>
+        </button>
+        @if (requestsOpen()) {
+          <ul id="nav-requests" class="mt-1 flex flex-col gap-1">
+            @for (item of requestLinks(); track item.label) {
+              <li>
+                <a
+                  [routerLink]="item.link"
+                  routerLinkActive
+                  #link="routerLinkActive"
+                  class="nav-item pl-10.5"
+                  [class]="link.isActive ? 'bg-accent-100 text-accent-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
+                >
+                  <span class="whitespace-nowrap">{{ item.label }}</span>
+                  @if (item.count) {
+                    <ng-container *ngTemplateOutlet="badge; context: { $implicit: item.count }" />
+                  }
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </li>
   </ul>
+
+  <button
+    type="button"
+    class="nav-item mt-auto w-full text-ink-muted hover:bg-surface-muted hover:text-ink"
+    [attr.aria-label]="collapsed() ? 'Expand menu' : 'Collapse menu'"
+    [appTooltip]="collapsed() ? 'Expand menu' : ''"
+    appTooltipPlacement="right"
+    (click)="toggleCollapsed()"
+  >
+    <!-- Heroicons chevron-double-left (mini, MIT), turned round for expand -->
+    <svg
+      class="size-5 shrink-0 transition-transform duration-150 motion-reduce:transition-none"
+      [class.rotate-180]="collapsed()"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M4.72 9.47a.75.75 0 0 0 0 1.06l4.25 4.25a.75.75 0 1 0 1.06-1.06L6.31 10l3.72-3.72a.75.75 0 1 0-1.06-1.06L4.72 9.47Zm9.25-4.25L9.72 9.47a.75.75 0 0 0 0 1.06l4.25 4.25a.75.75 0 1 0 1.06-1.06L11.31 10l3.72-3.72a.75.75 0 0 0-1.06-1.06Z"
+        clip-rule="evenodd"
+      />
+    </svg>
+    <span class="whitespace-nowrap" [class.sr-only]="collapsed()">Collapse menu</span>
+  </button>
 </nav>
+
+<ng-template #requestsMenu>
+  <div cdkMenu class="flex min-w-52 flex-col gap-1 rounded-control bg-surface p-2 shadow-raised">
+    <p class="label-caps px-3 pt-1 pb-1">Requests</p>
+    @for (item of requestLinks(); track item.label) {
+      <a
+        cdkMenuItem
+        [routerLink]="item.link"
+        routerLinkActive
+        #link="routerLinkActive"
+        class="nav-item focus:bg-surface-muted"
+        [class]="link.isActive ? 'bg-accent-100 text-accent-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
+      >
+        {{ item.label }}
+        @if (item.count) {
+          <ng-container *ngTemplateOutlet="badge; context: { $implicit: item.count }" />
+        }
+      </a>
+    }
+  </div>
+</ng-template>
+
+<ng-template #icon let-path>
+  <svg class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="path" />
+  </svg>
+</ng-template>
+
+<ng-template #badge let-count>
+  <span
+    class="ml-auto min-w-6 rounded-full bg-accent-600 px-2 py-0.5 text-center text-xs font-semibold text-white"
+    [attr.aria-label]="count + ' new'"
+  >
+    {{ count }}
+  </span>
+</ng-template>

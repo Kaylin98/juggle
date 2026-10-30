@@ -40,9 +40,15 @@ export class TeamContextService {
   /** The pages that can show every team at once. */
   readonly canShowAllTeams = computed(() => this.page() === 'capacity' || this.page() === 'dashboard');
 
-  /** Org Admins can show every team on the schedule and dashboard ("All teams"), kept in the URL as `?teams=all`. */
+  /**
+   * Org Admins can show every team on the schedule and dashboard ("All teams"), kept in the URL as `?teams=all`.
+   * Anyone else opening that URL sees their team, since the API refuses "all" to them.
+   */
   readonly allTeams = computed(
-    () => this.canShowAllTeams() && this.router.parseUrl(this.url()).queryParams['teams'] === ALL_TEAMS,
+    () =>
+      this.auth.isOrgAdmin() &&
+      this.canShowAllTeams() &&
+      this.router.parseUrl(this.url()).queryParams['teams'] === ALL_TEAMS,
   );
 
   showAllTeams(): void {

@@ -4,11 +4,13 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService } from './auth.service';
-import { TeamRole } from './models';
+import { Me, TeamRole } from './models';
 import { TeamContextService } from './team-context.service';
 
 @Component({ template: '' })
 class BlankPage {}
+
+const ORG_ADMIN: Me = { id: 'u1', name: 'Naledi', email: 'naledi@example.com', avatarColour: '#8a78d6', orgRole: 'OrgAdmin', personId: 'p1' };
 
 describe('TeamContextService.switchTo', () => {
   let router: Router;
@@ -63,6 +65,7 @@ describe('TeamContextService.showAllTeams', () => {
     TestBed.configureTestingModule({
       providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
     });
+    TestBed.inject(AuthService).me.set(ORG_ADMIN);
     TestBed.inject(AuthService).teams.set([
       { id: 'design', name: 'Design', colour: '#7c3aed', myRole: 'TeamAdmin' },
       { id: 'marketing', name: 'Marketing', colour: '#0284c7', myRole: 'TeamAdmin' },
@@ -86,6 +89,7 @@ describe('TeamContextService on the dashboard', () => {
     TestBed.configureTestingModule({
       providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
     });
+    TestBed.inject(AuthService).me.set(ORG_ADMIN);
     TestBed.inject(AuthService).teams.set([
       { id: 'design', name: 'Design', colour: '#7c3aed', myRole: 'TeamAdmin' },
       { id: 'marketing', name: 'Marketing', colour: '#0284c7', myRole: 'TeamAdmin' },
@@ -109,5 +113,18 @@ describe('TeamContextService on the dashboard', () => {
     const teamContext = TestBed.inject(TeamContextService);
     expect(teamContext.canShowAllTeams()).toBe(false);
     expect(teamContext.allTeams()).toBe(false);
+  });
+});
+
+describe('TeamContextService for a Member', () => {
+  it('ignores ?teams=all, since only Org Admins can see every team', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    TestBed.inject(AuthService).me.set({ ...ORG_ADMIN, orgRole: 'User' });
+    TestBed.inject(AuthService).teams.set([{ id: 'design', name: 'Design', colour: '#7c3aed', myRole: 'Member' }]);
+    await TestBed.inject(Router).navigateByUrl('/t/design/capacity?teams=all');
+
+    expect(TestBed.inject(TeamContextService).allTeams()).toBe(false);
   });
 });

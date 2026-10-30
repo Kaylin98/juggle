@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../core/auth.service';
+import { RequestsService } from '../core/requests.service';
 import { TeamContextService } from '../core/team-context.service';
 import { BRANDING } from '../branding';
 
@@ -8,6 +9,8 @@ interface NavItem {
   label: string;
   link: string[];
   icon: string;
+  /** Shown as a badge when above zero: New requests waiting in triage. */
+  count?: number;
 }
 
 // Heroicons (outline, MIT) path data.
@@ -31,6 +34,7 @@ const ICONS = {
 export class Nav {
   private readonly auth = inject(AuthService);
   private readonly teamContext = inject(TeamContextService);
+  private readonly requests = inject(RequestsService);
 
   protected readonly branding = BRANDING;
 
@@ -43,8 +47,14 @@ export class Nav {
         { label: 'Board', link: ['/t', teamId, 'board'], icon: ICONS.board },
       );
       if (this.auth.roleIn(teamId) === 'TeamAdmin') {
+        const inbox = this.requests.inbox;
         items.push(
-          { label: 'Triage', link: ['/t', teamId, 'triage'], icon: ICONS.triage },
+          {
+            label: 'Triage',
+            link: ['/t', teamId, 'triage'],
+            icon: ICONS.triage,
+            count: inbox.hasValue() ? inbox.value().length : 0,
+          },
           { label: 'Dashboard', link: ['/t', teamId, 'dashboard'], icon: ICONS.dashboard },
         );
       }

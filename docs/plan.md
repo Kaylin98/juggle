@@ -7,10 +7,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | 5 - Requests + triage |
-| Phase status | In progress |
-| Last completed task | Phase 4 approved and committed (review fixes D40, D41) |
-| Next task | 5.1 `RequestService` |
-| Blockers / open questions | None |
+| Phase status | Awaiting review |
+| Last completed task | Phase 5 tasks 5.1 to 5.8, committed as `Phase 5: Requests and triage` |
+| Next task | 6.1, once the user approves Phase 5 |
+| Blockers / open questions | Waiting for the Phase 5 review |
 | Last updated | 2026-10-30 |
 
 ## Phase overview
@@ -24,7 +24,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | D | Tue | Design pass | Done |
 | L | Tue | Schedule layout | Done |
 | 4 | Thu am | Schedule interactions | Done |
-| 5 | Thu pm | Requests + triage | In progress |
+| 5 | Thu pm | Requests + triage | Awaiting review |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
@@ -472,7 +472,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 ## Phase 5 - Requests + triage (Thu pm)
 
-**Status:** In progress
+**Status:** Awaiting review
 **Done when:** a submitted request can be accepted into a board task
 
 **Files**
@@ -492,30 +492,40 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 **Tasks**
 
-- [ ] 5.1 `RequestService` and controller: options, create, get, list, accept (task in the status after Triage, D18), reject
-- [ ] 5.2 Smoke test: `RequestsTests`
-- [ ] 5.3 Request form page (dropdowns use the shared `<app-select>`)
-- [ ] 5.4 Confirmation page with status
-- [ ] 5.5 Triage inbox, newest first
-- [ ] 5.6 Nav count badge, refreshed after accept or reject
-- [ ] 5.7 Accept dialog (assignee and other dropdowns use `<app-select>`)
-- [ ] 5.8 Reject dialog with reason
+- [x] 5.1 `RequestService` and controller: options, create, get, list, accept (task in the status after Triage, D18), reject
+- [x] 5.2 Smoke test: `RequestsTests`
+- [x] 5.3 Request form page (dropdowns use the shared `<app-select>`)
+- [x] 5.4 Confirmation page with status
+- [x] 5.5 Triage inbox, newest first
+- [x] 5.6 Nav count badge, refreshed after accept or reject
+- [x] 5.7 Accept dialog (assignee and other dropdowns use `<app-select>`)
+- [x] 5.8 Reject dialog with reason
 
 **Acceptance criteria**
 
-- [ ] Any user can submit: team, type, title, description, department, requested due date, priority
-- [ ] On submit, show a confirmation and the request's status
-- [ ] Lists New requests for the current team, newest first, with a count badge in the nav
-- [ ] Accept: choose project, assignee, estimate, committed due date; creates a task in the first column after Triage (e.g. To Do)
-- [ ] Reject with a reason
+- [x] Any user can submit: team, type, title, description, department, requested due date, priority
+- [x] On submit, show a confirmation and the request's status
+- [x] Lists New requests for the current team, newest first, with a count badge in the nav
+- [x] Accept: choose project, assignee, estimate, committed due date; creates a task in the first column after Triage (e.g. To Do)
+- [x] Reject with a reason
+
+**Notes and deviations**
+
+- `RequestsService` lives in `core/` (next to `allocations.service`), not `features/requests/`, because the nav, the request form and triage all use it. It holds the current team's inbox as one resource, so the nav badge and the triage page always agree and both refresh after an accept or reject
+- Accept and reject are forms in the shared drawer (`features/triage/{accept-dialog, reject-dialog, request-summary}`), so the request stays in view while deciding. The confirmation page is `/requests/:id`
+- Accept needs a project; assignee, estimate and date are optional, and the committed date starts as the requested date. The task goes at the end of the first column after Triage (D18). A request can be triaged once (a second accept or reject is a 400)
+- The requested due date can't be in the past (form check and 400). The request's own requester and the team's admins can open a request; anyone else gets 403
+- The badge loads when an admin opens a team and after each accept or reject; it does not poll, so a request sent from another browser shows after a page load or team switch (as in the demo script, which switches user)
+- At 1440px the board's automatic collapse folds To Do, so the new task is inside a collapsed column there; at 1920 every column is open. Worth checking the demo screen width before Friday
+- Checked in Edge against a separate API and web server on `juggle_check` (dropped afterwards): requester form (validation, department preset, confirmation), badge 6, newest first, accept to To Do with assignee and 16h (badge 5), reject with reason (badge 4), the requester sees Accepted, a Member has no Triage and is redirected. No console errors. 30 API tests and 62 web tests pass
 
 **Review gate**
 
-- [ ] Build passes with no warnings, lint passes, smoke tests pass
-- [ ] Acceptance criteria ticked
-- [ ] Committed as `Phase 5: Requests and triage`
-- [ ] "Where we left off" and status updated to Awaiting review
-- [ ] **STOP** for review
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Acceptance criteria ticked
+- [x] Committed as `Phase 5: Requests and triage`
+- [x] "Where we left off" and status updated to Awaiting review
+- [x] **STOP** for review
 - [ ] Approved by user
 
 ---
@@ -639,6 +649,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 - 2026-10-28: Phase 4 built: allocations API (create, update, delete, clash days, permissions by the project's team), drag to create, move and resize on the schedule, edit popover with delete, clash warning toasts, "Book on schedule" in the task drawer, read-only grid for Members (D39). Board and Schedule lazy-loaded to stay inside the bundle budget. Build with no warnings, lint, 24 API tests and 57 web tests pass; checked end to end in Chromium. Awaiting review.
 - 2026-10-30: Phase 4 review fix, fluid schedule drags (D40): immediate lift on press, 3px click threshold, the booking follows the pointer pixel by pixel with a snapped drop outline and target row tint, smooth resize and create, Esc cancels. Build, lint and 60 web tests pass; checked mid-move, mid-resize, mid-shrink and mid-create in Edge. Awaiting review.
 - 2026-10-30: Live schedule drag (D41): the dragged booking is the preview, snapping per day with a 120ms ease; strips, utilisation and stacking update live from client-side loads; rows animate height; "Booking clash" dialog replaces the clash toast; create popover gains "Booking" and a disabled "Time off" tab. Future development ideas added to "Later". Build, lint and 62 web tests pass; recorded in Edge. Phase 4 approved and committed; Phase 5 started.
+- 2026-10-30: Phase 5 built: requests API (options, create, get, team inbox, accept into the first column after Triage, reject with reason; requester or team admin access), request form and confirmation page, triage inbox newest first with a nav badge, accept and reject in the drawer. Build with no warnings, lint, 30 API tests and 62 web tests pass; checked end to end in Edge. Awaiting review.
 - 2026-10-30: Drop outline fixed: one booking tall in the lane it will take, full length, split as the real layout, no ghost fill. Build, lint and 58 web tests pass; outline matched the landed booking for move, resize start and end, and create. Awaiting review.
 - 2026-10-27: Availability strip segments are now fill bars (L.12), so a fully booked day reads as full, not empty. Build, lint and 34 web tests pass; every segment fill checked against its tooltip in the running app. Awaiting review.
 - 2026-10-27: Shared select (L.13) on CDK Overlay + Listbox replaces all native selects. Build, lint and 38 web tests pass; checked in the running app: team switcher, assignee filter (search + Enter), drawer assignee (keyboard open, arrows, type-ahead, Escape and outside click close only the panel). Awaiting review.

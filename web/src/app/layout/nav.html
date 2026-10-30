@@ -18,6 +18,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
           </svg>
           {{ item.label }}
+          @if (item.count) {
+            <span
+              class="ml-auto min-w-6 rounded-full bg-accent-600 px-2 py-0.5 text-center text-xs font-semibold text-white"
+              [attr.aria-label]="item.count + ' new'"
+            >
+              {{ item.count }}
+            </span>
+          }
         </a>
       </li>
     }

@@ -135,3 +135,56 @@ export interface SavedAllocation extends SaveAllocation {
   /** Days of this allocation on which the person is now booked over capacity (D16). */
   clashDays: string[];
 }
+
+export type RequestType = 'Presentation' | 'Social' | 'Print' | 'Web' | 'Video' | 'Copy' | 'Other';
+export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
+export type RequestStatus = 'New' | 'Accepted' | 'Rejected';
+
+export interface Option {
+  id: string;
+  name: string;
+}
+
+/** What the request form offers. Any team can be asked for work; the department defaults to the user's own. */
+export interface RequestOptions {
+  teams: Option[];
+  departments: Option[];
+  types: RequestType[];
+  priorities: Priority[];
+  myDepartmentId: string | null;
+}
+
+export interface WorkRequest {
+  id: string;
+  teamId: string;
+  teamName: string;
+  type: RequestType;
+  title: string;
+  description: string | null;
+  department: string;
+  requesterName: string;
+  requestedDueDate: string | null;
+  priority: Priority;
+  status: RequestStatus;
+  taskId: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
+export interface CreateRequest {
+  teamId: string;
+  type: RequestType;
+  title: string;
+  description: string | null;
+  departmentId: string;
+  requestedDueDate: string | null;
+  priority: Priority;
+}
+
+/** Turns a request into a task: its project, who does it, the estimate and the committed due date. */
+export interface AcceptRequest {
+  projectId: string;
+  assigneePersonId: string | null;
+  estimateHours: number | null;
+  dueDate: string | null;
+}

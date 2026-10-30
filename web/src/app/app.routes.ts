@@ -12,7 +12,16 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', canActivate: [landingGuard], children: [] },
-      { path: 'request', component: PlaceholderPage, title: 'New request' },
+      {
+        path: 'request',
+        loadComponent: () => import('./features/requests/request-form').then((m) => m.RequestFormPage),
+        title: 'New request',
+      },
+      {
+        path: 'requests/:id',
+        loadComponent: () => import('./features/requests/request-confirmation').then((m) => m.RequestConfirmationPage),
+        title: 'Request',
+      },
       {
         path: 't/:teamId',
         canActivate: [teamMemberGuard],
@@ -27,7 +36,12 @@ export const routes: Routes = [
             loadComponent: () => import('./features/board/board-page').then((m) => m.BoardPage),
             title: 'Board',
           },
-          { path: 'triage', component: PlaceholderPage, title: 'Triage', canActivate: [teamAdminGuard] },
+          {
+            path: 'triage',
+            loadComponent: () => import('./features/triage/triage-page').then((m) => m.TriagePage),
+            title: 'Triage',
+            canActivate: [teamAdminGuard],
+          },
           { path: 'dashboard', component: PlaceholderPage, title: 'Dashboard', canActivate: [teamAdminGuard] },
           { path: '', pathMatch: 'full', redirectTo: 'board' },
         ],

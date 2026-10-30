@@ -8,8 +8,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | Post-Phase 5 round (5 items) |
 | Phase status | In progress |
-| Last completed task | P.3 Side menu |
-| Next task | P.4 Request form layout check |
+| Last completed task | P.4 Request form layout check |
+| Next task | P.5 Polish |
 | Blockers / open questions | Phase 6 on hold until the user says to start |
 | Last updated | 2026-10-30 |
 
@@ -546,7 +546,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - [x] P.1 Board column collapse order: Done first, then right to left, so To Do stays open longest (L.11). The 240px minimum and 360px maximum were already in place
 - [x] P.2 "+ Add task" on the board (D42): `NewTaskDrawer` (the task drawer's create mode, its own component because the edit drawer is built around an existing task), `POST /api/teams/{teamId}/tasks`
 - [x] P.3 Side menu (D43): "Requests" nav group, collapsible icon rail with tooltips and a flyout (`layout/{nav, nav-prefs.service}`, `shared/tooltip.ts`)
-- [ ] P.4 Request form layout (built in the Phase 5 review, D30): check against the spec
+- [x] P.4 Request form layout (built in the Phase 5 review, D30): checked against the spec, no code change needed
 - [ ] P.5 Polish: shared select audit, review round tooltip, single-team switcher as text
 
 **Notes and deviations**
@@ -554,6 +554,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - Git: the `phase-5-requests-triage` and `schedule-live-drag` branches were fast-forwarded into `main` and deleted; work now happens on `main` only (`CLAUDE.md`, "Git")
 - P.2 checked in Chromium against the dev API: Naledi adds to In Design for Priya (last in the column, kept after reload); the header button opens on To Do; Ethan's assignee is locked to himself, his task lands at the end of To Do and is draggable; Ethan assigning Lerato through the API gets 403. Tests: 3 API (admin, Member, refusals), 3 web (locked assignee, required fields, payload)
 - P.3 needed no layout code in the board or schedule: the board re-fits its columns through its ResizeObserver as the menu's width changes, and the schedule's day columns are CSS. Checked in Chromium at 1440 and 1920: in the rail the Design board opens a fourth column at 1440 (To Do to With Requester) and widens all six at 1920; the schedule fills the width (1312px and 1792px) with no sideways page scroll; the width eases over 150ms and not at all under reduced motion; the state survives a reload; the flyout works by mouse and keyboard; a Member sees no Dashboard and no Triage. Tooltips show on hover and keyboard focus (not after a mouse click) and hide on Escape and on a page change, so the focus CDK Menu hands back to the rail icon after a choice does not leave one up. Tests: 5 web (group per role and page, badge on the closed group, rail saved and restored per user, dot)
+- P.4 checked in Chromium as Naledi, opening New request from the Marketing board: the form is 720px and the panel 320px, centred together (64px each side at 1440, 304px at 1920); below 1100px (checked at 1000) the panel sits under the form at the form's width; at 560px tall the panel sticks 24px under the header while the form scrolls past; the header team switcher is hidden; Team starts as Marketing, the last team viewed. The panel wording matches the request. The Team options had no colour dots, which is fixed under P.5
 
 ---
 
@@ -685,3 +686,4 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 2026-10-30: Post-Phase 5 round, item 1: board columns auto-collapse Done first, then right to left (240px minimum and 360px maximum unchanged; manual rules unchanged). Branches merged into `main` (fast-forward) and deleted; Git rule added to `CLAUDE.md`. Build, lint and 66 web tests pass; checked against the dev API: Design at 1440 keeps To Do, In Design and Internal Review open, Marketing folds only Published, everything open at 1920.
 - 2026-10-30: Post-Phase 5 round, item 2 (D42): "Add task" on the board (each column and the header) opens the new task drawer; `POST /api/teams/{teamId}/tasks` with Members limited to themselves. Build with no warnings, lint, 34 API tests and 69 web tests pass; checked in Chromium as Naledi and Ethan.
 - 2026-10-30: Post-Phase 5 round, item 3 (D43): side menu with a "Requests" group and a collapsible icon rail (tooltips, dots, flyout, remembered per user, eased width). Build with no warnings, lint and 74 web tests pass; checked in Chromium at 1440 and 1920 (board and schedule re-fit, reduced motion, keyboard flyout, Member view).
+- 2026-10-30: Post-Phase 5 round, item 4: request form layout checked against the spec at 1000, 1440 and 1920 (and 560px tall for the sticky panel); it was already built in the Phase 5 review (D30), so only the plan changed.

@@ -7,9 +7,9 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | 6 - Dashboard, roles, polish, rehearsal |
-| Phase status | In progress (6.11, 6.12 and the dashboard awaiting review) |
-| Last completed task | 6.8 Seed reset and README |
-| Next task | 6.10 Rehearse the demo script |
+| Phase status | Awaiting review |
+| Last completed task | 6.10 Demo rehearsal (one step open) |
+| Next task | User review of Phase 6; decide demo step 5 (seed or wording) and the collapsed Changes Requested column |
 | Blockers / open questions | None |
 | Last updated | 2026-10-30 |
 
@@ -26,7 +26,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 4 | Thu am | Schedule interactions | Done |
 | 5 | Thu pm | Requests + triage | Done |
 | P | Fri | Post-Phase 5 round | Done |
-| 6 | Fri | Dashboard, roles, polish, rehearsal | In progress |
+| 6 | Fri | Dashboard, roles, polish, rehearsal | Awaiting review |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
 
@@ -572,7 +572,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 
 ## Phase 6 - Dashboard, roles, polish, rehearsal (Fri)
 
-**Status:** In progress
+**Status:** Awaiting review
 **Done when:** the full demo script runs start to finish without errors
 
 **Files**
@@ -596,17 +596,17 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - [x] 6.6 Empty states
 - [x] 6.7 Visual polish at 1280 px
 - [x] 6.8 Verify the seed reset command and README
-- [ ] 6.9 Optional: Playwright happy path
-- [ ] 6.10 Rehearse the demo script:
-  - [ ] Sign in as a Sales requester and submit "Sales deck for Q1 roadshow"
-  - [ ] Switch to the Head of Design; triage badge shows the new request
-  - [ ] Schedule shows a red day, a person on leave, an under-loaded designer
-  - [ ] Accept the request to the under-loaded designer (16 h); it appears in To Do
+- [ ] 6.9 Optional: Playwright happy path (not done: it would add `@playwright/test` to the repo; the rehearsal below ran as a local Playwright script instead)
+- [ ] 6.10 Rehearse the demo script (one step open, see notes):
+  - [x] Sign in as a Sales requester and submit "Sales deck for Q1 roadshow"
+  - [x] Switch to the Head of Design; triage badge shows the new request
+  - [x] Schedule shows a red day, a person on leave, an under-loaded designer
+  - [x] Accept the request to the under-loaded designer (16 h); it appears in To Do
   - [ ] "Book on schedule" 4 h/day over 4 days; load turns green to amber
-  - [ ] Drag an allocation onto a full day; clash warning appears
-  - [ ] Drag a card to Internal Review, then Changes Requested; review cycle increases
-  - [ ] Dashboard shows utilisation, overdue tasks, triage queue one shorter
-  - [ ] Switch to Marketing: different columns and people; shared designer's load includes Design work
+  - [x] Drag an allocation onto a full day; clash warning appears
+  - [x] Drag a card to Internal Review, then Changes Requested; review cycle increases
+  - [x] Dashboard shows utilisation, overdue tasks, triage queue one shorter
+  - [x] Switch to Marketing: different columns and people; shared designer's load includes Design work
 - [x] 6.11 Requests group icons (D43): My requests, New request and Triage get their icons back at 16px, starting where the group's label starts; the group gets a paper-airplane icon instead of Triage's inbox; the rail flyout shows the same icons
 - [x] 6.12 Booking wording (D44): user-facing text says "booking" / "book"; the two API errors that reached the user ("Allocation not found.", "An allocation can be at most a year long.") now say booking; rule added to the Design section of `CLAUDE.md`
 
@@ -621,6 +621,8 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 6.6 empty states: every page already had loading, empty and error states (board columns, schedule with no people, triage, My requests with a New request button, the dashboard panels, login, request form) except the dashboard, which showed only its header while loading (now "Loading the dashboard..."). The request detail error now says why ("It may not exist, or it was sent by someone else"). A board filter that matches nothing showed "No cards" in every column, as if the board were empty; columns now say "No matching cards" while a filter is on. Checked in Chromium (dashboard loading with a slowed API, Marketing board filtered to Overdue)
 - 6.7 at 1280x800 in Chromium: login, schedule (Design and All teams), board, task drawer, dashboard, triage and the accept drawer, My requests, New request and a request detail (as Naledi and as David); no page scrolls sideways and nothing is clipped. Fixed on the dashboard: the utilisation header broke "2–27 Nov" across lines (labels and dates now wrap as whole units), and the triage card's detail wrapped to two lines (now "New requests waiting for a decision"). Rechecked at 1280, 1440 and 1920
 - 6.8 ran the README's reset as written (API stopped, `dotnet run --project api/Juggle.Api -- --reset-demo`): exit 0 after 11s, and it exits without starting the server. Fresh data matches the brief: 11 people, 3 overdue (Design), 5 New requests in Design and 2 in Marketing, Sipho over capacity this week, Lerato next week. The README's run, reset, test and lint steps match the code, so it is unchanged
+- 6.10 rehearsed through the UI in Chromium at 1440x900 against the dev API, on freshly reset data, with no console errors: David sends "Sales deck for Q1 roadshow" (Presentation, due in 2 weeks) and lands on its detail page; as Naledi the Requests badge shows 6 and the request tops the inbox; the 4-week schedule shows red days (Sipho this week, Lerato next week), Amahle's annual leave and Priya at 27% (available); Accept with Sales Deck, Priya, 16h (committed due date pre-filled from the request) puts the task in To Do; "Book on schedule" opens with Mon 2 Nov, 4 days, 4h/day and books it; dragging Ethan's Sales Deck booking onto Lerato's row opens "Booking clash: Lerato Mokoena is over capacity on 4 days, from Tue 3 Nov" (cancelled); "Sales deck master template" dragged to Internal Review, then to Changes Requested, ends at review round 2; the dashboard shows 3 overdue, 5 in triage (one fewer), 1 over capacity; Marketing shows Planned to Published and Chloe, Jason, Megan and Thabo, with Jason's Design bookings greyed in his load. Data reset afterwards
+- 6.10 open points for review: (1) Step 5 "load turns green to amber" does not happen: Priya goes from 27% to 37% on the 4-week view (still "available") and from 25% to 65% next week on the 1-week view (green). An under-loaded designer cannot reach amber from 16h alone. Options: give Priya about 2h/day more next week in the seed (next week 50% green, then 90% amber after booking, while the 4-week view still shows her as available), or change the script's wording to "her next week fills up". (2) At 1440 Changes Requested is auto-collapsed, so after step 7 the "R2" is only visible once the column is expanded (or with the menu collapsed at 1920). (3) Right after a reset with the API still running, the first API call returns 500 (its pooled connections were dropped) and the next succeeds; the README already says to stop the API first
 
 **Acceptance criteria**
 
@@ -632,10 +634,10 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 
 **Review gate**
 
-- [ ] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Build passes with no warnings, lint passes, smoke tests pass
 - [ ] Acceptance criteria ticked
 - [ ] Committed as `Phase 6: Dashboard, roles and polish`
-- [ ] "Where we left off" and status updated to Awaiting review
+- [x] "Where we left off" and status updated to Awaiting review
 - [ ] **STOP** for review
 - [ ] Approved by user
 
@@ -717,3 +719,4 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 2026-10-30: Item 6.12 (D44): "booking" in all user-facing text; two API error messages fixed, rule in `CLAUDE.md`. Build with no warnings and 36 API tests pass.
 - 2026-10-30: Phase 6 dashboard (6.1 to 6.3, D45): `GET /api/dashboard` reusing the schedule rules, dashboard page with summary cards, utilisation and work by department, "All teams" for Org Admins, board "Due" filter, filtered board keeps matching columns open. Build with no warnings, lint, 40 API tests and 87 web tests pass; checked in Chromium at 1440 and 1920 against the new API build on the dev database. Awaiting review.
 - 2026-10-30: Demo data reset with `--reset-demo` after the dashboard (week of 26 Oct), and again after the seed change (Sipho over capacity this week). The API on 5268 restarted on the new build; it serves `/api/dashboard`, and the Design dashboard shows Sipho over this week (35h of 40h).
+- 2026-10-30: Phase 6 continued: seed puts Sipho over capacity this week; 6.4 server role audit (no gaps, `AccessTests`); 6.5 UI role audit ("All teams" only for Org Admins); 6.6 empty states; 6.7 polish at 1280; 6.8 reset and README verified; 6.10 demo rehearsed end to end through the UI with one open point (step 5 does not turn green to amber). Build with no warnings, lint, 45 API tests and 88 web tests pass. Demo data reset. Awaiting review.

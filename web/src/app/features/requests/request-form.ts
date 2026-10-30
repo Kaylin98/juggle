@@ -160,7 +160,7 @@ export class RequestFormPage {
 
   protected readonly teamOptions = computed<SelectOption[]>(() => [
     { value: '', label: 'Choose a team' },
-    ...(this.options.value()?.teams ?? []).map((t) => ({ value: t.id, label: t.name })),
+    ...(this.options.value()?.teams ?? []).map((t) => ({ value: t.id, label: t.name, colour: t.colour })),
   ]);
   protected readonly typeOptions = computed<SelectOption[]>(() => [
     { value: '', label: 'Choose a type' },

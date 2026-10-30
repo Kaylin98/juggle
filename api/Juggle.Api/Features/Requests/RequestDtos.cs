@@ -5,9 +5,12 @@ namespace Juggle.Api.Features.Requests;
 
 public sealed record OptionDto(Guid Id, string Name);
 
+/// <summary>A team to ask, with its colour for the dot beside its name.</summary>
+public sealed record TeamOptionDto(Guid Id, string Name, string Colour);
+
 /// <summary>What the request form offers. Any team can be asked for work; the department defaults to the user's own.</summary>
 public sealed record RequestOptionsDto(
-    IReadOnlyList<OptionDto> Teams,
+    IReadOnlyList<TeamOptionDto> Teams,
     IReadOnlyList<OptionDto> Departments,
     IReadOnlyList<RequestType> Types,
     IReadOnlyList<Priority> Priorities,

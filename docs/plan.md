@@ -7,9 +7,9 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | Post-Phase 5 round (5 items) |
-| Phase status | In progress |
-| Last completed task | P.4 Request form layout check |
-| Next task | P.5 Polish |
+| Phase status | Awaiting review |
+| Last completed task | P.5 Polish (post-Phase 5 round complete; demo data reset) |
+| Next task | User review of the post-Phase 5 round; then 6.1 when the user says to start Phase 6 |
 | Blockers / open questions | Phase 6 on hold until the user says to start |
 | Last updated | 2026-10-30 |
 
@@ -25,7 +25,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | L | Tue | Schedule layout | Done |
 | 4 | Thu am | Schedule interactions | Done |
 | 5 | Thu pm | Requests + triage | Done |
-| P | Fri | Post-Phase 5 round | In progress |
+| P | Fri | Post-Phase 5 round | Awaiting review |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
@@ -536,7 +536,7 @@ Requested by the user on 2026-10-27, after the design pass. Design tokens unchan
 
 ## Post-Phase 5 round (Fri)
 
-**Status:** In progress
+**Status:** Awaiting review
 **Done when:** the five items below are built, checked in the browser against the dev API with screenshots at 1440px (and 1920px for P.1, P.3 and P.4), and committed one per item on `main`
 
 Requested by the user on 2026-10-30, after Phase 5 was approved.
@@ -547,7 +547,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - [x] P.2 "+ Add task" on the board (D42): `NewTaskDrawer` (the task drawer's create mode, its own component because the edit drawer is built around an existing task), `POST /api/teams/{teamId}/tasks`
 - [x] P.3 Side menu (D43): "Requests" nav group, collapsible icon rail with tooltips and a flyout (`layout/{nav, nav-prefs.service}`, `shared/tooltip.ts`)
 - [x] P.4 Request form layout (built in the Phase 5 review, D30): checked against the spec, no code change needed
-- [ ] P.5 Polish: shared select audit, review round tooltip, single-team switcher as text
+- [x] P.5 Polish: shared select audit (team dots on the request form, no `$any`), review round tooltip, single-team switcher as text
 
 **Notes and deviations**
 
@@ -555,6 +555,16 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - P.2 checked in Chromium against the dev API: Naledi adds to In Design for Priya (last in the column, kept after reload); the header button opens on To Do; Ethan's assignee is locked to himself, his task lands at the end of To Do and is draggable; Ethan assigning Lerato through the API gets 403. Tests: 3 API (admin, Member, refusals), 3 web (locked assignee, required fields, payload)
 - P.3 needed no layout code in the board or schedule: the board re-fits its columns through its ResizeObserver as the menu's width changes, and the schedule's day columns are CSS. Checked in Chromium at 1440 and 1920: in the rail the Design board opens a fourth column at 1440 (To Do to With Requester) and widens all six at 1920; the schedule fills the width (1312px and 1792px) with no sideways page scroll; the width eases over 150ms and not at all under reduced motion; the state survives a reload; the flyout works by mouse and keyboard; a Member sees no Dashboard and no Triage. Tooltips show on hover and keyboard focus (not after a mouse click) and hide on Escape and on a page change, so the focus CDK Menu hands back to the rail icon after a choice does not leave one up. Tests: 5 web (group per role and page, badge on the closed group, rail saved and restored per user, dot)
 - P.4 checked in Chromium as Naledi, opening New request from the Marketing board: the form is 720px and the panel 320px, centred together (64px each side at 1440, 304px at 1920); below 1100px (checked at 1000) the panel sits under the form at the form's width; at 560px tall the panel sticks 24px under the header while the form scrolls past; the header team switcher is hidden; Team starts as Marketing, the last team viewed. The panel wording matches the request. The Team options had no colour dots, which is fixed under P.5
+- P.5 select audit: the shared select already met the spec (tokens, accent-50 active row, check on the selected option, text, avatar and dot options, search above 8 options, arrows, Enter, Escape, type-ahead, ControlValueAccessor, inside drawers) and is used for the team switcher, board filters, task and new task drawers, request form, accept form and schedule popover. Fixed: the request form's Team options had no dots, because the options API sent no team colour (now `TeamOptionDto` with `Colour`); the search box used `$any` (now its template reference). Review round badges and the drawer pill ("Review cycle" is now "Review round") show "Review round 3: sent back for changes twice" (`review-round.ts`); the tooltip widened to 320px so it fits on one line, and hides on press so a dragged card does not carry it. A user with one team (and no "All teams") sees the team as text. Checked in Chromium at 1440: tooltip, drawer pill, search and type-ahead by keyboard, Escape closing only the select inside the schedule popover, team dots, Ethan (one team, text) and Jason (two teams, dropdown). Tests: 1 API (team colours), 3 web (wording, single and two teams)
+
+**Review gate**
+
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Screenshots at 1440px (and 1920px for P.1, P.3, P.4) reviewed and fixed
+- [x] One commit per item on `main`
+- [x] "Where we left off" and status updated to Awaiting review
+- [x] **STOP** for review
+- [ ] Approved by user
 
 ---
 
@@ -639,8 +649,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - Schedule filters by project, skill or department, so a lead can find who is free for a kind of work
 - Hover on a booking shows the linked task and its due date, so the schedule explains why someone is booked
 - Team workflow settings screen to add, rename, reorder and delete board columns, so teams can shape their own flow without a developer
-- Single-team users see the team name as text instead of a dropdown, since a one-item switcher is noise
-- Tooltip on review round badges (for example "Review round 2: sent back once"), so the badge explains itself
+- Move the remaining `title` hints (schedule day cells, bookings, time off, utilisation, avatars, card due dates, column counts, the disabled Time off tab) to `appTooltip`, so every tooltip matches the design and none is clipped
 - Split booking: hovering a booking shows a "Split" action at the day boundary under the pointer, and clicking splits it into two bookings there, so a booking can be broken up without deleting and re-creating it
 - Duplicate booking: copy a booking to another person or other dates, so repeated work is quick to plan
 - Total hours bookings: enter the total hours and the dates, and hours/day is worked out, since work is often estimated as a total rather than per day
@@ -687,3 +696,4 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 2026-10-30: Post-Phase 5 round, item 2 (D42): "Add task" on the board (each column and the header) opens the new task drawer; `POST /api/teams/{teamId}/tasks` with Members limited to themselves. Build with no warnings, lint, 34 API tests and 69 web tests pass; checked in Chromium as Naledi and Ethan.
 - 2026-10-30: Post-Phase 5 round, item 3 (D43): side menu with a "Requests" group and a collapsible icon rail (tooltips, dots, flyout, remembered per user, eased width). Build with no warnings, lint and 74 web tests pass; checked in Chromium at 1440 and 1920 (board and schedule re-fit, reduced motion, keyboard flyout, Member view).
 - 2026-10-30: Post-Phase 5 round, item 4: request form layout checked against the spec at 1000, 1440 and 1920 (and 560px tall for the sticky panel); it was already built in the Phase 5 review (D30), so only the plan changed.
+- 2026-10-30: Post-Phase 5 round, item 5: select audit (team colour dots on the request form, `$any` removed), review round tooltips, single-team switcher as text. Build with no warnings, lint, 35 API tests and 77 web tests pass; checked in Chromium at 1440. Demo data reset with `--reset-demo`. Round awaiting review.

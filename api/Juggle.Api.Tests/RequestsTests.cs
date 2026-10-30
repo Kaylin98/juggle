@@ -129,6 +129,16 @@ public sealed class RequestsTests(ApiFactory api)
         }
     }
 
+    [Fact]
+    public async Task Options_give_each_team_its_colour()
+    {
+        var david = await api.SignInAsAsync("David Cohen");
+
+        var options = await david.GetFromJsonAsync<RequestOptionsDto>("/api/requests/options", ApiFactory.Json, _ct);
+
+        Assert.All(options!.Teams, team => Assert.Matches("^#[0-9a-f]{6}$", team.Colour));
+    }
+
     private async Task<CreateRequestRequest> NewRequestAsync(HttpClient client, string title)
     {
         var options = await client.GetFromJsonAsync<RequestOptionsDto>("/api/requests/options", ApiFactory.Json, _ct);

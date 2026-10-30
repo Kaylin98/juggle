@@ -157,8 +157,12 @@ export interface Option {
 }
 
 /** What the request form offers. Any team can be asked for work; the department defaults to the user's own. */
+export interface TeamOption extends Option {
+  colour: string;
+}
+
 export interface RequestOptions {
-  teams: Option[];
+  teams: TeamOption[];
   departments: Option[];
   types: RequestType[];
   priorities: Priority[];

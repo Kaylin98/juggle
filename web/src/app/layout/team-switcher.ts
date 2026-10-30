@@ -3,14 +3,25 @@ import { AuthService } from '../core/auth.service';
 import { ALL_TEAMS, TeamContextService } from '../core/team-context.service';
 import { Select, SelectOption } from '../shared/select';
 
+/** Picks the current team. With only one team there is nothing to pick, so it shows the team's name instead. */
 @Component({
   selector: 'app-team-switcher',
   imports: [Select],
   template: `
-    <label class="flex items-center gap-3">
-      <span class="label-caps">Team</span>
-      <app-select variant="pill" [options]="options()" [value]="value()" (valueChange)="select($event)" />
-    </label>
+    @if (onlyOption(); as team) {
+      <div class="flex items-center gap-3">
+        <span class="label-caps">Team</span>
+        <span class="flex items-center gap-2 text-sm font-semibold" [style.--hue]="team.colour">
+          <span class="hue-dot size-2 rounded-full"></span>
+          {{ team.label }}
+        </span>
+      </div>
+    } @else {
+      <label class="flex items-center gap-3">
+        <span class="label-caps">Team</span>
+        <app-select variant="pill" [options]="options()" [value]="value()" (valueChange)="select($event)" />
+      </label>
+    }
   `,
 })
 export class TeamSwitcher {
@@ -22,6 +33,8 @@ export class TeamSwitcher {
     ...(this.auth.isOrgAdmin() && this.teamContext.page() === 'capacity' ? [{ value: ALL_TEAMS, label: 'All teams' }] : []),
     ...this.auth.teams().map((team) => ({ value: team.id, label: team.name, colour: team.colour })),
   ]);
+
+  protected readonly onlyOption = computed(() => (this.options().length === 1 ? this.options()[0] : null));
 
   protected readonly value = computed(() => (this.teamContext.allTeams() ? ALL_TEAMS : (this.teamContext.teamId() ?? '')));
 

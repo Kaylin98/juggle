@@ -2,6 +2,8 @@ import { DatePipe } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { Person, Project, Task } from '../../core/models';
 import { Avatar } from '../../shared/avatar';
+import { Tooltip } from '../../shared/tooltip';
+import { reviewRoundLabel } from './review-round';
 
 /** A task with what the board needs to show it. */
 export interface BoardCard {
@@ -13,7 +15,7 @@ export interface BoardCard {
 
 @Component({
   selector: 'app-task-card',
-  imports: [Avatar, DatePipe],
+  imports: [Avatar, DatePipe, Tooltip],
   template: `
     @let task = card().task;
     <button
@@ -43,7 +45,7 @@ export interface BoardCard {
         @if (task.reviewCycle > 1) {
           <span
             class="rounded-full bg-warn-50 px-2 py-0.5 font-semibold text-warn-700"
-            [attr.title]="'Review cycle ' + task.reviewCycle"
+            [appTooltip]="reviewRoundLabel(task.reviewCycle)"
             >R{{ task.reviewCycle }}</span
           >
         }
@@ -57,4 +59,6 @@ export interface BoardCard {
 export class TaskCard {
   readonly card = input.required<BoardCard>();
   readonly opened = output<void>();
+
+  protected readonly reviewRoundLabel = reviewRoundLabel;
 }

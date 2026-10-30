@@ -4,8 +4,10 @@ import { Person, Task, UpdateTask } from '../../core/models';
 import { Drawer } from '../../shared/drawer';
 import { Select, SelectOption } from '../../shared/select';
 import { ToastService } from '../../shared/toast.service';
+import { Tooltip } from '../../shared/tooltip';
 import { BoardService } from './board.service';
 import { BookOnSchedule } from './book-on-schedule';
+import { reviewRoundLabel } from './review-round';
 import { BoardCard } from './task-card';
 
 /** Form fields as the inputs hold them: empty strings for blank values. */
@@ -42,7 +44,7 @@ function toUpdate(value: TaskForm): UpdateTask {
 
 @Component({
   selector: 'app-task-drawer',
-  imports: [BookOnSchedule, Drawer, FormField, Select],
+  imports: [BookOnSchedule, Drawer, FormField, Select, Tooltip],
   templateUrl: './task-drawer.html',
 })
 export class TaskDrawer {
@@ -57,6 +59,8 @@ export class TaskDrawer {
   readonly canBook = input.required<boolean>();
   readonly closed = output<void>();
   readonly saved = output<Task>();
+
+  protected readonly reviewRoundLabel = reviewRoundLabel;
 
   protected readonly assigneeOptions = computed<SelectOption[]>(() => [
     { value: '', label: 'Unassigned' },

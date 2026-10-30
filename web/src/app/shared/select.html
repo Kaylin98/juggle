@@ -40,7 +40,7 @@
           placeholder="Search"
           aria-label="Search options"
           [value]="search()"
-          (input)="search.set($any($event.target).value)"
+          (input)="search.set(searchBox.value)"
           (keydown.arrowdown)="focusList($event)"
           (keydown.enter)="chooseFirstMatch($event)"
         />

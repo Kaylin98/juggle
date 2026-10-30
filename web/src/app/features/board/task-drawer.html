@@ -5,8 +5,11 @@
       <span class="hue-dot size-2 rounded-full"></span>
       <span>{{ card().project.name }} &middot; {{ card().project.department }}</span>
       @if (card().task.reviewCycle > 1) {
-        <span class="ml-auto rounded-full bg-warn-50 px-2 py-0.5 text-xs font-semibold text-warn-700">
-          Review cycle {{ card().task.reviewCycle }}
+        <span
+          class="ml-auto rounded-full bg-warn-50 px-2 py-0.5 text-xs font-semibold text-warn-700"
+          [appTooltip]="reviewRoundLabel(card().task.reviewCycle)"
+        >
+          Review round {{ card().task.reviewCycle }}
         </span>
       }
     </div>

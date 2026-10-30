@@ -14,7 +14,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
 {
     public async Task<RequestOptionsDto> GetOptionsAsync(CancellationToken ct)
     {
-        var teams = await db.Teams.OrderBy(t => t.Name).Select(t => new OptionDto(t.Id, t.Name)).ToListAsync(ct);
+        var teams = await db.Teams.OrderBy(t => t.Name).Select(t => new TeamOptionDto(t.Id, t.Name, t.Colour)).ToListAsync(ct);
         var departments = await db.Departments.OrderBy(d => d.Name).Select(d => new OptionDto(d.Id, d.Name)).ToListAsync(ct);
         var myDepartmentId = await db.Users.Where(u => u.Id == currentUser.UserId).Select(u => u.DepartmentId).FirstAsync(ct);
         return new RequestOptionsDto(teams, departments, Enum.GetValues<RequestType>(), Enum.GetValues<Priority>(), myDepartmentId);

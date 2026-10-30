@@ -8,8 +8,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | 6 - Dashboard, roles, polish, rehearsal |
 | Phase status | In progress (6.11, 6.12 and the dashboard awaiting review) |
-| Last completed task | 6.1 to 6.3 Dashboard |
-| Next task | User review of 6.11, 6.12 and the dashboard; then 6.4 Role audit |
+| Last completed task | 6.4 Server role audit |
+| Next task | 6.5 UI role audit |
 | Blockers / open questions | None |
 | Last updated | 2026-10-30 |
 
@@ -591,7 +591,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - [x] 6.1 `DashboardService` and controller (D27, D45): reuses `CapacityService` for 5 weeks from this Monday and sums each person's days; `TeamScope` parses `teamId` for the schedule and dashboard
 - [x] 6.2 Smoke test: `DashboardTests` (utilisation matches the schedule, counts match the board and triage, All teams, 403 for a Member and another team's admin)
 - [x] 6.3 Dashboard page: summary cards linking to the filtered board, triage and schedule; utilisation per person in the schedule colours; work by department; "All teams" for Org Admins
-- [ ] 6.4 Role audit on the server; `AccessTests` (Member gets 403 on triage and dashboard, cannot edit others' tasks)
+- [x] 6.4 Role audit on the server; `AccessTests` (Member gets 403 on triage and dashboard, cannot edit others' tasks)
 - [ ] 6.5 Role audit in the UI: nav and route guards
 - [ ] 6.6 Empty states
 - [ ] 6.7 Visual polish at 1280 px
@@ -616,6 +616,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 6.12 searched every template, inline template, aria-label, title, tooltip, toast and API error message: the web app already said Booking, New booking, Book and "6h of 8h booked"; only the two API errors (shown in toasts) said allocation. The seed has no user-facing allocation text. Tests: 1 API (both messages)
 - 6.1 to 6.3 checked in Chromium at 1440 and 1920 (menu expanded and collapsed) with the demo data, against the new API build on port 5269 on the dev database (the API on 5268 was not restarted): Design shows 3 overdue, 5 in triage, 0 over capacity this week (the seed puts Lerato over next week), Ruben 90% and Amahle 85% (amber), Priya 35% (available); "All teams" shows Design 3 and Marketing 1 overdue, Design 5 and Marketing 2 in triage, and all 11 people; Marketing shows Jason's Design work in his load. The overdue card opens the board with Due set to Overdue (3 cards, all overdue), the triage card opens Triage, the schedule card the schedule; Megan (Marketing admin, one team) sees no "All teams"; Jason (Member) is sent to the board and gets 403 from the API; no page overflow, no console errors. Fixed while checking: on the filtered board at 1440 the three overdue cards sat in auto-collapsed columns while empty columns stayed open (D45 now collapses columns a filter leaves empty first); the utilisation header labels were not on one baseline; the subtitle repeated the week dates. Tests: 4 API, 7 web (team links, utilisation order and colours, board due filter, collapse with a filter, All teams on the dashboard)
 - Seed (review of the dashboard, 2026-10-30): Sipho has a 3h Q1 Campaign booking on Thursday and Friday this week (10h of 8h on both days), so "Over capacity this week" shows 1. Lerato stays over from Tuesday next week for the clash step. Dates stay relative to the current week. Tests: 1 API (Sipho over this week, Lerato next week)
+- 6.4 server audit: every endpoint except demo login needs a signed-in user (fallback policy); team reads check membership, admin actions (triage, dashboard, bookings, reassign) check Team Admin, Members edit and move only their own tasks, bookings check the project's team before and after a change, a request is visible to its requester or the team's admins, and `OrgId` comes from the global query filters. No gaps found, so no code change. `AccessTests` (4): signed out gets 401; a Requester gets 403 on every team endpoint and on other people's requests; a Member gets 403 on triage, accept, reject, the dashboard, "All teams", booking and changing others' tasks, and 200 on the board and schedule; another team's admin gets 403 on Design
 
 **Acceptance criteria**
 

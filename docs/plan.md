@@ -10,7 +10,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | Phase status | In progress (6.11, 6.12 and the dashboard awaiting review) |
 | Last completed task | 6.1 to 6.3 Dashboard |
 | Next task | User review of 6.11, 6.12 and the dashboard; then 6.4 Role audit |
-| Blockers / open questions | Restart the API on 5268 to serve `/api/dashboard` (it runs a build from before the dashboard) |
+| Blockers / open questions | None |
 | Last updated | 2026-10-30 |
 
 ## Phase overview
@@ -711,3 +711,4 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 2026-10-30: Post-Phase 5 round approved. Phase 6 started. Item 6.11: Requests group icons (16px item icons aligned under the group label, paper-airplane for the group, same icons in the rail flyout). Build with no warnings, lint and 78 web tests pass; checked in Chromium at 1440 and 1920, menu expanded and collapsed.
 - 2026-10-30: Item 6.12 (D44): "booking" in all user-facing text; two API error messages fixed, rule in `CLAUDE.md`. Build with no warnings and 36 API tests pass.
 - 2026-10-30: Phase 6 dashboard (6.1 to 6.3, D45): `GET /api/dashboard` reusing the schedule rules, dashboard page with summary cards, utilisation and work by department, "All teams" for Org Admins, board "Due" filter, filtered board keeps matching columns open. Build with no warnings, lint, 40 API tests and 87 web tests pass; checked in Chromium at 1440 and 1920 against the new API build on the dev database. Awaiting review.
+- 2026-10-30: Demo data reset with `--reset-demo` after the dashboard (week of 26 Oct), and again after the seed change (Sipho over capacity this week). The API on 5268 restarted on the new build; it serves `/api/dashboard`, and the Design dashboard shows Sipho over this week (35h of 40h).

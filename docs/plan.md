@@ -372,7 +372,7 @@ Requested by the user on 2026-10-27, with `docs/design-reference.png` for mood o
 ## Schedule layout (between Phase 3 and Phase 4)
 
 **Status:** Done
-**Done when:** the schedule reads at a glance like a resource planner (`docs/schedule-reference.png` for structure only); screenshots at 1440px reviewed
+**Done when:** the schedule reads at a glance like a resource planner (a reference screenshot, kept outside the repo, for structure only); screenshots at 1440px reviewed
 
 Requested by the user on 2026-10-27, after the design pass. Design tokens unchanged.
 

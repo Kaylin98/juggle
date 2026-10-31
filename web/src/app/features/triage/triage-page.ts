@@ -43,7 +43,7 @@ const PRIORITY_PILL: Record<Priority, string> = {
                 </div>
                 <h2 class="mt-2 font-display text-base font-semibold">{{ request.title }}</h2>
                 <p class="mt-1 text-sm text-ink-muted">
-                  From {{ request.marketingManagerName ?? request.requesterName }} &middot; briefed in
+                  From {{ request.requesterName }} &middot; briefed in
                   {{ request.createdAt | date: 'EEE d MMM, HH:mm' }}
                   @if (request.requestedDueDate; as due) {
                     &middot; studio deadline <span class="font-semibold text-ink">{{ due | date: 'EEE d MMM' }}</span>

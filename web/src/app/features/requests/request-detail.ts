@@ -102,12 +102,17 @@ const NOTE: Record<RequestStatus, string> = {
               <dd class="mt-1">{{ request.requestedDueDate ? (request.requestedDueDate | date: 'EEE d MMM y') : 'No date' }}</dd>
             </div>
             <div>
-              <dt class="label-caps">Marketing manager</dt>
-              <dd class="mt-1">{{ request.marketingManagerName ?? request.requesterName }}</dd>
+              <dt class="label-caps">Requested by</dt>
+              <dd class="mt-1">{{ request.requesterName }}</dd>
             </div>
             <div>
               <dt class="label-caps">Briefed in</dt>
-              <dd class="mt-1">{{ request.createdAt | date: 'EEE d MMM y, HH:mm' }} by {{ request.requesterName }}</dd>
+              <dd class="mt-1">
+                {{ request.createdAt | date: 'EEE d MMM y, HH:mm' }}
+                @if (request.loggedByName; as loggedBy) {
+                  &middot; logged by {{ loggedBy }}
+                }
+              </dd>
             </div>
           </dl>
         </section>

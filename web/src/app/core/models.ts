@@ -173,12 +173,13 @@ export interface UserOption extends Option {
 
 /**
  * What the request form offers. Any team can be asked for work; the department defaults to the user's own.
- * Marketing managers are the users with a department, and the user.
+ * Requesters are the brands' marketing managers (the users with a department), whom members of the team asked and
+ * Org Admins can log a brief for (D55).
  */
 export interface RequestOptions {
   teams: TeamOption[];
   departments: Option[];
-  marketingManagers: UserOption[];
+  requesters: UserOption[];
   priorities: Priority[];
   myDepartmentId: string | null;
 }
@@ -195,7 +196,8 @@ export interface WorkRequest {
   deliverables: string[];
   department: string;
   requesterName: string;
-  marketingManagerName: string | null;
+  /** Who logged it on the requester's behalf; null when the requester sent it (D55). */
+  loggedByName: string | null;
   /** The studio deadline. */
   requestedDueDate: string | null;
   priority: Priority;
@@ -216,7 +218,8 @@ export interface CreateRequest {
   /** One per line. */
   deliverables: string | null;
   departmentId: string;
-  marketingManagerUserId: string;
+  /** Who the brief is from, when a member of the team asked or an Org Admin logs it; ignored for anyone else. */
+  requestedByUserId: string | null;
   requestedDueDate: string | null;
   priority: Priority;
 }

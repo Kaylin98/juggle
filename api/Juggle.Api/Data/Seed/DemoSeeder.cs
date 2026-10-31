@@ -385,7 +385,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             });
         }
 
-        // Briefs, in the studio's template (D50). The marketing manager is the brand's, who sent it.
+        // Briefs, in the studio's template (D50), each sent by the brand's marketing manager.
 
         var now = clock.Now;
 
@@ -397,7 +397,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 TeamId = team.Id,
                 RequesterUserId = manager.Id,
                 DepartmentId = manager.DepartmentId!.Value,
-                MarketingManagerUserId = manager.Id,
+                LoggedByUserId = manager.Id,
                 Title = jobName,
                 MainGoal = mainGoal,
                 Deliverables = deliverables,

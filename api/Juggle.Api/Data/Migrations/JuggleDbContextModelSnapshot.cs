@@ -212,12 +212,12 @@ namespace Juggle.Api.Data.Migrations
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("LoggedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("MainGoal")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid?>("MarketingManagerUserId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid>("OrgId")
                         .HasColumnType("uuid");
@@ -257,7 +257,7 @@ namespace Juggle.Api.Data.Migrations
 
                     b.HasIndex("DepartmentId");
 
-                    b.HasIndex("MarketingManagerUserId");
+                    b.HasIndex("LoggedByUserId");
 
                     b.HasIndex("OrgId");
 
@@ -596,9 +596,11 @@ namespace Juggle.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Juggle.Api.Data.Entities.User", "MarketingManager")
+                    b.HasOne("Juggle.Api.Data.Entities.User", "LoggedBy")
                         .WithMany()
-                        .HasForeignKey("MarketingManagerUserId");
+                        .HasForeignKey("LoggedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
                         .WithMany()
@@ -624,7 +626,7 @@ namespace Juggle.Api.Data.Migrations
 
                     b.Navigation("Department");
 
-                    b.Navigation("MarketingManager");
+                    b.Navigation("LoggedBy");
 
                     b.Navigation("Requester");
 

@@ -123,7 +123,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 
 **4. Request form**
 
-- [ ] Any user can submit a brief in the studio's template: team, brand (department), job name, main goal, deliverables (one per line), marketing manager, studio deadline, priority (Phase C; was team, type, title, description, department, requested due date, priority)
+- [ ] Any user can submit a brief in the studio's template: team, brand (department), job name, main goal, deliverables (one per line), studio deadline, priority, and "Requested by" (a brand's marketing manager) for members of the team asked and Org Admins (Phase C; was team, type, title, description, department, requested due date, priority)
 - [ ] On submit, show a confirmation and the request's status
 
 **5. Triage inbox (Team Admin)**
@@ -162,7 +162,7 @@ Realistic, fictional data that tells the story; dates are relative to the curren
 | Allocations | Last week to 5 weeks ahead; one designer (Lerato) at 11h on seven days this week and next; one under-loaded (Priya, 50% next week); the rest 60 to 90% |
 | Time off | Approved leave for 2 Studio people in the next 2 weeks; 1 Marketing person on sick leave this week ("Unavailable" to everyone but them and their admins); 1 pending request in Studio for the demo |
 | Public holidays | South African public holidays for the current and next year |
-| Requests | Briefs in their template (job name, main goal, deliverables, marketing manager, studio deadline): 5 New in Studio triage, 2 in Marketing, 3 already accepted |
+| Requests | Briefs in their template (job name, main goal, deliverables, studio deadline), each from a brand's marketing manager: 5 New in Studio triage, 2 in Marketing, 3 already accepted |
 
 - Fictional people only, with made-up South African names; no real staff names
 - Brands are names and palette colours only: no brand logos anywhere
@@ -194,7 +194,7 @@ About 10 minutes, told as The Core Group's studio (Phase C): the pain points the
 
 1. **Dashboard, as Naledi Khumalo (Head of Studio).** Lerato Mokoena is "Over capacity this week" and tops utilisation, while others have room: one designer carries far more than the rest. "Awaiting review" shows the approval backlog, and "Overdue tasks" the deadlines already missed
 2. **Schedule:** Lerato's red days this week and next, Priya Naidoo clearly available, Amahle on leave next week. Bookings read as job codes, so every brand's work is in one view
-3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), Zanele as marketing manager, studio deadline in 2 weeks
+3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), studio deadline in 2 weeks. It goes in as from Zanele, with no "Requested by" field; Studio members would see "Requested by" to log a brief for a manager
 4. **Triage, as a new brief:** switch back to Naledi; the triage badge shows it. Accept: "New brief" proposes `DJI0143_Q<n>'<YY>_Summer Holiday Sale` (editable); assign Priya, estimate 16 h, keep the committed date. The board shows a new DJI project, in its own colour, with three cards in Briefed in
 5. **Book it:** open the Takealot banners card (it carries the 16 h) and "Book on schedule" for 4 h/day over 4 days. On the schedule, Priya goes from green to amber
 6. **Show a clash:** drag a booking onto Ethan Pillay's full day next week; the clash dialog appears

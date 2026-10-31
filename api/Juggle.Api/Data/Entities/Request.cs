@@ -8,7 +8,10 @@ public class Request
     public Guid TeamId { get; set; }
     public Guid RequesterUserId { get; set; }
     public Guid DepartmentId { get; set; }
-    public Guid? MarketingManagerUserId { get; set; }
+
+    /// <summary>Who entered it: the requester, or a member of the team asked logging it on their behalf (D55).</summary>
+    public Guid LoggedByUserId { get; set; }
+
     public required string Title { get; set; }
     public string? MainGoal { get; set; }
 
@@ -24,6 +27,6 @@ public class Request
 
     public Team Team { get; set; } = null!;
     public User Requester { get; set; } = null!;
-    public User? MarketingManager { get; set; }
+    public User LoggedBy { get; set; } = null!;
     public Department Department { get; set; } = null!;
 }

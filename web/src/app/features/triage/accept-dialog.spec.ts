@@ -12,7 +12,7 @@ const request: WorkRequest = {
   deliverables: ['Takealot banners', 'Social tiles x6', 'Email header'],
   department: 'DJI',
   requesterName: 'Zanele Mthembu',
-  marketingManagerName: 'Zanele Mthembu',
+  loggedByName: null,
   requestedDueDate: '2026-11-13',
   priority: 'High',
   status: 'New',

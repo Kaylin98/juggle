@@ -69,7 +69,7 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.Property(r => r.Deliverables).HasMaxLength(4000);
             e.Property(r => r.RejectionReason).HasMaxLength(1000);
             e.HasOne(r => r.Requester).WithMany().HasForeignKey(r => r.RequesterUserId);
-            e.HasOne(r => r.MarketingManager).WithMany().HasForeignKey(r => r.MarketingManagerUserId);
+            e.HasOne(r => r.LoggedBy).WithMany().HasForeignKey(r => r.LoggedByUserId);
             e.HasOne<TaskItem>().WithMany().HasForeignKey(r => r.TaskId);
         });
 

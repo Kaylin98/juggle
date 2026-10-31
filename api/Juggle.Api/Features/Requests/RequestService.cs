@@ -17,12 +17,30 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         var teams = await db.Teams.OrderBy(t => t.Name).Select(t => new TeamOptionDto(t.Id, t.Name, t.Colour)).ToListAsync(ct);
         var departments = await db.Departments.OrderBy(d => d.Name).Select(d => new OptionDto(d.Id, d.Name)).ToListAsync(ct);
         var myDepartmentId = await db.Users.Where(u => u.Id == currentUser.UserId).Select(u => u.DepartmentId).FirstAsync(ct);
-        var managers = await db.Users
-            .Where(u => u.DepartmentId != null || u.Id == currentUser.UserId)
+        var requesters = await db.Users
+            .Where(u => u.DepartmentId != null)
             .OrderBy(u => u.Name)
             .Select(u => new UserOptionDto(u.Id, u.Name, u.AvatarColour))
             .ToListAsync(ct);
-        return new RequestOptionsDto(teams, departments, managers, Enum.GetValues<Priority>(), myDepartmentId);
+        return new RequestOptionsDto(teams, departments, requesters, Enum.GetValues<Priority>(), myDepartmentId);
+    }
+
+    /// <summary>
+    /// Members of the team asked, and Org Admins, log briefs for a brand's marketing manager, who becomes the
+    /// requester. Everyone else always sends as themselves, whatever the client sends (D55).
+    /// </summary>
+    private async Task<Guid> RequesterAsync(CreateRequestRequest request, CancellationToken ct)
+    {
+        if (await teamAccess.GetRoleAsync(request.TeamId, ct) is null)
+        {
+            return currentUser.UserId;
+        }
+        if (request.RequestedByUserId is not { } requesterId
+            || !await db.Users.AnyAsync(u => u.Id == requesterId && u.DepartmentId != null, ct))
+        {
+            throw new BadRequestException("Choose who the brief is from.");
+        }
+        return requesterId;
     }
 
     public async Task<RequestDto> CreateAsync(CreateRequestRequest request, CancellationToken ct)
@@ -35,10 +53,6 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         {
             var label = await db.Organisations.Select(o => o.DepartmentLabel).FirstAsync(ct);
             throw new BadRequestException($"Choose a {label.ToLowerInvariant()}.");
-        }
-        if (!await db.Users.AnyAsync(u => u.Id == request.MarketingManagerUserId, ct))
-        {
-            throw new BadRequestException("Choose a marketing manager.");
         }
         if (Deliverables.Parse(request.Deliverables).Any(d => d.Length > Deliverables.MaxLength))
         {
@@ -53,9 +67,9 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         {
             OrgId = currentUser.OrgId,
             TeamId = request.TeamId,
-            RequesterUserId = currentUser.UserId,
+            RequesterUserId = await RequesterAsync(request, ct),
+            LoggedByUserId = currentUser.UserId,
             DepartmentId = request.DepartmentId,
-            MarketingManagerUserId = request.MarketingManagerUserId,
             Title = request.Title.Trim(),
             MainGoal = string.IsNullOrWhiteSpace(request.MainGoal) ? null : request.MainGoal.Trim(),
             Deliverables = string.IsNullOrWhiteSpace(request.Deliverables) ? null : request.Deliverables.Trim(),
@@ -69,23 +83,25 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         return await GetAsync(entity.Id, ct);
     }
 
-    /// <summary>The requester sees their own request; the team's admins see every request to the team.</summary>
+    /// <summary>
+    /// The requester, and whoever logged it for them, see the request; the team's admins see every request to the team.
+    /// </summary>
     public async Task<RequestDto> GetAsync(Guid id, CancellationToken ct)
     {
         var request = await Requests().FirstOrDefaultAsync(r => r.Id == id, ct)
             ?? throw new NotFoundException("Request not found.");
-        if (request.RequesterUserId != currentUser.UserId)
+        if (request.RequesterUserId != currentUser.UserId && request.LoggedByUserId != currentUser.UserId)
         {
             await teamAccess.EnsureCanManageAsync(request.TeamId, ct);
         }
         return await ToDtoAsync(request, ct);
     }
 
-    /// <summary>The signed-in user's own requests, newest first, to every team.</summary>
+    /// <summary>The requests the signed-in user sent or logged for someone, newest first, to every team.</summary>
     public async Task<IReadOnlyList<RequestDto>> GetMineAsync(CancellationToken ct)
     {
         var requests = await Requests()
-            .Where(r => r.RequesterUserId == currentUser.UserId)
+            .Where(r => r.RequesterUserId == currentUser.UserId || r.LoggedByUserId == currentUser.UserId)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(ct);
         return await ToDtosAsync(requests, ct);
@@ -226,7 +242,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         .Include(r => r.Team)
         .Include(r => r.Department)
         .Include(r => r.Requester)
-        .Include(r => r.MarketingManager)
+        .Include(r => r.LoggedBy)
         .AsNoTracking();
 
     private async Task<RequestDto> ToDtoAsync(Request request, CancellationToken ct) => (await ToDtosAsync([request], ct))[0];
@@ -255,7 +271,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         Deliverables.Parse(r.Deliverables),
         r.Department.Name,
         r.Requester.Name,
-        r.MarketingManager?.Name,
+        r.LoggedByUserId == r.RequesterUserId ? null : r.LoggedBy.Name,
         r.RequestedDueDate,
         r.Priority,
         r.Status,

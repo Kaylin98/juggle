@@ -19,7 +19,7 @@ interface RequestForm {
   title: string;
   mainGoal: string;
   deliverables: string;
-  marketingManagerUserId: string;
+  requestedByUserId: string;
   requestedDueDate: string;
   priority: Priority;
 }
@@ -28,7 +28,8 @@ interface RequestForm {
  * Asks a team for work with a brief in the studio's template (D50). Anyone can submit; on submit it opens the
  * request, with its status. The form keeps to about 720px so it reads like a form, with a guide beside it, centred
  * together (an exception to the full-width page rule, asked for in the Phase 5 review). The team starts as the last
- * team the user viewed, the department as the user's own and the marketing manager as the user.
+ * team the user viewed and the department as the user's own. Members of the team asked, and Org Admins, log briefs
+ * for a brand's marketing manager under "Requested by"; everyone else sends as themselves (D55).
  */
 @Component({
   selector: 'app-request-form',
@@ -117,22 +118,24 @@ interface RequestForm {
                       <p class="field-error">{{ requestForm.deliverables().errors()[0].message }}</p>
                     }
                   </div>
-                  <div>
-                    <label class="form-label" for="request-manager">Marketing manager</label>
-                    <app-select
-                      triggerId="request-manager"
-                      [options]="managerOptions()"
-                      [formField]="requestForm.marketingManagerUserId"
-                    />
-                    @if (
-                      requestForm.marketingManagerUserId().touched() &&
-                      requestForm.marketingManagerUserId().invalid()
-                    ) {
-                      <p class="field-error">
-                        {{ requestForm.marketingManagerUserId().errors()[0].message }}
-                      </p>
-                    }
-                  </div>
+                  @if (logsForSomeone()) {
+                    <div>
+                      <label class="form-label" for="request-by">Requested by</label>
+                      <app-select
+                        triggerId="request-by"
+                        [options]="requesterOptions()"
+                        [formField]="requestForm.requestedByUserId"
+                      />
+                      @if (
+                        requestForm.requestedByUserId().touched() &&
+                        requestForm.requestedByUserId().invalid()
+                      ) {
+                        <p class="field-error">
+                          {{ requestForm.requestedByUserId().errors()[0].message }}
+                        </p>
+                      }
+                    </div>
+                  }
                   <div>
                     <label class="form-label" for="request-due">Studio deadline</label>
                     <input
@@ -199,13 +202,14 @@ export class RequestFormPage {
     { value: '', label: `Choose a ${this.departmentLabel()}` },
     ...(this.options.value()?.departments ?? []).map((d) => ({ value: d.id, label: d.name })),
   ]);
-  protected readonly managerOptions = computed<SelectOption[]>(() =>
-    (this.options.value()?.marketingManagers ?? []).map((u) => ({
+  protected readonly requesterOptions = computed<SelectOption[]>(() => [
+    { value: '', label: 'Choose who the brief is from' },
+    ...(this.options.value()?.requesters ?? []).map((u) => ({
       value: u.id,
       label: u.name,
       avatarColour: u.avatarColour,
     })),
-  );
+  ]);
   protected readonly priorityOptions = computed<SelectOption[]>(() =>
     (this.options.value()?.priorities ?? []).map((p) => ({ value: p, label: p })),
   );
@@ -216,10 +220,16 @@ export class RequestFormPage {
     title: '',
     mainGoal: '',
     deliverables: '',
-    marketingManagerUserId: this.auth.me()?.id ?? '',
+    requestedByUserId: '',
     requestedDueDate: '',
     priority: 'Medium',
   }));
+
+  /**
+   * Members of the team asked log briefs for a brand's marketing manager (Org Admins have every team); everyone else
+   * sends as themselves, and the API ignores any requester they send (D55).
+   */
+  protected readonly logsForSomeone = computed(() => this.auth.roleIn(this.model().teamId) !== null);
 
   protected readonly requestForm = form(this.model, (request) => {
     required(request.teamId, { message: 'Choose the team to ask.' });
@@ -235,7 +245,10 @@ export class RequestFormPage {
         ? { kind: 'deliverable', message: `Keep each deliverable under ${DELIVERABLE_MAX} characters.` }
         : undefined,
     );
-    required(request.marketingManagerUserId, { message: 'Choose the marketing manager.' });
+    required(request.requestedByUserId, {
+      message: 'Choose who the brief is from.',
+      when: () => this.logsForSomeone(),
+    });
     validate(request.requestedDueDate, ({ value }) =>
       value() && value() < this.today
         ? { kind: 'past', message: "The deadline can't be in the past." }
@@ -246,10 +259,11 @@ export class RequestFormPage {
   protected async send(event: Event): Promise<void> {
     event.preventDefault();
     await submit(this.requestForm, async () => {
-      const { title, mainGoal, deliverables, requestedDueDate, ...rest } = this.model();
+      const { title, mainGoal, deliverables, requestedByUserId, requestedDueDate, ...rest } = this.model();
       try {
         const created = await this.requests.create({
           ...rest,
+          requestedByUserId: this.logsForSomeone() ? requestedByUserId : null,
           title: title.trim(),
           mainGoal: mainGoal.trim() || null,
           deliverables: deliverables.trim() || null,

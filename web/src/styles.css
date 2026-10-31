@@ -13,9 +13,9 @@
   --color-white: #ffffff;
 
   /* Surfaces and lines */
-  --color-page: #f5f7fb;
+  --color-page: #f4f7fc;
   --color-surface: #ffffff;
-  --color-surface-muted: #eef2f7;
+  --color-surface-muted: #ecf1f8;
   --color-line: #e6ebf1;
   --color-line-strong: #d5dce6;
 
@@ -25,27 +25,27 @@
   --color-ink-faint: #94a3b8;
 
   /* The one accent: actions, selected states, focus, today */
-  --color-accent-50: #eef4fd;
-  --color-accent-100: #dde8fb;
-  --color-accent-200: #bdd2f6;
-  --color-accent-500: #4a7fe0;
-  --color-accent-600: #2f66cc;
-  --color-accent-700: #2553ad;
+  --color-accent-50: #ebf3ff;
+  --color-accent-100: #d8e7ff;
+  --color-accent-200: #b8d3fb;
+  --color-accent-500: #3d7bea;
+  --color-accent-600: #2563d9;
+  --color-accent-700: #1d51b8;
 
   /* Warm amber for small highlights */
-  --color-highlight-50: #fdf4e3;
-  --color-highlight: #e9a83a;
+  --color-highlight-50: #fff2d9;
+  --color-highlight: #f0a633;
 
   /* Load and status: 50 tint, 500 dot or bar, 700 text (AA on the tint and on white) */
-  --color-ok-50: #e8f5ee;
-  --color-ok-500: #5fae84;
-  --color-ok-700: #2f7a55;
-  --color-warn-50: #fdf3e1;
-  --color-warn-500: #e0a43a;
-  --color-warn-700: #94630f;
-  --color-over-50: #fcebea;
-  --color-over-500: #e07a72;
-  --color-over-700: #b4423c;
+  --color-ok-50: #e3f6ec;
+  --color-ok-500: #4cb582;
+  --color-ok-700: #1f7a4f;
+  --color-warn-50: #fff2d9;
+  --color-warn-500: #f0a830;
+  --color-warn-700: #8a5a00;
+  --color-over-50: #fde8e6;
+  --color-over-500: #ec6b62;
+  --color-over-700: #b8352e;
 
   --radius-card: 16px;
   --radius-control: 10px;
@@ -66,7 +66,7 @@
  * Set the colour as --hue on the element, then use these. Never fill a large area with the hue.
  */
 @utility hue-tint {
-  background-color: color-mix(in oklch, var(--hue) 14%, var(--color-surface));
+  background-color: color-mix(in oklch, var(--hue) 18%, var(--color-surface));
 }
 
 @utility hue-edge {
@@ -79,7 +79,7 @@
 
 /* Dark text in the hue's family, for initials on a hue tint. */
 @utility hue-ink {
-  color: color-mix(in oklch, var(--hue) 35%, var(--color-ink));
+  color: color-mix(in oklch, var(--hue) 42%, var(--color-ink));
 }
 
 /* Scroll areas: a thin, quiet scrollbar; scroll-quiet shows it only while the area is hovered. */

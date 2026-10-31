@@ -32,10 +32,13 @@ export interface SelectOption {
 /** Above this many options the panel gets a search box. */
 const SEARCH_THRESHOLD = 8;
 
-// Open below the trigger with a 4px gap, or above it when there is no room below.
-const POSITIONS: ConnectedPosition[] = [
+// Open below the trigger with a 4px gap, or above it when there is no room below. The panel can be wider than the
+// trigger, so near the right edge of the screen it lines up with the trigger's right edge instead of running off it.
+export const SELECT_POSITIONS: ConnectedPosition[] = [
   { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 4 },
+  { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 4 },
   { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -4 },
+  { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', offsetY: -4 },
 ];
 
 /**
@@ -62,7 +65,7 @@ export class Select implements ControlValueAccessor {
   protected readonly open = signal(false);
   protected readonly disabled = signal(false);
   protected readonly search = signal('');
-  protected readonly positions = POSITIONS;
+  protected readonly positions = SELECT_POSITIONS;
 
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
   private readonly listbox = viewChild(CdkListbox);

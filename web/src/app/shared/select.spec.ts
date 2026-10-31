@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Select, SelectOption } from './select';
+import { SELECT_POSITIONS, Select, SelectOption } from './select';
 
 const people: SelectOption[] = [
   { value: '', label: 'Unassigned' },
@@ -71,5 +71,13 @@ describe('Select', () => {
     fixture.detectChanges();
 
     expect(options().map((o) => o.textContent?.trim())).toEqual(['Person 4']);
+  });
+});
+
+describe('SELECT_POSITIONS', () => {
+  // The panel can be wider than the trigger; a trigger at the right edge of the screen needs an end-aligned fallback.
+  it('lines the panel up with either edge of the trigger, below and above', () => {
+    const placements = SELECT_POSITIONS.map((p) => `${p.overlayY}:${p.originX}:${p.overlayX}`);
+    expect(placements).toEqual(['top:start:start', 'top:end:end', 'bottom:start:start', 'bottom:end:end']);
   });
 });

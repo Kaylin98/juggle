@@ -9,12 +9,12 @@ import { Nav } from './nav';
 @Component({ template: '' })
 class Blank {}
 
-async function render(role: 'TeamAdmin' | 'Member', url: string) {
+async function render(role: 'TeamAdmin' | 'Member', url: string, personId: string | null = 'p1') {
   TestBed.configureTestingModule({
     imports: [Nav],
     providers: [
       provideRouter([{ path: '**', component: Blank }]),
-      { provide: AuthService, useValue: { me: signal({ id: 'u1' }), roleIn: () => role } },
+      { provide: AuthService, useValue: { me: signal({ id: 'u1', personId }), roleIn: () => role } },
       { provide: TeamContextService, useValue: { teamId: signal('design') } },
       { provide: RequestsService, useValue: { inbox: { hasValue: () => true, value: () => [{}, {}, {}] } } },
     ],
@@ -33,13 +33,13 @@ describe('Nav', () => {
 
   it('groups the request pages under Requests, closed away from them, with the triage count on the group', async () => {
     const { fixture, group, links } = await render('TeamAdmin', '/t/design/board');
-    expect(links()).toEqual(['Dashboard', 'Schedule', 'Board']);
+    expect(links()).toEqual(['Dashboard', 'My work', 'Schedule', 'Board']);
     expect(group().getAttribute('aria-expanded')).toBe('false');
     expect(group().textContent).toContain('3');
 
     group().click();
     await fixture.whenStable();
-    expect(links()).toEqual(['Dashboard', 'Schedule', 'Board', 'Triage 3', 'My requests', 'New request']);
+    expect(links()).toEqual(['Dashboard', 'My work', 'Schedule', 'Board', 'Triage 3', 'My requests', 'New request']);
     expect(group().textContent).not.toContain('3');
   });
 
@@ -62,7 +62,12 @@ describe('Nav', () => {
     const { fixture, group, links } = await render('Member', '/request');
     await fixture.whenStable();
     expect(group().textContent).not.toContain('3');
-    expect(links()).toEqual(['Schedule', 'Board', 'My requests', 'New request']);
+    expect(links()).toEqual(['My work', 'Schedule', 'Board', 'My requests', 'New request']);
+  });
+
+  it('shows My work only to someone with a Person record', async () => {
+    const { links } = await render('Member', '/t/design/board', null);
+    expect(links()).toEqual(['Schedule', 'Board']);
   });
 
   it('shrinks to the icon rail, remembers it for the user, and shows the triage count as a dot', async () => {

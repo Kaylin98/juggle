@@ -247,3 +247,37 @@ export interface Dashboard {
   /** Open tasks by their project's department, most first. */
   workByDepartment: DepartmentCount[];
 }
+
+/** A task assigned to the signed-in person, with what My work shows of its team, project and status. */
+export interface MyTask {
+  task: Task;
+  teamId: string;
+  teamName: string;
+  projectName: string;
+  projectColour: string;
+  projectDepartment: string;
+  statusName: string;
+  category: StatusCategory;
+}
+
+export interface MyTimeOff {
+  id: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+  /** Weekdays in the range that are not public holidays. */
+  workingDays: number;
+}
+
+/** The signed-in person's work across all their teams. */
+export interface MyWork {
+  person: Person;
+  /** Open tasks: overdue first, then by due date, undated last. */
+  tasks: MyTask[];
+  /** Each weekday of this week and next week. */
+  days: DayLoad[];
+  /** Bookings on those days, in every team. */
+  bookings: Allocation[];
+  /** Leave that has not ended yet, earliest first. */
+  timeOff: MyTimeOff[];
+}

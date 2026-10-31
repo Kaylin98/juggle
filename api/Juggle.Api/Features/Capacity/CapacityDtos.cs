@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Juggle.Api.Data.Entities;
 
 namespace Juggle.Api.Features.Capacity;
 
@@ -34,4 +35,21 @@ public sealed record AllocationDto(
     DateOnly EndDate,
     decimal HoursPerDay,
     string? Notes,
-    bool OtherTeam);
+    bool OtherTeam)
+{
+    /// <summary>Maps an allocation loaded with its project and the project's department.</summary>
+    public static AllocationDto From(Allocation a, string teamName, bool otherTeam) => new(
+        a.Id,
+        a.PersonId,
+        a.ProjectId,
+        a.Project.Name,
+        a.Project.Colour,
+        a.Project.Department.Name,
+        teamName,
+        a.TaskId,
+        a.StartDate,
+        a.EndDate,
+        a.HoursPerDay,
+        a.Notes,
+        otherTeam);
+}

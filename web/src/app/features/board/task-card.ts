@@ -21,7 +21,7 @@ export interface BoardCard {
     <button
       type="button"
       class="block w-full rounded-card border border-line bg-surface px-4 py-3 text-left shadow-soft transition-shadow hover:shadow-lifted focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
-      [class.cursor-grab]="card().canEdit"
+      [class.cursor-grab]="card().canEdit && movable()"
       (click)="opened.emit()"
     >
       <span class="flex items-center gap-2 text-xs text-ink-muted" [style.--hue]="card().project.colour">
@@ -49,7 +49,9 @@ export interface BoardCard {
             >R{{ task.reviewCycle }}</span
           >
         }
-        @if (card().assignee; as assignee) {
+        @if (detail()) {
+          <span class="ml-auto truncate text-ink-muted">{{ detail() }}</span>
+        } @else if (card().assignee; as assignee) {
           <app-avatar class="ml-auto" size="sm" [name]="assignee.name" [colour]="assignee.avatarColour" />
         }
       </span>
@@ -58,6 +60,10 @@ export interface BoardCard {
 })
 export class TaskCard {
   readonly card = input.required<BoardCard>();
+  /** On the board a card the viewer can edit is dragged between columns; elsewhere it only opens. */
+  readonly movable = input(true);
+  /** Shown in place of the assignee, such as the team and status on My work. */
+  readonly detail = input<string | null>(null);
   readonly opened = output<void>();
 
   protected readonly reviewRoundLabel = reviewRoundLabel;

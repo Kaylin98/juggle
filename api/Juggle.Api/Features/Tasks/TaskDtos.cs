@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Juggle.Api.Data.Entities;
 
 namespace Juggle.Api.Features.Tasks;
 
@@ -14,7 +15,23 @@ public sealed record TaskDto(
     bool IsOverdue,
     int ReviewCycle,
     int SortOrder,
-    string? Link);
+    string? Link)
+{
+    /// <summary>Maps a task loaded with its status. Overdue (D21): due before today and not done.</summary>
+    public static TaskDto From(TaskItem task, DateOnly today) => new(
+        task.Id,
+        task.ProjectId,
+        task.StatusId,
+        task.Title,
+        task.Description,
+        task.AssigneePersonId,
+        task.EstimateHours,
+        task.DueDate,
+        task.DueDate < today && task.Status.Category != StatusCategory.Done,
+        task.ReviewCycle,
+        task.SortOrder,
+        task.Link);
+}
 
 /// <summary>A task added from the board. With no status it goes in the first column after Triage.</summary>
 public sealed record CreateTaskRequest(

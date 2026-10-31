@@ -30,3 +30,11 @@ export const teamAdminGuard: CanActivateFn = async (route) => {
   const teamId = route.parent!.paramMap.get('teamId')!;
   return auth.roleIn(teamId) === 'TeamAdmin' || router.parseUrl(`/t/${teamId}/board`);
 };
+
+/** My work is for people on a team's schedule; requesters have no Person record (D10). */
+export const personGuard: CanActivateFn = async () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  await auth.ensureLoaded();
+  return auth.me()?.personId != null || router.parseUrl(auth.landingUrl());
+};

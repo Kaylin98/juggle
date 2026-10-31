@@ -7,6 +7,7 @@ using Juggle.Api.Features.Allocations;
 using Juggle.Api.Features.Auth;
 using Juggle.Api.Features.Capacity;
 using Juggle.Api.Features.Dashboard;
+using Juggle.Api.Features.MyWork;
 using Juggle.Api.Features.Requests;
 using Juggle.Api.Features.Tasks;
 using Juggle.Api.Features.Teams;
@@ -35,6 +36,7 @@ builder.Services.AddScoped<CapacityService>();
 builder.Services.AddScoped<AllocationService>();
 builder.Services.AddScoped<RequestService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<MyWorkService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

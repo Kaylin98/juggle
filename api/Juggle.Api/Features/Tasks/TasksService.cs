@@ -134,17 +134,5 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
         }
     }
 
-    private TaskDto ToDto(TaskItem task) => new(
-        task.Id,
-        task.ProjectId,
-        task.StatusId,
-        task.Title,
-        task.Description,
-        task.AssigneePersonId,
-        task.EstimateHours,
-        task.DueDate,
-        task.DueDate < clock.Today && task.Status.Category != StatusCategory.Done,
-        task.ReviewCycle,
-        task.SortOrder,
-        task.Link);
+    private TaskDto ToDto(TaskItem task) => TaskDto.From(task, clock.Today);
 }

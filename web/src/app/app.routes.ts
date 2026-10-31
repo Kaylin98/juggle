@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, landingGuard, teamAdminGuard, teamMemberGuard } from './core/guards';
+import { authGuard, landingGuard, personGuard, teamAdminGuard, teamMemberGuard } from './core/guards';
 import { LoginPage } from './features/login/login-page';
 import { Shell } from './layout/shell';
 
@@ -11,6 +11,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', canActivate: [landingGuard], children: [] },
+      {
+        path: 'my-work',
+        canActivate: [personGuard],
+        loadComponent: () => import('./features/my-work/my-work-page').then((m) => m.MyWorkPage),
+        title: 'My work',
+      },
       {
         path: 'request',
         loadComponent: () => import('./features/requests/request-form').then((m) => m.RequestFormPage),

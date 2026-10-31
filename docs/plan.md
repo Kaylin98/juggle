@@ -6,10 +6,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | 6 - Dashboard, roles, polish, rehearsal |
-| Phase status | Done |
-| Last completed task | Brighter project colours on schedule bookings (`hue-booking`), after demo-v1 |
-| Next task | Demo. Before it: stop the API, run `--reset-demo`, start the API. Ideas go to "Later" |
+| Current phase | Stretch - My work, time off |
+| Phase status | In progress |
+| Last completed task | S.1 My work (D46) |
+| Next task | S.2 Time off request and approval (D47), then review; tag `demo-v2` once approved |
 | Blockers / open questions | None |
 | Last updated | 2026-10-31 |
 
@@ -27,6 +27,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 5 | Thu pm | Requests + triage | Done |
 | P | Fri | Post-Phase 5 round | Done |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Done |
+| S | Sat | Stretch: My work, time off | In progress |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
 
@@ -69,7 +70,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
   - Member sees the board and schedule of their own teams, but only edits tasks assigned to them (including drag). The grid is read-only for Members
   - Requester sees only the request form
 - D25 Allocations from another team show greyed and cannot be edited from the current team's grid. "All teams" (Org Admin only, grid only) shows every person and every bar is editable
-- D26 Landing pages: admins go to the dashboard, Members to the board, Requesters to "My requests" (changed 2026-10-30 after demo-v1: admins went to the schedule; Phase 5 review: requesters went to the request form). Switching team keeps the current page when the role allows it, otherwise the role's landing page
+- D26 Landing pages: admins go to the dashboard, Members to My work (D46), Requesters to "My requests" (changed 2026-10-31 for the stretch: Members went to the board; 2026-10-30 after demo-v1: admins went to the schedule; Phase 5 review: requesters went to the request form). Switching team keeps the current page when the role allows it, otherwise the role's landing page
 - D27 Dashboard: per person, one bar for this week and one for the next 4 weeks combined. "Over capacity this week" = at least one red day this week. "Work by department" counts open (not Done) tasks of the current team, grouped by the project's department
 - D28 "Book on schedule" opens a small form: start date (default next working day), number of working days, hours/day (default estimate / days). It creates an allocation linked to the task
 - D29 Add allocation delete (button in the bar's edit popover), so a wrong drag during the demo can be undone. Small addition beyond the brief
@@ -661,8 +662,18 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 
 ## Stretch (only if ahead by Thursday)
 
-- [ ] My Work view for members
-- [ ] Time off request and approve flow
+Built after demo-v1 (approved 2026-10-31), one commit per item, tagged `demo-v2` once approved.
+
+- [x] S.1 My Work view for members (D46)
+- [ ] S.2 Time off request and approve flow (D47)
+
+**Decisions**
+
+- D46 (2026-10-31) My work (`/my-work`, outside a team, so the team switcher is hidden): for everyone with a Person record, admins included; Members land on it (D26). Nav: Dashboard (admins), My work, Schedule, Board. `GET /api/my-work` (403 without a Person) returns the person, their open tasks across all their teams (not Done, not Triage; overdue first, then by due date, undated last), their day loads and bookings for this week and next (the same `CapacityCalculator` as the schedule, so leave, holidays and other teams' bookings count), and their leave that has not ended. Sections, each full width: My tasks (To do, In progress, Review columns in the board's card style, with the team and status in place of the avatar; a card opens the board's task drawer, without reassigning or "Book on schedule", which stay on the board); My schedule (read-only: per day the schedule's availability strip, the bookings as `hue-booking` chips or the ink leave block; per week the utilisation meter, moved to `shared/`); Upcoming time off. "This week" is Monday to Friday of the current week, as on the dashboard, so on a weekend it is the week just ending
+
+**Notes**
+
+- S.1 checked in Chromium at 1440 against the API on 5268 with the demo data: Jason (Member, Design and Marketing) and Amahle land on My work, Naledi on the Dashboard; the switcher is hidden; Jason's tasks come from both teams; Amahle's leave shows in the schedule strip and the time off list; the drawer opens with the assignee locked; no console errors. Fixed while checking: the schedule shared a row with time off, so day cells were about 100px and booking names truncated; each section now takes the full width (about 180px a day). Tests: 3 API (tasks across teams and their order, loads match the schedule, 403 for requesters), 5 web (grouping, weeks and bookings per day, landing, nav)
 
 ## Later
 
@@ -734,3 +745,4 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 2026-10-31: Public holidays on the schedule read "Public holiday" and the holiday's name, as one block down every row, instead of "Off". Build with no warnings, lint, 46 API tests and 97 web tests pass.
 - 2026-10-31: Palette lifted a little (more saturated accent, status and project tints, still soft); contrast rechecked for AA. Build with no warnings, lint and 97 web tests pass.
 - 2026-10-31: Schedule bookings use a brighter project tint (`hue-booking`). Build with no warnings, lint and 97 web tests pass.
+- 2026-10-31: Stretch approved (with decisions on declined requests, self-approval and leave on behalf). S.1 My work built and checked at 1440. Build with no warnings, lint, 49 API tests and 102 web tests pass.

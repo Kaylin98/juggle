@@ -65,19 +65,6 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
         return new CapacityDto(
             days,
             people,
-            allocations.Select(a => new AllocationDto(
-                a.Id,
-                a.PersonId,
-                a.ProjectId,
-                a.Project.Name,
-                a.Project.Colour,
-                a.Project.Department.Name,
-                teamNames[a.Project.TeamId],
-                a.TaskId,
-                a.StartDate,
-                a.EndDate,
-                a.HoursPerDay,
-                a.Notes,
-                teamId is not null && a.Project.TeamId != teamId)).ToList());
+            allocations.Select(a => AllocationDto.From(a, teamNames[a.Project.TeamId], teamId is not null && a.Project.TeamId != teamId)).ToList());
     }
 }

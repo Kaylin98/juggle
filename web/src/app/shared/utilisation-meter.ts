@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
-import { PeriodLoad } from '../../core/models';
-import { UTILISATION_BAR, UTILISATION_TEXT, formatHours, utilisationLevel } from '../../shared/load-colour';
+import { PeriodLoad } from '../core/models';
+import { UTILISATION_BAR, UTILISATION_TEXT, formatHours, utilisationLevel } from './load-colour';
 
 /** One period's utilisation: the percentage in its load colour, the hours, and a bar (full when over 100%). */
 @Component({

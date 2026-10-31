@@ -47,11 +47,12 @@ export class AuthService {
     return this.teams().find((t) => t.id === teamId)?.myRole ?? null;
   }
 
-  /** Admins land on the dashboard, members on the board, requesters on their requests (D26). */
+  /** Admins land on the dashboard, members on My work, requesters on their requests (D26). */
   landingUrl(): string {
     const team = this.teams()[0];
     if (!team) return '/requests';
-    return team.myRole === 'TeamAdmin' ? `/t/${team.id}/dashboard` : `/t/${team.id}/board`;
+    if (team.myRole === 'TeamAdmin') return `/t/${team.id}/dashboard`;
+    return this.me()?.personId ? '/my-work' : `/t/${team.id}/board`;
   }
 
   private async load(): Promise<boolean> {

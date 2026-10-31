@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { PeriodLoad, PersonUtilisation } from '../../core/models';
 import { Avatar } from '../../shared/avatar';
 import { UTILISATION_BAR, UtilisationLevel } from '../../shared/load-colour';
-import { UtilisationMeter } from './utilisation-meter';
+import { UtilisationMeter } from '../../shared/utilisation-meter';
 
 const LEGEND: { level: UtilisationLevel; label: string }[] = [
   { level: 'available', label: 'Available, under 50%' },

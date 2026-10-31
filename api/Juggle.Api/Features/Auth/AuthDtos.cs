@@ -13,4 +13,5 @@ public sealed record DemoUserDto(
 
 public sealed record SignInRequest(Guid UserId);
 
-public sealed record MeDto(Guid Id, string Name, string Email, string AvatarColour, OrgRole OrgRole, Guid? PersonId);
+/// <param name="DepartmentLabel">What the organisation calls departments, such as "Brand" (D48).</param>
+public sealed record MeDto(Guid Id, string Name, string Email, string AvatarColour, OrgRole OrgRole, Guid? PersonId, string DepartmentLabel);

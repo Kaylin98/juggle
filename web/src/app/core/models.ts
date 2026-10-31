@@ -21,6 +21,8 @@ export interface Me {
   avatarColour: string;
   orgRole: OrgRole;
   personId: string | null;
+  /** What the organisation calls departments, such as "Brand" (D48). */
+  departmentLabel: string;
 }
 
 export interface Team {

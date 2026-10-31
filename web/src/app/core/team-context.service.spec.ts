@@ -10,7 +10,7 @@ import { TeamContextService } from './team-context.service';
 @Component({ template: '' })
 class BlankPage {}
 
-const ORG_ADMIN: Me = { id: 'u1', name: 'Naledi', email: 'naledi@example.com', avatarColour: '#8a78d6', orgRole: 'OrgAdmin', personId: 'p1' };
+const ORG_ADMIN: Me = { id: 'u1', name: 'Naledi', email: 'naledi@example.com', avatarColour: '#8a78d6', orgRole: 'OrgAdmin', personId: 'p1', departmentLabel: 'Department' };
 
 describe('TeamContextService.switchTo', () => {
   let router: Router;

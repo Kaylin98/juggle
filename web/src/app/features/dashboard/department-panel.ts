@@ -1,13 +1,14 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { AuthService } from '../../core/auth.service';
 import { DepartmentCount } from '../../core/models';
 
-/** Open tasks by their project's department (D27), as bars against the largest. */
+/** Open tasks by their project's department (D27), as bars against the largest; worded with the org's label (D48). */
 @Component({
   selector: 'app-department-panel',
   host: { class: 'panel block p-6' },
   template: `
-    <h2 class="font-display text-lg font-semibold">Work by department</h2>
-    <p class="mt-1 text-sm text-ink-muted">Open tasks, by the department each project is for</p>
+    <h2 class="font-display text-lg font-semibold">Work by {{ label() }}</h2>
+    <p class="mt-1 text-sm text-ink-muted">Open tasks, by the {{ label() }} each project is for</p>
 
     <ul class="mt-6 space-y-4">
       @for (item of departments(); track item.department) {
@@ -28,6 +29,10 @@ import { DepartmentCount } from '../../core/models';
 })
 export class DepartmentPanel {
   readonly departments = input.required<DepartmentCount[]>();
+
+  private readonly auth = inject(AuthService);
+
+  protected readonly label = computed(() => this.auth.departmentLabel().toLowerCase());
 
   protected readonly largest = computed(() => Math.max(1, ...this.departments().map((d) => d.count)));
 }

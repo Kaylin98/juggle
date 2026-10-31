@@ -28,7 +28,8 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         }
         if (!await db.Departments.AnyAsync(d => d.Id == request.DepartmentId, ct))
         {
-            throw new BadRequestException("Choose a department.");
+            var label = await db.Organisations.Select(o => o.DepartmentLabel).FirstAsync(ct);
+            throw new BadRequestException($"Choose a {label.ToLowerInvariant()}.");
         }
         if (request.RequestedDueDate < clock.Today)
         {

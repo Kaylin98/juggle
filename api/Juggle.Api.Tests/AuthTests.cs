@@ -28,7 +28,7 @@ public sealed class AuthTests(ApiFactory api)
         var me = await client.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct);
         var teams = await client.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct);
 
-        Assert.Equal(OrgRole.OrgAdmin, me!.OrgRole);
+        Assert.Equal((OrgRole.OrgAdmin, "Brand"), (me!.OrgRole, me.DepartmentLabel));
         Assert.Equal(["Design", "Marketing"], teams!.Select(t => t.Name));
         Assert.All(teams!, t => Assert.Equal(TeamRole.TeamAdmin, t.MyRole));
     }

@@ -8,7 +8,7 @@ describe('AuthService.landingUrl', () => {
   function landing(role: TeamRole | null, personId: string | null = 'p1'): string {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     const auth = TestBed.inject(AuthService);
-    auth.me.set({ id: 'u1', name: 'Jason', email: 'jason@example.com', avatarColour: '#5b8def', orgRole: 'User', personId });
+    auth.me.set({ id: 'u1', name: 'Jason', email: 'jason@example.com', avatarColour: '#5b8def', orgRole: 'User', personId, departmentLabel: 'Department' });
     auth.teams.set(role ? [{ id: 'design', name: 'Design', colour: '#8a78d6', myRole: role }] : []);
     return auth.landingUrl();
   }

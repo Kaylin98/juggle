@@ -13,6 +13,9 @@ export class AuthService {
 
   readonly isOrgAdmin = computed(() => this.me()?.orgRole === 'OrgAdmin');
 
+  /** The organisation's word for a department, such as "Brand" (D48), for every user-facing mention of one. */
+  readonly departmentLabel = computed(() => this.me()?.departmentLabel ?? 'Department');
+
   /** Team Admins of any team, and Org Admins, approve the time off of the people in their teams (D47). */
   readonly isApprover = computed(() => this.isOrgAdmin() || this.teams().some((t) => t.myRole === 'TeamAdmin'));
 

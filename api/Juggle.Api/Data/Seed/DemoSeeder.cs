@@ -36,7 +36,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         var today = clock.Today;
         var weekStart = today.StartOfWeek();
 
-        var org = new Organisation { Name = "Stark Industries", TimeZone = OrgClock.TimeZoneId };
+        var org = new Organisation { Name = "Stark Industries", TimeZone = OrgClock.TimeZoneId, DepartmentLabel = "Brand", FinancialYearStartMonth = 10 };
         db.Organisations.Add(org);
 
         // Departments and teams

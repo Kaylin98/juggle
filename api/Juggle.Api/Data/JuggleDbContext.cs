@@ -31,10 +31,18 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Organisation>().HasQueryFilter(o => o.Id == OrgId);
+        modelBuilder.Entity<Organisation>(e =>
+        {
+            e.HasQueryFilter(o => o.Id == OrgId);
+            e.Property(o => o.DepartmentLabel).HasMaxLength(32);
+        });
         modelBuilder.Entity<Team>().HasQueryFilter(t => t.OrgId == OrgId);
         modelBuilder.Entity<Person>().HasQueryFilter(p => p.OrgId == OrgId);
-        modelBuilder.Entity<Department>().HasQueryFilter(d => d.OrgId == OrgId);
+        modelBuilder.Entity<Department>(e =>
+        {
+            e.HasQueryFilter(d => d.OrgId == OrgId);
+            e.Property(d => d.JobCodePrefix).HasMaxLength(10);
+        });
         modelBuilder.Entity<WorkflowStatus>().HasQueryFilter(s => s.OrgId == OrgId);
         modelBuilder.Entity<Project>().HasQueryFilter(p => p.OrgId == OrgId);
         modelBuilder.Entity<Allocation>().HasQueryFilter(a => a.OrgId == OrgId);

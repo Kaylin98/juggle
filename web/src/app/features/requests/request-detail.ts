@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 import { RequestStatus } from '../../core/models';
 import { RequestsService } from '../../core/requests.service';
 import { StatusPill } from './status-pill';
@@ -88,7 +89,7 @@ const NOTE: Record<RequestStatus, string> = {
               <dd class="mt-1">{{ request.requestedDueDate ? (request.requestedDueDate | date: 'EEE d MMM y') : 'No date' }}</dd>
             </div>
             <div>
-              <dt class="label-caps">Department</dt>
+              <dt class="label-caps">{{ departmentLabel() }}</dt>
               <dd class="mt-1">{{ request.department }}</dd>
             </div>
             <div>
@@ -105,6 +106,7 @@ const NOTE: Record<RequestStatus, string> = {
 })
 export class RequestDetailPage {
   private readonly requests = inject(RequestsService);
+  protected readonly departmentLabel = inject(AuthService).departmentLabel;
 
   /** From the `/requests/:id` route. */
   readonly id = input.required<string>();

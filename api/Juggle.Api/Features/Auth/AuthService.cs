@@ -43,11 +43,13 @@ public sealed class AuthService(JuggleDbContext db, CurrentUser currentUser, IDe
 
     public async Task<MeDto> GetMeAsync(CancellationToken ct)
     {
-        return await db.Users
+        var me = await db.Users
             .Where(u => u.Id == currentUser.UserId)
-            .Select(u => new MeDto(u.Id, u.Name, u.Email, u.AvatarColour, u.OrgRole, u.Person == null ? null : u.Person.Id))
+            .Select(u => new { u.Id, u.Name, u.Email, u.AvatarColour, u.OrgRole, PersonId = u.Person == null ? (Guid?)null : u.Person.Id })
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("User not found.");
+        var departmentLabel = await db.Organisations.Select(o => o.DepartmentLabel).FirstAsync(ct);
+        return new MeDto(me.Id, me.Name, me.Email, me.AvatarColour, me.OrgRole, me.PersonId, departmentLabel);
     }
 
     private static string RoleLabel(User user) => user switch

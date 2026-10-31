@@ -1,6 +1,7 @@
 import { Component, computed, inject, linkedSignal, resource } from '@angular/core';
 import { FormField, form, maxLength, required, submit, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 import { Priority, RequestType } from '../../core/models';
 import { RequestsService } from '../../core/requests.service';
 import { TeamContextService } from '../../core/team-context.service';
@@ -89,7 +90,7 @@ interface RequestForm {
                     }
                   </div>
                   <div>
-                    <label class="form-label" for="request-department">Your department</label>
+                    <label class="form-label" for="request-department">Your {{ departmentLabel() }}</label>
                     <app-select
                       triggerId="request-department"
                       [options]="departmentOptions()"
@@ -154,8 +155,11 @@ export class RequestFormPage {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly teamContext = inject(TeamContextService);
+  private readonly auth = inject(AuthService);
 
   protected readonly today = today();
+  /** The org's word for a department, lower case, such as "brand" (D48). */
+  protected readonly departmentLabel = computed(() => this.auth.departmentLabel().toLowerCase());
   protected readonly options = resource({ loader: () => this.requests.options() });
 
   protected readonly teamOptions = computed<SelectOption[]>(() => [
@@ -167,7 +171,7 @@ export class RequestFormPage {
     ...(this.options.value()?.types ?? []).map((t) => ({ value: t, label: t })),
   ]);
   protected readonly departmentOptions = computed<SelectOption[]>(() => [
-    { value: '', label: 'Choose a department' },
+    { value: '', label: `Choose a ${this.departmentLabel()}` },
     ...(this.options.value()?.departments ?? []).map((d) => ({ value: d.id, label: d.name })),
   ]);
   protected readonly priorityOptions = computed<SelectOption[]>(() =>
@@ -192,7 +196,7 @@ export class RequestFormPage {
     maxLength(request.description, 4000, {
       message: 'Keep the description under 4000 characters.',
     });
-    required(request.departmentId, { message: 'Choose your department.' });
+    required(request.departmentId, { message: () => `Choose your ${this.departmentLabel()}.` });
     validate(request.requestedDueDate, ({ value }) =>
       value() && value() < this.today
         ? { kind: 'past', message: "The date can't be in the past." }

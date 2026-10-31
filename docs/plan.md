@@ -8,8 +8,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | C - Client demo for The Core Group |
 | Phase status | In progress |
-| Last completed task | C.9 Seed rewrite and tests |
-| Next task | C.10 Demo brief and C.11 browser check |
+| Last completed task | C.10 Demo brief |
+| Next task | C.11 Browser check and screenshots |
 | Blockers / open questions | None |
 | Last updated | 2026-10-31 |
 
@@ -49,7 +49,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 
 - D9 Add `Request.RejectionReason` (nullable). The brief needs a reject reason but the model has no field for it
 - D10 A `Person` is optional for a `User`: requesters are Users without a Person. A team's people are the Persons whose User has a membership in that team
-- D11 `Request.Type` is a fixed list in code, shared by all teams: Presentation, Social, Print, Web, Video, Copy, Other
+- D11 (replaced by D50 in Phase C: "Type of work" was dropped) `Request.Type` is a fixed list in code, shared by all teams: Presentation, Social, Print, Web, Video, Copy, Other
 - D12 Demo login role labels: Org Admin, Team Admin, Member, Requester (Requester = no team membership)
 
 **Business rules**
@@ -60,7 +60,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D16 Clash: the save always succeeds; the response lists the days now over capacity and the UI shows a warning toast. No confirm dialog before saving
 - D17 Time off is full days only. Only `Approved` time off reduces capacity; pending leave is shown but does not (changed 2026-10-31 for D47: the seed had only approved leave)
 - D18 The Triage status is hidden on the board, because triage happens in the inbox. Accepting a request puts the task in the next status by `Order` (Design: To Do, Marketing: Planned)
-- D19 Status categories. Design: Triage, To Do = Todo; In Design = InProgress; Internal Review, With Requester = Review; Changes Requested = InProgress; Done = Done. Marketing: Triage, Planned = Todo; Writing = InProgress; Review = Review; Scheduled, Published = Done
+- D19 Status categories (the Design statuses are replaced by the Studio statuses in D49, Phase C). Design: Triage, To Do = Todo; In Design = InProgress; Internal Review, With Requester = Review; Changes Requested = InProgress; Done = Done. Marketing: Triage, Planned = Todo; Writing = InProgress; Review = Review; Scheduled, Published = Done
 - D20 Review cycle starts at 1 and goes up by 1 when a task moves from a Review-category status to an InProgress-category status (sent back for changes). Cards show "R2", "R3" when the cycle is above 1
 - D21 Overdue = due date before today (Africa/Johannesburg) and status category is not Done
 - D22 Card order: the move endpoint takes `{ statusId, index }` and the server renumbers `SortOrder` within the column
@@ -91,7 +91,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 
 **Seed**
 
-- D31 Org "Stark Industries", as in the brief. Design has 8 people, including the Head of Design (Org Admin and Design Team Admin) and one part-timer at 5 h/day. Marketing has 4 people: Marketing Lead (Team Admin), 2 marketers and the shared Brand Designer. Total 11 people and 14 users, with requesters from Sales, HR and Product
+- D31 (replaced by D54 in Phase C) Org "Stark Industries", as in the brief. Design has 8 people, including the Head of Design (Org Admin and Design Team Admin) and one part-timer at 5 h/day. Marketing has 4 people: Marketing Lead (Team Admin), 2 marketers and the shared Brand Designer. Total 11 people and 14 users, with requesters from Sales, HR and Product
 - D32 Seed dates are relative to the week the seed runs; run the reset before the demo. Reset: `dotnet run --project api/Juggle.Api -- --reset-demo` (drops the database, migrates, seeds)
 - D33 SA public holidays are calculated for the current and next year (fixed dates, Easter-based dates, Sunday holidays moved to Monday)
 
@@ -727,7 +727,7 @@ Built after demo-v1 (approved 2026-10-31), one commit per item.
 - [x] C.7 Dashboard "Awaiting review" card (D53)
 - [x] C.8 Seed rewrite (D54); `--reset-demo`
 - [x] C.9 Tests updated for the new seed; new tests for the label, the request fields, new brief and the dashboard card
-- [ ] C.10 `docs/demo-brief.md`: seed table, org name and the demo script below
+- [x] C.10 `docs/demo-brief.md`: seed table, org name and the demo script below
 - [ ] C.11 Build with no warnings, lint, all tests; restart the API and `ng serve`; run the demo script in a browser at 1440; screenshots of the dashboard, schedule, board and request form for the user
 
 **Demo script (to write into `docs/demo-brief.md` in C.10)**

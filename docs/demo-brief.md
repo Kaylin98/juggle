@@ -123,19 +123,20 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 
 **4. Request form**
 
-- [ ] Any user can submit: team, type, title, description, department, requested due date, priority
+- [ ] Any user can submit a brief in the studio's template: team, brand (department), job name, main goal, deliverables (one per line), marketing manager, studio deadline, priority (Phase C; was team, type, title, description, department, requested due date, priority)
 - [ ] On submit, show a confirmation and the request's status
 
 **5. Triage inbox (Team Admin)**
 
 - [ ] Lists New requests for the current team, newest first, with a count badge in the nav
-- [ ] Accept: choose project, assignee, estimate, committed due date; creates a task in the first column after Triage (e.g. To Do)
+- [ ] Accept: choose project, assignee, estimate, committed due date; creates a task in the first column after Triage (e.g. Briefed in)
+- [ ] Accept as a new brief (Phase C, the default): creates a project named with the next job code (editable) and one task per deliverable
 - [ ] Reject with a reason
 
 **6. Dashboard (Team Admin; default landing page for admins)**
 
 - [ ] Utilisation bar per person for this week and the next 4 weeks
-- [ ] Cards: overdue tasks, requests waiting in triage, people over capacity this week
+- [ ] Cards: overdue tasks, tasks awaiting review (Phase C), requests waiting in triage, people over capacity this week
 - [ ] Work by department (task count)
 
 **Roles**
@@ -149,21 +150,22 @@ Realistic, fictional data that tells the story; dates are relative to the curren
 
 | Item | Seed |
 | --- | --- |
-| Organisation | "Stark Industries" (fictional; rename before the demo if needed) |
-| Teams | Design (8 people), Marketing (4 people); 1 designer is also a Marketing member |
-| Users | 1 Org Admin who is also Design Team Admin, 1 Marketing Team Admin, members, 3 requesters from other departments |
-| People | Mix of 8 h/day and one part-timer at 5 h/day; job titles (UI Designer, Brand Designer, Motion Designer, Content Marketer...) |
-| Departments | Marketing, Sales, HR, Product, Executive |
-| Design statuses | Triage, To Do, In Design, Internal Review, With Requester, Changes Requested, Done |
+| Organisation | "The Core Group", the client; departments are shown as "Brand"; financial year starts in October |
+| Teams | Studio (8 people), Marketing (4 people); 1 designer is also a Marketing member |
+| Users | 1 Org Admin who is also Head of Studio (Studio Team Admin), 1 Marketing Team Admin, members, 6 brand marketing managers (requesters) |
+| People | Mix of 8 h/day and one part-time Artworker at 5 h/day; job titles (Senior Designer, Digital Designer, Motion Designer, Artworker, Content Marketer...) |
+| Brands | CGA, DJI, ARP, Bambu Lab, InRetail, Reloved, MS Surface, GoPro, CVM, CCB, CORE, Pure Electric, Mobile in Africa, Ultra Human, each with a job code prefix (DJI, GOPRO, BAMBU, PURE, MSS...) |
+| Studio statuses | Triage, Briefed in, Working on it, Feedback needed, Awaiting approval, Done |
 | Marketing statuses | Triage, Planned, Writing, Review, Scheduled, Published |
-| Projects | 8 to 10, each with a colour and department (e.g. Q1 Campaign, Website Refresh, Sales Deck, HR Onboarding Pack) |
-| Tasks | About 40 spread across columns; 3 overdue; some with review cycle 2 or 3 |
-| Allocations | 6 weeks (2 back, 4 ahead); most people 60 to 90% loaded; 1 person over 100% next week; 1 person under 40% |
-| Time off | Approved leave for 2 Design people in the next 2 weeks; 1 Marketing person on sick leave this week ("Unavailable" to everyone but them and their admins); 1 pending request in Design for the demo |
+| Projects | Briefs named with job codes, 10 in Studio and 4 in Marketing across 9 brands, coloured from the palette (e.g. `DJI0141_Q1'27_Black Friday`, `DJI0142_Q1'27_Amazon Brand Store`, `GOPRO0213_Q1'27_Festive Bundles`) |
+| Tasks | About 50 deliverables (Black Friday: Takealot banners, iStore banners, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP); 6 in Awaiting approval; 4 overdue; some on round 2 or 3 |
+| Allocations | Last week to 5 weeks ahead; one designer (Lerato) at 11h on seven days this week and next; one under-loaded (Priya, 50% next week); the rest 60 to 90% |
+| Time off | Approved leave for 2 Studio people in the next 2 weeks; 1 Marketing person on sick leave this week ("Unavailable" to everyone but them and their admins); 1 pending request in Studio for the demo |
 | Public holidays | South African public holidays for the current and next year |
-| Requests | 5 New in Design triage, 2 in Marketing, 3 already accepted |
+| Requests | Briefs in their template (job name, main goal, deliverables, marketing manager, studio deadline): 5 New in Studio triage, 2 in Marketing, 3 already accepted |
 
-- Use made-up names; no real staff names or company branding
+- Fictional people only, with made-up South African names; no real staff names
+- Brands are names and palette colours only: no brand logos anywhere
 - The seeder must be re-runnable (reset command) so the demo can start clean
 
 ## Build order
@@ -188,19 +190,20 @@ One milestone per day, each ending with something runnable. The schedule gets th
 
 ## Demo script
 
-About 10 minutes, following one request from submission to booked capacity.
+About 10 minutes, told as The Core Group's studio (Phase C): the pain points they live with today on Monday.com, then one DJI brief from the marketing manager to booked capacity.
 
-1. **Sign in as a requester** (Sales). Submit a request: "Sales deck for Q1 roadshow", due in 2 weeks
-2. **Switch to the Head of Design.** The Dashboard opens; the triage badge and the "Requests in triage" card show the new request. Open Triage from the card
-3. **Check capacity first:** open the schedule. Point out the red day (someone over capacity), the person on leave, and the under-loaded designer
-4. **Accept the request:** assign it to the under-loaded designer, estimate 16 h, set a committed due date. It appears on the board in To Do
-5. **Book it:** from the task drawer, "Book on schedule" for 4 h/day over 4 days. Back on the schedule, their load turns from green to amber
-6. **Show a clash:** drag another allocation onto a full day; the clash warning appears
-7. **Move work on the board:** drag a card to Internal Review, then to Changes Requested; the review cycle increases
-8. **Dashboard:** utilisation per person, overdue tasks, triage queue now one shorter
-9. **Time off:** switch to a designer; My work opens. "Request time off" for Monday and Tuesday of the week after next: the schedule shows a hatched "Pending" block, and their hours still count. Switch back to the Head of Design and approve it under Requests > Time off: the schedule shows the solid leave block and those days come off their capacity
-10. **Switch team to Marketing:** different columns, different people. The shared designer's load includes Design work
-11. **Close:** "The same tool works for every department; Design is the pilot." Then ask the discovery questions
+1. **Dashboard, as Naledi Khumalo (Head of Studio).** Lerato Mokoena is "Over capacity this week" and tops utilisation, while others have room: one designer carries far more than the rest. "Awaiting review" shows the approval backlog, and "Overdue tasks" the deadlines already missed
+2. **Schedule:** Lerato's red days this week and next, Priya Naidoo clearly available, Amahle on leave next week. Bookings read as job codes, so every brand's work is in one view
+3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), Zanele as marketing manager, studio deadline in 2 weeks
+4. **Triage, as a new brief:** switch back to Naledi; the triage badge shows it. Accept: "New brief" proposes `DJI0143_Q<n>'<YY>_Summer Holiday Sale` (editable); assign Priya, estimate 16 h, keep the committed date. The board shows a new DJI project, in its own colour, with three cards in Briefed in
+5. **Book it:** open the Takealot banners card (it carries the 16 h) and "Book on schedule" for 4 h/day over 4 days. On the schedule, Priya goes from green to amber
+6. **Show a clash:** drag a booking onto Ethan Pillay's full day next week; the clash dialog appears
+7. **Approval loop on the board:** drag a card from Awaiting approval back to Working on it; it shows R2, so rounds of feedback are counted
+8. **Time off:** switch to a designer; My work opens. "Request time off" for Monday and Tuesday of the week after next: the schedule shows a hatched "Pending" block, and their hours still count. Switch back to Naledi and approve it under Requests > Time off: the schedule shows the solid leave block and those days come off their capacity
+9. **Switch team to Marketing:** different columns, different people. Jason van Wyk's load includes his Studio work
+10. **Close:** "One place for every brand: who is busy, who is free and what is waiting." Then ask the discovery questions
+
+Ask Juggle ("Who can take a 2-day DJI job next week?") is not built, so it is not in the script.
 
 ## Coding standards
 

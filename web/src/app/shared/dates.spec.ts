@@ -1,4 +1,4 @@
-import { addDays, addWeekdays, isWeekend, isoWeek, nextWeekday, startOfWeek } from './dates';
+import { addDays, addWeekdays, isIsoDate, isWeekend, isoWeek, nextWeekday, startOfWeek } from './dates';
 
 describe('dates', () => {
   it('adds days across a month end', () => {
@@ -36,5 +36,9 @@ describe('dates', () => {
       '2026-11-02',
       '2026-11-02',
     ]);
+  });
+
+  it('accepts only real yyyy-MM-dd dates, as from the URL', () => {
+    expect(['2026-11-02', '2026-13-40', '2 Nov', '', undefined].map(isIsoDate)).toEqual([true, false, false, false, false]);
   });
 });

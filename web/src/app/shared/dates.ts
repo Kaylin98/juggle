@@ -63,3 +63,8 @@ export function formatDateRange(from: string, to: string, locale: string): strin
     ? `${date(from, 'd')}–${date(to, 'd MMM')}`
     : `${date(from, 'd MMM')} – ${date(to, 'd MMM')}`;
 }
+
+/** A real date written as yyyy-MM-dd, such as a date from the URL. */
+export function isIsoDate(value: string | undefined): value is string {
+  return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(parse(value).getTime());
+}

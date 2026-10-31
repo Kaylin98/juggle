@@ -70,5 +70,5 @@ export class MyTasks {
 
 export function toCard(task: MyTask): BoardCard {
   const project = { id: task.task.projectId, name: task.projectName, colour: task.projectColour, department: task.projectDepartment };
-  return { task: task.task, project, assignee: null, canEdit: true };
+  return { task: task.task, project, assignee: null, canEdit: true, done: task.category === 'Done' };
 }

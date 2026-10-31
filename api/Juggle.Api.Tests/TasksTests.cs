@@ -1,5 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using Juggle.Api.Common;
+using Juggle.Api.Features.Allocations;
+using Juggle.Api.Features.Capacity;
 using Juggle.Api.Features.Tasks;
 using Juggle.Api.Features.Teams;
 
@@ -165,6 +168,43 @@ public sealed class TasksTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.Forbidden, requester.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, inTriage.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, otherProject.StatusCode);
+    }
+
+    [Fact]
+    public async Task Board_shows_the_hours_booked_on_working_days_only()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var studioId = await GetTeamIdAsync(client, "Studio");
+        var tasks = await GetTasksAsync(client, "Studio");
+        var task = tasks.Single(t => t.Title == "Retail launch video");
+        // Next week from Monday to Sunday: Amahle is on approved leave Monday to Wednesday, so only her working days count.
+        var monday = new OrgClock(TimeProvider.System).Today.StartOfWeek().AddDays(7);
+        var schedule = await client.GetFromJsonAsync<CapacityDto>(
+            $"/api/capacity?teamId={studioId}&start={monday:yyyy-MM-dd}&weeks=1", ApiFactory.Json, _ct);
+        var workingDays = schedule!.People.Single(p => p.Id == task.AssigneePersonId).Days.Count(d => d.Capacity > 0);
+
+        var booking = new SaveAllocationRequest(task.AssigneePersonId!.Value, task.ProjectId, task.Id, monday, monday.AddDays(6), 4, null);
+        (await client.PostAsJsonAsync("/api/allocations", booking, ApiFactory.Json, _ct)).EnsureSuccessStatusCode();
+
+        var booked = (await GetTasksAsync(client, "Studio")).Single(t => t.Id == task.Id);
+        Assert.Equal(0, task.BookedHours);
+        Assert.Empty(task.Bookings);
+        Assert.InRange(workingDays, 1, 4);
+        Assert.Equal(4m * workingDays, booked.BookedHours);
+        Assert.Equal([new TaskBookingDto(task.AssigneePersonId.Value, "Amahle Dlamini", monday, monday.AddDays(6), 4, 4m * workingDays)], booked.Bookings);
+    }
+
+    [Fact]
+    public async Task Due_soon_means_open_and_due_within_seven_days_or_overdue()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var tasks = await GetTasksAsync(client, "Studio");
+        bool DueSoon(string title) => tasks.Single(t => t.Title == title).IsDueSoon;
+
+        Assert.True(DueSoon("iStore banners"));
+        Assert.True(DueSoon("Bellyband"));
+        Assert.False(DueSoon("Campus poster series"));
+        Assert.False(DueSoon("Pop-up stand graphics"));
     }
 
     private static UpdateTaskRequest ToUpdate(TaskDto task) =>

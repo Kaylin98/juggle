@@ -48,6 +48,7 @@ export class BoardPage {
     source: () => ({ teamId: this.teamId(), due: this.due() }),
     computation: ({ due }): string => (due === 'overdue' ? due : ''),
   });
+  protected readonly bookingFilter = linkedSignal({ source: this.teamId, computation: () => '' });
   protected readonly openTaskId = linkedSignal<string, string | null>({
     source: this.teamId,
     computation: () => null,
@@ -92,6 +93,11 @@ export class BoardPage {
     });
   }
 
+  /** The Done-category columns: their cards show no booking chip and are never "not booked" (D57). */
+  private readonly doneStatusIds = computed(
+    () => new Set((this.data()?.statuses ?? []).filter((s) => s.category === 'Done').map((s) => s.id)),
+  );
+
   private readonly cards = computed<BoardCard[]>(() => {
     const data = this.data();
     if (!data) return [];
@@ -102,6 +108,7 @@ export class BoardPage {
       project: projects.get(task.projectId)!,
       assignee: task.assigneePersonId ? (people.get(task.assigneePersonId) ?? null) : null,
       canEdit: this.canEdit(task),
+      done: this.doneStatusIds().has(task.statusId),
     }));
   });
 
@@ -131,7 +138,9 @@ export class BoardPage {
     () => new Set(this.filtered() ? this.columns().filter((c) => c.cards.length === 0).map((c) => c.status.id) : []),
   );
 
-  protected readonly filtered = computed(() => !!(this.assigneeFilter() || this.projectFilter() || this.dueFilter()));
+  protected readonly filtered = computed(
+    () => !!(this.assigneeFilter() || this.projectFilter() || this.dueFilter() || this.bookingFilter()),
+  );
 
   protected readonly openCard = computed(
     () => this.cards().find((card) => card.task.id === this.openTaskId()) ?? null,
@@ -188,7 +197,13 @@ export class BoardPage {
   }
 
   private matchesFilters(task: Task): boolean {
-    return matchesFilters(task, { assigneeId: this.assigneeFilter(), projectId: this.projectFilter(), due: this.dueFilter() });
+    return matchesFilters(task, {
+      assigneeId: this.assigneeFilter(),
+      projectId: this.projectFilter(),
+      due: this.dueFilter(),
+      booking: this.bookingFilter(),
+      doneStatusIds: this.doneStatusIds(),
+    });
   }
 
   private replaceTask(saved: Task): void {

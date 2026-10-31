@@ -3,6 +3,9 @@ using Juggle.Api.Data.Entities;
 
 namespace Juggle.Api.Features.Tasks;
 
+/// <param name="IsDueSoon">Due within the next 7 days, or overdue, and not done (D57).</param>
+/// <param name="BookedHours">The hours of all its bookings.</param>
+/// <param name="Bookings">The bookings linked to it, earliest first.</param>
 public sealed record TaskDto(
     Guid Id,
     Guid ProjectId,
@@ -13,25 +16,41 @@ public sealed record TaskDto(
     decimal? EstimateHours,
     DateOnly? DueDate,
     bool IsOverdue,
+    bool IsDueSoon,
     int ReviewCycle,
     int SortOrder,
-    string? Link)
+    string? Link,
+    decimal BookedHours,
+    IReadOnlyList<TaskBookingDto> Bookings)
 {
+    private const int DueSoonDays = 7;
+
     /// <summary>Maps a task loaded with its status. Overdue (D21): due before today and not done.</summary>
-    public static TaskDto From(TaskItem task, DateOnly today) => new(
-        task.Id,
-        task.ProjectId,
-        task.StatusId,
-        task.Title,
-        task.Description,
-        task.AssigneePersonId,
-        task.EstimateHours,
-        task.DueDate,
-        task.DueDate < today && task.Status.Category != StatusCategory.Done,
-        task.ReviewCycle,
-        task.SortOrder,
-        task.Link);
+    public static TaskDto From(TaskItem task, DateOnly today, IEnumerable<TaskBookingDto> bookings)
+    {
+        var open = task.Status.Category != StatusCategory.Done;
+        var linked = bookings.ToList();
+        return new(
+            task.Id,
+            task.ProjectId,
+            task.StatusId,
+            task.Title,
+            task.Description,
+            task.AssigneePersonId,
+            task.EstimateHours,
+            task.DueDate,
+            open && task.DueDate < today,
+            open && task.DueDate <= today.AddDays(DueSoonDays),
+            task.ReviewCycle,
+            task.SortOrder,
+            task.Link,
+            linked.Sum(b => b.Hours),
+            linked);
+    }
 }
+
+/// <param name="Hours">Hours per day on each of the person's working days from the start to the end date.</param>
+public sealed record TaskBookingDto(Guid PersonId, string PersonName, DateOnly StartDate, DateOnly EndDate, decimal HoursPerDay, decimal Hours);
 
 /// <summary>A task added from the board. With no status it goes in the first column after Triage.</summary>
 public sealed record CreateTaskRequest(

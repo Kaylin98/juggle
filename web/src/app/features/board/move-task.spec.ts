@@ -12,9 +12,12 @@ function task(id: string, statusId: string, sortOrder: number): Task {
     estimateHours: null,
     dueDate: null,
     isOverdue: false,
+    isDueSoon: false,
     reviewCycle: 1,
     sortOrder,
     link: null,
+    bookedHours: 0,
+    bookings: [],
   };
 }
 

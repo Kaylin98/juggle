@@ -15,7 +15,7 @@ import { filter } from 'rxjs';
   selector: 'app-tooltip-panel',
   host: {
     role: 'tooltip',
-    class: 'block max-w-80 rounded-control bg-ink px-2 py-1 text-xs font-semibold text-white shadow-raised',
+    class: 'block max-w-80 rounded-control bg-ink px-2 py-1 text-xs font-semibold whitespace-pre-line text-white shadow-raised',
   },
   template: `{{ text() }}`,
 })
@@ -37,8 +37,8 @@ const POSITIONS: Record<'top' | 'right', ConnectedPosition[]> = {
 
 /**
  * A short text shown beside an element on hover and keyboard focus, in an overlay so scroll areas and narrow
- * containers do not clip it. An empty text shows nothing. Hides on press or click (a drag must not carry it),
- * Escape and a page change.
+ * containers do not clip it; a line break in the text starts a new line. An empty text shows nothing. Hides on press
+ * or click (a drag must not carry it), Escape and a page change.
  */
 @Directive({
   selector: '[appTooltip]',

@@ -14,6 +14,7 @@
           [(assigneeId)]="assigneeFilter"
           [(projectId)]="projectFilter"
           [(due)]="dueFilter"
+          [(booking)]="bookingFilter"
         />
         <button type="button" class="btn-primary" (click)="addingTo.set(columns()[0].status)">Add task</button>
       </div>
@@ -53,7 +54,7 @@
     [people]="data()?.people ?? []"
     [canReassign]="teamContext.isTeamAdmin()"
     [canBook]="teamContext.isTeamAdmin()"
-    (closed)="openTaskId.set(null)" (saved)="onSaved($event)" />
+    (closed)="openTaskId.set(null)" (saved)="onSaved($event)" (booked)="board.reload()" />
 }
 
 @if (addingTo(); as status) {

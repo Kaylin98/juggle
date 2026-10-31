@@ -68,6 +68,7 @@ export class BookOnSchedule {
   readonly task = input.required<Task>();
   readonly assignee = input.required<Person>();
   readonly closed = output<void>();
+  readonly booked = output<void>();
 
   protected readonly model = linkedSignal(() => defaults(this.task()));
 
@@ -102,6 +103,7 @@ export class BookOnSchedule {
           clash ?? `Booked ${this.assignee().name} for ${hoursPerDay}h/day, ${date(startDate)} to ${date(endDate)}.`,
           clash ? 'warning' : 'success',
         );
+        this.booked.emit();
         this.closed.emit();
       } catch (error) {
         this.toast.error(error);

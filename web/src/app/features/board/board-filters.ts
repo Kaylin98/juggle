@@ -7,7 +7,12 @@ const DUE_OPTIONS: SelectOption[] = [
   { value: 'overdue', label: 'Overdue' },
 ];
 
-/** Assignee, project and due date filters. An empty value means "all". */
+const BOOKING_OPTIONS: SelectOption[] = [
+  { value: '', label: 'Any' },
+  { value: 'unbooked', label: 'Not booked' },
+];
+
+/** Assignee, project, due date and booking filters. An empty value means "all". */
 @Component({
   selector: 'app-board-filters',
   imports: [Select],
@@ -25,7 +30,11 @@ const DUE_OPTIONS: SelectOption[] = [
       <span class="label-caps">Due</span>
       <app-select variant="pill" [options]="dueOptions" [(value)]="due" />
     </label>
-    @if (assigneeId() || projectId() || due()) {
+    <label class="flex items-center gap-3">
+      <span class="label-caps">Booking</span>
+      <app-select variant="pill" [options]="bookingOptions" [(value)]="booking" />
+    </label>
+    @if (assigneeId() || projectId() || due() || booking()) {
       <button type="button" class="btn-quiet" (click)="clear()">Clear</button>
     }
   `,
@@ -37,8 +46,11 @@ export class BoardFilters {
   readonly projectId = model.required<string>();
   /** "overdue" shows only tasks due before today that are not done. */
   readonly due = model.required<string>();
+  /** "unbooked" shows only open tasks with no booking (D57). */
+  readonly booking = model.required<string>();
 
   protected readonly dueOptions = DUE_OPTIONS;
+  protected readonly bookingOptions = BOOKING_OPTIONS;
 
   protected readonly assigneeOptions = computed<SelectOption[]>(() => [
     { value: '', label: 'Everyone' },
@@ -54,6 +66,7 @@ export class BoardFilters {
     this.assigneeId.set('');
     this.projectId.set('');
     this.due.set('');
+    this.booking.set('');
   }
 }
 
@@ -61,12 +74,16 @@ export interface TaskFilters {
   assigneeId: string;
   projectId: string;
   due: string;
+  booking: string;
+  /** The Done-category columns: their cards are never "not booked". */
+  doneStatusIds: ReadonlySet<string>;
 }
 
 export function matchesFilters(task: Task, filters: TaskFilters): boolean {
   return (
     (!filters.assigneeId || task.assigneePersonId === filters.assigneeId) &&
     (!filters.projectId || task.projectId === filters.projectId) &&
-    (filters.due !== 'overdue' || task.isOverdue)
+    (filters.due !== 'overdue' || task.isOverdue) &&
+    (filters.booking !== 'unbooked' || (task.bookings.length === 0 && !filters.doneStatusIds.has(task.statusId)))
   );
 }

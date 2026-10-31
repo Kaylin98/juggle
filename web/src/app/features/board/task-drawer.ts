@@ -59,6 +59,8 @@ export class TaskDrawer {
   readonly canBook = input.required<boolean>();
   readonly closed = output<void>();
   readonly saved = output<Task>();
+  /** A booking was made from here, so the card's booked hours changed. */
+  readonly booked = output<void>();
 
   protected readonly reviewRoundLabel = reviewRoundLabel;
 

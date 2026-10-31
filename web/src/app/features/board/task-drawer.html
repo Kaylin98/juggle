@@ -16,7 +16,7 @@
 
     @if (canBook() && assignee(); as assignee) {
       @if (booking()) {
-        <app-book-on-schedule [task]="card().task" [assignee]="assignee" (closed)="booking.set(false)" />
+        <app-book-on-schedule [task]="card().task" [assignee]="assignee" (closed)="booking.set(false)" (booked)="booked.emit()" />
       } @else {
         <button type="button" class="btn-secondary w-full" (click)="booking.set(true)">Book on schedule</button>
       }

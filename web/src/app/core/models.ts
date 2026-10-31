@@ -66,9 +66,24 @@ export interface Task {
   estimateHours: number | null;
   dueDate: string | null;
   isOverdue: boolean;
+  /** Due within the next 7 days, or overdue, and not done (D57). */
+  isDueSoon: boolean;
   reviewCycle: number;
   sortOrder: number;
   link: string | null;
+  /** The hours of all its bookings, on the person's working days. */
+  bookedHours: number;
+  /** The bookings linked to it, earliest first. */
+  bookings: TaskBooking[];
+}
+
+export interface TaskBooking {
+  personId: string;
+  personName: string;
+  startDate: string;
+  endDate: string;
+  hoursPerDay: number;
+  hours: number;
 }
 
 /** A task added from the board. With no status it goes in the first column after Triage. */

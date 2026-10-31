@@ -36,6 +36,7 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, O
                 && (currentUser.IsOrgAdmin || db.TeamMemberships.Any(m => m.TeamId == t.TeamId && m.UserId == currentUser.UserId)))
             .AsNoTracking()
             .ToListAsync(ct);
+        var taskBookings = await TaskBookings.LoadAsync(db, tasks.Select(t => t.Id).ToList(), ct);
 
         var bookings = await db.Allocations
             .Include(a => a.Project).ThenInclude(p => p.Department)
@@ -60,7 +61,7 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, O
             new PersonDto(person.Id, person.User.Name, person.User.AvatarColour, person.JobTitle, person.HoursPerDay),
             tasks
                 .Select(t => new MyTaskDto(
-                    TaskDto.From(t, today),
+                    TaskDto.From(t, today, taskBookings[t.Id]),
                     t.TeamId,
                     teamNames[t.TeamId],
                     t.Project.Name,

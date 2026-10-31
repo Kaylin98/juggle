@@ -120,6 +120,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 - [ ] Drag between and within columns persists order and status
 - [ ] Filter by assignee and project
 - [ ] Clicking a card opens a drawer: edit title, description, assignee, estimate, due date, link; "Book on schedule" creates an allocation for the assignee
+- [ ] Open cards show "Booked Nh" (tooltip: who and when; click: the schedule at that week) or "Not booked", amber when due within 7 days; a "Not booked" filter (Phase C addition, D57)
 
 **4. Request form**
 
@@ -197,7 +198,7 @@ About 10 minutes, told as The Core Group's studio (Phase C): the pain points the
 2. **Schedule:** Lerato's red days this week and next, Priya Naidoo clearly available, Amahle on leave next week. Bookings read as job codes, so every brand's work is in one view
 3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), studio deadline in 2 weeks. It goes in as from Zanele, with no "Requested by" field; Studio members would see "Requested by" to log a brief for a manager
 4. **Triage, as a new brief:** switch back to Naledi; the triage badge shows it. Accept: "New brief" proposes `DJI0143_Q<n>'<YY>_Summer Holiday Sale` (editable); assign Priya, estimate 16 h, keep the committed date. The board shows a new DJI project, in its own colour, with three cards in Briefed in
-5. **Book it:** open the Takealot banners card (it carries the 16 h) and "Book on schedule" for 4 h/day over 4 days. On the schedule, Priya goes from green to amber
+5. **Book it:** on the board, set Booking to "Not booked": everything nobody is booked for yet, amber where it is due within 7 days, and the three new cards among it. Clear the filter, open the Takealot banners card (it carries the 16 h) and "Book on schedule" for 4 h/day over 4 days: the card now reads "Booked 16h", and its tooltip says who and when. Click the chip: the schedule opens at that week, and on the 1-week view Priya goes from green to amber
 6. **Show a clash:** drag a booking onto Ethan Pillay's full day next week; the clash dialog appears
 7. **Approval loop on the board:** drag a card from Awaiting approval back to Working on it; it shows R2, so rounds of feedback are counted
 8. **Time off:** switch to a designer; My work opens. "Request time off" for Monday and Tuesday of the week after next: the schedule shows a hatched "Pending" block, and their hours still count. Switch back to Naledi and approve it under Requests > Time off: the schedule shows the solid leave block and those days come off their capacity

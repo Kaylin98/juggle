@@ -4,7 +4,7 @@ import { AllocationsService } from '../../core/allocations.service';
 import { AuthService } from '../../core/auth.service';
 import { Allocation, SaveAllocation, Schedule } from '../../core/models';
 import { ALL_TEAMS, TeamContextService } from '../../core/team-context.service';
-import { startOfWeek, today } from '../../shared/dates';
+import { isIsoDate, startOfWeek, today } from '../../shared/dates';
 import { ToastService } from '../../shared/toast.service';
 import { AllocationPopover, BookingDetails, BookingDraft } from './allocation-popover';
 import { CapacityGrid, NewBooking, PopoverOrigin } from './capacity-grid';
@@ -36,8 +36,14 @@ export class CapacityPage {
   /** From the `/t/:teamId/capacity` route. */
   readonly teamId = input.required<string>();
 
+  /** `?week=yyyy-MM-dd` (from a board card's booking chip) opens the schedule at that date's week. */
+  readonly week = input<string>();
+
   protected readonly today = today();
-  protected readonly start = signal(startOfWeek(this.today));
+  protected readonly start = linkedSignal(() => {
+    const week = this.week();
+    return startOfWeek(isIsoDate(week) ? week : this.today);
+  });
   protected readonly weeks = signal<Weeks>(4);
 
   protected readonly schedule = resource({

@@ -17,7 +17,8 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
             .OrderBy(t => t.SortOrder)
             .AsNoTracking()
             .ToListAsync(ct);
-        return tasks.Select(ToDto).ToList();
+        var bookings = await TaskBookings.LoadAsync(db, tasks.Select(t => t.Id).ToList(), ct);
+        return tasks.Select(t => TaskDto.From(t, clock.Today, bookings[t.Id])).ToList();
     }
 
     /// <summary>
@@ -63,7 +64,7 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
         };
         db.Tasks.Add(task);
         await db.SaveChangesAsync(ct);
-        return ToDto(task);
+        return await ToDtoAsync(task, ct);
     }
 
     public async Task<TaskDto> UpdateAsync(Guid id, UpdateTaskRequest request, CancellationToken ct)
@@ -85,7 +86,7 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
         task.DueDate = request.DueDate;
         task.Link = request.Link;
         await db.SaveChangesAsync(ct);
-        return ToDto(task);
+        return await ToDtoAsync(task, ct);
     }
 
     /// <summary>
@@ -115,7 +116,7 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
         }
 
         await db.SaveChangesAsync(ct);
-        return ToDto(task);
+        return await ToDtoAsync(task, ct);
     }
 
     private async Task<TaskItem> FindEditableAsync(Guid id, CancellationToken ct)
@@ -134,5 +135,6 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
         }
     }
 
-    private TaskDto ToDto(TaskItem task) => TaskDto.From(task, clock.Today);
+    private async Task<TaskDto> ToDtoAsync(TaskItem task, CancellationToken ct) =>
+        TaskDto.From(task, clock.Today, (await TaskBookings.LoadAsync(db, [task.Id], ct))[task.Id]);
 }

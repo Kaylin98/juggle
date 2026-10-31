@@ -56,6 +56,7 @@ const CHEVRON_RIGHT =
             [cdkDragData]="card.task"
             [cdkDragDisabled]="!card.canEdit"
             [card]="card"
+            [showBooking]="true"
             (opened)="opened.emit(card.task)"
           />
         } @empty {

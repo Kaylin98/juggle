@@ -272,6 +272,8 @@ export interface Dashboard {
   people: PersonUtilisation[];
   /** One entry per team shown, so "All teams" can link to each team. */
   overdueTasks: TeamCount[];
+  /** Open tasks in a review column, waiting on feedback or approval (D53). */
+  awaitingReview: TeamCount[];
   triageRequests: TeamCount[];
   /** Open tasks by their project's department, most first. */
   workByDepartment: DepartmentCount[];

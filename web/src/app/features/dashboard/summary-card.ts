@@ -76,8 +76,8 @@ export class SummaryCard {
   readonly count = input.required<number>();
   readonly detail = input.required<string>();
   /** The number's colour when above zero. */
-  readonly tone = input.required<'over' | 'accent'>();
+  readonly tone = input.required<'over' | 'warn' | 'accent'>();
   readonly links = input.required<CardLink[]>();
 
-  protected readonly toneText = { over: 'text-over-700', accent: 'text-accent-700' };
+  protected readonly toneText = { over: 'text-over-700', warn: 'text-warn-700', accent: 'text-accent-700' };
 }

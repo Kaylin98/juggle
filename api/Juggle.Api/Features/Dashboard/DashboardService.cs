@@ -61,6 +61,12 @@ public sealed class DashboardService(
             .GroupBy(t => t.TeamId)
             .ToDictionaryAsync(g => g.Key, g => g.Count(), ct);
 
+        // Awaiting review (D53): sitting in a review column, waiting on feedback or approval.
+        var awaitingReview = await openTasks
+            .Where(t => t.Status.Category == StatusCategory.Review)
+            .GroupBy(t => t.TeamId)
+            .ToDictionaryAsync(g => g.Key, g => g.Count(), ct);
+
         var triage = await db.Requests
             .Where(r => teamIds.Contains(r.TeamId) && r.Status == RequestStatus.New)
             .GroupBy(r => r.TeamId)
@@ -74,6 +80,7 @@ public sealed class DashboardService(
         return new DashboardDto(
             people,
             teams.Select(t => new TeamCountDto(t.Id, t.Name, overdue.GetValueOrDefault(t.Id))).ToList(),
+            teams.Select(t => new TeamCountDto(t.Id, t.Name, awaitingReview.GetValueOrDefault(t.Id))).ToList(),
             teams.Select(t => new TeamCountDto(t.Id, t.Name, triage.GetValueOrDefault(t.Id))).ToList(),
             byDepartment.OrderByDescending(d => d.Count).ThenBy(d => d.Department).ToList());
     }

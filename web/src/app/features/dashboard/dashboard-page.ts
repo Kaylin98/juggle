@@ -9,8 +9,9 @@ import { CardLink, SummaryCard } from './summary-card';
 import { UtilisationPanel } from './utilisation-panel';
 
 /**
- * The team dashboard (Team Admins and Org Admins): summary cards that open the filtered board, triage or schedule,
- * utilisation per person, and open work by department. "All teams" shows every team (Org Admin).
+ * The team dashboard (Team Admins and Org Admins): summary cards (overdue, awaiting review, triage, over capacity)
+ * that open the filtered board, triage or schedule, utilisation per person, and open work by department. "All teams"
+ * shows every team (Org Admin).
  */
 @Component({
   selector: 'app-dashboard-page',
@@ -25,13 +26,20 @@ import { UtilisationPanel } from './utilisation-panel';
       @if (dashboard.error()) {
         <p class="empty-state mt-6 text-over-700">The dashboard could not be loaded. Refresh the page to try again.</p>
       } @else if (data(); as data) {
-        <div class="mt-6 grid grid-cols-3 gap-6">
+        <div class="mt-6 grid grid-cols-2 gap-6 xl:grid-cols-4">
           <app-summary-card
             label="Overdue tasks"
             tone="over"
             [count]="total(data.overdueTasks)"
             detail="Due before today and not done"
             [links]="overdueLinks()"
+          />
+          <app-summary-card
+            label="Awaiting review"
+            tone="warn"
+            [count]="total(data.awaitingReview)"
+            detail="Waiting on feedback or approval"
+            [links]="reviewLinks()"
           />
           <app-summary-card
             label="Requests in triage"
@@ -104,6 +112,10 @@ export class DashboardPage {
 
   protected readonly overdueLinks = computed(() =>
     teamLinks(this.data()?.overdueTasks ?? [], this.teamContext.allTeams(), 'board', 'Show on the board', { due: 'overdue' }),
+  );
+
+  protected readonly reviewLinks = computed(() =>
+    teamLinks(this.data()?.awaitingReview ?? [], this.teamContext.allTeams(), 'board', 'Show on the board'),
   );
 
   protected readonly triageLinks = computed(() =>

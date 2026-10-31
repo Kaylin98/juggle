@@ -6,11 +6,13 @@ namespace Juggle.Api.Features.Dashboard;
 public sealed record DashboardQuery([Required] string TeamId);
 
 /// <param name="OverdueTasks">Per team in view, so "All teams" can link to each team's board.</param>
+/// <param name="AwaitingReview">Open tasks in a Review-category status (D53), per team in view.</param>
 /// <param name="TriageRequests">New requests waiting in triage, per team in view.</param>
 /// <param name="WorkByDepartment">Open tasks by their project's department, most first.</param>
 public sealed record DashboardDto(
     IReadOnlyList<PersonUtilisationDto> People,
     IReadOnlyList<TeamCountDto> OverdueTasks,
+    IReadOnlyList<TeamCountDto> AwaitingReview,
     IReadOnlyList<TeamCountDto> TriageRequests,
     IReadOnlyList<DepartmentCountDto> WorkByDepartment);
 

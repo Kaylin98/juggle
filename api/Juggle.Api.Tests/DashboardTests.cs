@@ -74,11 +74,14 @@ public sealed class DashboardTests(ApiFactory api)
         var statuses = await client.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{designId}/statuses", ApiFactory.Json, _ct);
         var inbox = await client.GetFromJsonAsync<List<RequestDto>>($"/api/teams/{designId}/requests?status=New", ApiFactory.Json, _ct);
         var done = statuses!.Where(s => s.Category == StatusCategory.Done).Select(s => s.Id).ToHashSet();
+        var review = statuses!.Where(s => s.Category == StatusCategory.Review).Select(s => s.Id).ToHashSet();
 
         var dashboard = await GetDashboardAsync(client, designId.ToString());
 
         Assert.Equal([new TeamCountDto(designId, "Design", tasks.Count(t => t.IsOverdue))], dashboard.OverdueTasks);
         Assert.Equal([new TeamCountDto(designId, "Design", inbox!.Count)], dashboard.TriageRequests);
+        Assert.Equal([new TeamCountDto(designId, "Design", tasks.Count(t => review.Contains(t.StatusId)))], dashboard.AwaitingReview);
+        Assert.True(dashboard.AwaitingReview[0].Count > 0);
         Assert.True(dashboard.OverdueTasks[0].Count > 0);
         Assert.Equal(tasks.Count(t => !done.Contains(t.StatusId)), dashboard.WorkByDepartment.Sum(d => d.Count));
         Assert.Equal(dashboard.WorkByDepartment.OrderByDescending(d => d.Count), dashboard.WorkByDepartment);
@@ -95,6 +98,7 @@ public sealed class DashboardTests(ApiFactory api)
 
         Assert.Equal(["Design", "Marketing"], dashboard.OverdueTasks.Select(t => t.TeamName));
         Assert.Equal(["Design", "Marketing"], dashboard.TriageRequests.Select(t => t.TeamName));
+        Assert.Equal(["Design", "Marketing"], dashboard.AwaitingReview.Select(t => t.TeamName));
         Assert.Equal(schedule!.People.Count, dashboard.People.Count);
     }
 

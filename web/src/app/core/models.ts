@@ -155,7 +155,6 @@ export interface SavedAllocation extends SaveAllocation {
   leaveDays: string[];
 }
 
-export type RequestType = 'Presentation' | 'Social' | 'Print' | 'Web' | 'Video' | 'Copy' | 'Other';
 export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
 export type RequestStatus = 'New' | 'Accepted' | 'Rejected';
 
@@ -164,28 +163,40 @@ export interface Option {
   name: string;
 }
 
-/** What the request form offers. Any team can be asked for work; the department defaults to the user's own. */
 export interface TeamOption extends Option {
   colour: string;
 }
 
+export interface UserOption extends Option {
+  avatarColour: string;
+}
+
+/**
+ * What the request form offers. Any team can be asked for work; the department defaults to the user's own.
+ * Marketing managers are the users with a department, and the user.
+ */
 export interface RequestOptions {
   teams: TeamOption[];
   departments: Option[];
-  types: RequestType[];
+  marketingManagers: UserOption[];
   priorities: Priority[];
   myDepartmentId: string | null;
 }
 
+/** A brief, in the studio's template (D50). */
 export interface WorkRequest {
   id: string;
   teamId: string;
   teamName: string;
-  type: RequestType;
+  /** The job name. */
   title: string;
-  description: string | null;
+  mainGoal: string | null;
+  /** One per line as typed, without empty lines or bullets. */
+  deliverables: string[];
   department: string;
   requesterName: string;
+  marketingManagerName: string | null;
+  /** The studio deadline. */
   requestedDueDate: string | null;
   priority: Priority;
   status: RequestStatus;
@@ -200,10 +211,12 @@ export interface WorkRequest {
 
 export interface CreateRequest {
   teamId: string;
-  type: RequestType;
   title: string;
-  description: string | null;
+  mainGoal: string | null;
+  /** One per line. */
+  deliverables: string | null;
   departmentId: string;
+  marketingManagerUserId: string;
   requestedDueDate: string | null;
   priority: Priority;
 }

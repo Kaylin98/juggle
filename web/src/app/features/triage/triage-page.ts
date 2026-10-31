@@ -36,20 +36,28 @@ const PRIORITY_PILL: Record<Priority, string> = {
             <li class="panel flex flex-wrap items-start gap-6 p-6">
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="label-caps">{{ request.type }}</span>
+                  <span class="label-caps">{{ request.department }}</span>
                   <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" [class]="priorityPill[request.priority]">
                     {{ request.priority }}
                   </span>
                 </div>
                 <h2 class="mt-2 font-display text-base font-semibold">{{ request.title }}</h2>
                 <p class="mt-1 text-sm text-ink-muted">
-                  From {{ request.requesterName }}, {{ request.department }} &middot; sent {{ request.createdAt | date: 'EEE d MMM, HH:mm' }}
+                  From {{ request.marketingManagerName ?? request.requesterName }} &middot; briefed in
+                  {{ request.createdAt | date: 'EEE d MMM, HH:mm' }}
                   @if (request.requestedDueDate; as due) {
-                    &middot; needed by <span class="font-semibold text-ink">{{ due | date: 'EEE d MMM' }}</span>
+                    &middot; studio deadline <span class="font-semibold text-ink">{{ due | date: 'EEE d MMM' }}</span>
                   }
                 </p>
-                @if (request.description) {
-                  <p class="mt-3 line-clamp-2 text-sm">{{ request.description }}</p>
+                @if (request.mainGoal) {
+                  <p class="mt-3 line-clamp-2 text-sm">{{ request.mainGoal }}</p>
+                }
+                @if (request.deliverables.length) {
+                  <ul class="mt-3 flex flex-wrap gap-2" aria-label="Deliverables">
+                    @for (deliverable of request.deliverables; track $index) {
+                      <li class="rounded-full bg-surface-muted px-3 py-1 text-xs">{{ deliverable }}</li>
+                    }
+                  </ul>
                 }
               </div>
               <div class="flex shrink-0 gap-2">

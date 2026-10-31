@@ -2,7 +2,7 @@ import { Component, computed, inject, linkedSignal, resource } from '@angular/co
 import { FormField, form, maxLength, required, submit, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { Priority, RequestType } from '../../core/models';
+import { Priority } from '../../core/models';
 import { RequestsService } from '../../core/requests.service';
 import { TeamContextService } from '../../core/team-context.service';
 import { today } from '../../shared/dates';
@@ -10,20 +10,25 @@ import { Select, SelectOption } from '../../shared/select';
 import { ToastService } from '../../shared/toast.service';
 import { RequestGuide } from './request-guide';
 
+/** The longest deliverable, so each can become a task title (D51). */
+const DELIVERABLE_MAX = 200;
+
 interface RequestForm {
   teamId: string;
-  workType: RequestType | '';
-  title: string;
-  description: string;
   departmentId: string;
+  title: string;
+  mainGoal: string;
+  deliverables: string;
+  marketingManagerUserId: string;
   requestedDueDate: string;
   priority: Priority;
 }
 
 /**
- * Asks a team for work. Anyone can submit; on submit it opens the request, with its status. The form keeps to
- * about 720px so it reads like a form, with a guide beside it, centred together (an exception to the full-width
- * page rule, asked for in the Phase 5 review). The team starts as the last team the user viewed.
+ * Asks a team for work with a brief in the studio's template (D50). Anyone can submit; on submit it opens the
+ * request, with its status. The form keeps to about 720px so it reads like a form, with a guide beside it, centred
+ * together (an exception to the full-width page rule, asked for in the Phase 5 review). The team starts as the last
+ * team the user viewed, the department as the user's own and the marketing manager as the user.
  */
 @Component({
   selector: 'app-request-form',
@@ -34,7 +39,7 @@ interface RequestForm {
       <div class="mx-auto max-w-268">
         <h1 class="page-title">New request</h1>
         <p class="mt-1 text-sm text-ink-muted">
-          Ask a team for work. They will triage it and let you know.
+          Brief a team on new work. They will triage it and let you know.
         </p>
 
         <div class="mt-6 grid items-start gap-8 min-[1100px]:grid-cols-[minmax(0,1fr)_20rem]">
@@ -58,39 +63,7 @@ interface RequestForm {
                     }
                   </div>
                   <div>
-                    <label class="form-label" for="request-type">Type of work</label>
-                    <app-select
-                      triggerId="request-type"
-                      [options]="typeOptions()"
-                      [formField]="requestForm.workType"
-                    />
-                    @if (requestForm.workType().touched() && requestForm.workType().invalid()) {
-                      <p class="field-error">{{ requestForm.workType().errors()[0].message }}</p>
-                    }
-                  </div>
-                  <div class="sm:col-span-2">
-                    <label class="form-label" for="request-title">Title</label>
-                    <input id="request-title" class="form-input" [formField]="requestForm.title" />
-                    @if (requestForm.title().touched() && requestForm.title().invalid()) {
-                      <p class="field-error">{{ requestForm.title().errors()[0].message }}</p>
-                    }
-                  </div>
-                  <div class="sm:col-span-2">
-                    <label class="form-label" for="request-description">Description</label>
-                    <textarea
-                      id="request-description"
-                      class="form-input"
-                      rows="5"
-                      [formField]="requestForm.description"
-                    ></textarea>
-                    @if (
-                      requestForm.description().touched() && requestForm.description().invalid()
-                    ) {
-                      <p class="field-error">{{ requestForm.description().errors()[0].message }}</p>
-                    }
-                  </div>
-                  <div>
-                    <label class="form-label" for="request-department">Your {{ departmentLabel() }}</label>
+                    <label class="form-label" for="request-department">{{ auth.departmentLabel() }}</label>
                     <app-select
                       triggerId="request-department"
                       [options]="departmentOptions()"
@@ -104,16 +77,64 @@ interface RequestForm {
                       </p>
                     }
                   </div>
-                  <div>
-                    <label class="form-label" for="request-priority">Priority</label>
-                    <app-select
-                      triggerId="request-priority"
-                      [options]="priorityOptions()"
-                      [formField]="requestForm.priority"
+                  <div class="sm:col-span-2">
+                    <label class="form-label" for="request-title">Job name</label>
+                    <input
+                      id="request-title"
+                      class="form-input"
+                      placeholder="Black Friday"
+                      [formField]="requestForm.title"
                     />
+                    @if (requestForm.title().touched() && requestForm.title().invalid()) {
+                      <p class="field-error">{{ requestForm.title().errors()[0].message }}</p>
+                    }
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label class="form-label" for="request-goal">Main goal</label>
+                    <textarea
+                      id="request-goal"
+                      class="form-input"
+                      rows="3"
+                      placeholder="What the work is for and what a good result looks like"
+                      [formField]="requestForm.mainGoal"
+                    ></textarea>
+                    @if (requestForm.mainGoal().touched() && requestForm.mainGoal().invalid()) {
+                      <p class="field-error">{{ requestForm.mainGoal().errors()[0].message }}</p>
+                    }
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label class="form-label" for="request-deliverables">Deliverables, one per line</label>
+                    <textarea
+                      id="request-deliverables"
+                      class="form-input"
+                      rows="5"
+                      placeholder="Takealot banners&#10;A4 insert: Cameraland&#10;Social tiles x6"
+                      [formField]="requestForm.deliverables"
+                    ></textarea>
+                    @if (
+                      requestForm.deliverables().touched() && requestForm.deliverables().invalid()
+                    ) {
+                      <p class="field-error">{{ requestForm.deliverables().errors()[0].message }}</p>
+                    }
                   </div>
                   <div>
-                    <label class="form-label" for="request-due">Needed by</label>
+                    <label class="form-label" for="request-manager">Marketing manager</label>
+                    <app-select
+                      triggerId="request-manager"
+                      [options]="managerOptions()"
+                      [formField]="requestForm.marketingManagerUserId"
+                    />
+                    @if (
+                      requestForm.marketingManagerUserId().touched() &&
+                      requestForm.marketingManagerUserId().invalid()
+                    ) {
+                      <p class="field-error">
+                        {{ requestForm.marketingManagerUserId().errors()[0].message }}
+                      </p>
+                    }
+                  </div>
+                  <div>
+                    <label class="form-label" for="request-due">Studio deadline</label>
                     <input
                       id="request-due"
                       class="form-input"
@@ -129,6 +150,14 @@ interface RequestForm {
                         {{ requestForm.requestedDueDate().errors()[0].message }}
                       </p>
                     }
+                  </div>
+                  <div>
+                    <label class="form-label" for="request-priority">Priority</label>
+                    <app-select
+                      triggerId="request-priority"
+                      [options]="priorityOptions()"
+                      [formField]="requestForm.priority"
+                    />
                   </div>
                 </div>
                 <div class="mt-8 flex justify-end gap-2">
@@ -155,7 +184,7 @@ export class RequestFormPage {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly teamContext = inject(TeamContextService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
 
   protected readonly today = today();
   /** The org's word for a department, lower case, such as "brand" (D48). */
@@ -166,40 +195,50 @@ export class RequestFormPage {
     { value: '', label: 'Choose a team' },
     ...(this.options.value()?.teams ?? []).map((t) => ({ value: t.id, label: t.name, colour: t.colour })),
   ]);
-  protected readonly typeOptions = computed<SelectOption[]>(() => [
-    { value: '', label: 'Choose a type' },
-    ...(this.options.value()?.types ?? []).map((t) => ({ value: t, label: t })),
-  ]);
   protected readonly departmentOptions = computed<SelectOption[]>(() => [
     { value: '', label: `Choose a ${this.departmentLabel()}` },
     ...(this.options.value()?.departments ?? []).map((d) => ({ value: d.id, label: d.name })),
   ]);
+  protected readonly managerOptions = computed<SelectOption[]>(() =>
+    (this.options.value()?.marketingManagers ?? []).map((u) => ({
+      value: u.id,
+      label: u.name,
+      avatarColour: u.avatarColour,
+    })),
+  );
   protected readonly priorityOptions = computed<SelectOption[]>(() =>
     (this.options.value()?.priorities ?? []).map((p) => ({ value: p, label: p })),
   );
 
   protected readonly model = linkedSignal<RequestForm>(() => ({
     teamId: this.teamContext.teamId() ?? '',
-    workType: '',
-    title: '',
-    description: '',
     departmentId: this.options.value()?.myDepartmentId ?? '',
+    title: '',
+    mainGoal: '',
+    deliverables: '',
+    marketingManagerUserId: this.auth.me()?.id ?? '',
     requestedDueDate: '',
     priority: 'Medium',
   }));
 
   protected readonly requestForm = form(this.model, (request) => {
     required(request.teamId, { message: 'Choose the team to ask.' });
-    required(request.workType, { message: 'Choose the type of work.' });
-    required(request.title, { message: 'Give the request a title.' });
-    maxLength(request.title, 200, { message: 'Keep the title under 200 characters.' });
-    maxLength(request.description, 4000, {
-      message: 'Keep the description under 4000 characters.',
-    });
     required(request.departmentId, { message: () => `Choose your ${this.departmentLabel()}.` });
+    required(request.title, { message: 'Give the job a name.' });
+    maxLength(request.title, 200, { message: 'Keep the job name under 200 characters.' });
+    maxLength(request.mainGoal, 2000, { message: 'Keep the main goal under 2000 characters.' });
+    maxLength(request.deliverables, 4000, { message: 'Keep the deliverables under 4000 characters.' });
+    validate(request.deliverables, ({ value }) =>
+      value()
+        .split('\n')
+        .some((line) => line.trim().length > DELIVERABLE_MAX)
+        ? { kind: 'deliverable', message: `Keep each deliverable under ${DELIVERABLE_MAX} characters.` }
+        : undefined,
+    );
+    required(request.marketingManagerUserId, { message: 'Choose the marketing manager.' });
     validate(request.requestedDueDate, ({ value }) =>
       value() && value() < this.today
-        ? { kind: 'past', message: "The date can't be in the past." }
+        ? { kind: 'past', message: "The deadline can't be in the past." }
         : undefined,
     );
   });
@@ -207,13 +246,13 @@ export class RequestFormPage {
   protected async send(event: Event): Promise<void> {
     event.preventDefault();
     await submit(this.requestForm, async () => {
-      const { workType, title, description, requestedDueDate, ...rest } = this.model();
+      const { title, mainGoal, deliverables, requestedDueDate, ...rest } = this.model();
       try {
         const created = await this.requests.create({
           ...rest,
-          type: workType as RequestType,
           title: title.trim(),
-          description: description.trim() || null,
+          mainGoal: mainGoal.trim() || null,
+          deliverables: deliverables.trim() || null,
           requestedDueDate: requestedDueDate || null,
         });
         this.toast.show('Request sent.', 'success');

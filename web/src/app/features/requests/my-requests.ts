@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 import { RequestsService } from '../../core/requests.service';
 import { StatusPill } from './status-pill';
 
@@ -26,9 +27,9 @@ import { StatusPill } from './status-pill';
             <div class="hidden grid-cols-[minmax(0,1fr)_8rem_7rem_7rem_7rem_7rem] gap-4 border-b border-line px-6 py-3 md:grid">
               <span class="label-caps">Request</span>
               <span class="label-caps">Team</span>
-              <span class="label-caps">Type</span>
-              <span class="label-caps">Sent</span>
-              <span class="label-caps">Needed by</span>
+              <span class="label-caps">{{ departmentLabel() }}</span>
+              <span class="label-caps">Briefed in</span>
+              <span class="label-caps">Deadline</span>
               <span class="label-caps text-right">Status</span>
             </div>
             <ul>
@@ -40,9 +41,9 @@ import { StatusPill } from './status-pill';
                   >
                     <span class="truncate font-semibold">{{ request.title }}</span>
                     <span class="text-ink-muted max-md:col-start-1 max-md:row-start-2">
-                      {{ request.teamName }}<span class="md:hidden"> &middot; {{ request.type }}</span>
+                      {{ request.teamName }}<span class="md:hidden"> &middot; {{ request.department }}</span>
                     </span>
-                    <span class="text-ink-muted max-md:hidden">{{ request.type }}</span>
+                    <span class="truncate text-ink-muted max-md:hidden">{{ request.department }}</span>
                     <span class="text-ink-muted max-md:hidden">{{ request.createdAt | date: 'd MMM y' }}</span>
                     <span class="text-ink-muted max-md:hidden">
                       {{ request.requestedDueDate ? (request.requestedDueDate | date: 'd MMM y') : '-' }}
@@ -69,6 +70,7 @@ import { StatusPill } from './status-pill';
 })
 export class MyRequestsPage {
   private readonly service = inject(RequestsService);
+  protected readonly departmentLabel = inject(AuthService).departmentLabel;
 
   protected readonly requests = resource({ loader: () => this.service.mine() });
 }

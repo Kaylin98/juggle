@@ -205,12 +205,19 @@ namespace Juggle.Api.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Deliverables")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                    b.Property<string>("MainGoal")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("MarketingManagerUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("OrgId")
                         .HasColumnType("uuid");
@@ -246,14 +253,11 @@ namespace Juggle.Api.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("MarketingManagerUserId");
 
                     b.HasIndex("OrgId");
 
@@ -592,6 +596,10 @@ namespace Juggle.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Juggle.Api.Data.Entities.User", "MarketingManager")
+                        .WithMany()
+                        .HasForeignKey("MarketingManagerUserId");
+
                     b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
                         .WithMany()
                         .HasForeignKey("OrgId")
@@ -615,6 +623,8 @@ namespace Juggle.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Department");
+
+                    b.Navigation("MarketingManager");
 
                     b.Navigation("Requester");
 

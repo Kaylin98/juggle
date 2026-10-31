@@ -343,16 +343,16 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
 
         var now = clock.Now;
 
-        void AddRequest(Team team, User requester, RequestType type, string title, string description, Priority priority, int dueDays, double ageHours, TaskItem? acceptedTask = null) =>
+        void AddRequest(Team team, User requester, string title, string mainGoal, Priority priority, int dueDays, double ageHours, TaskItem? acceptedTask = null) =>
             db.Requests.Add(new Request
             {
                 OrgId = org.Id,
                 TeamId = team.Id,
                 RequesterUserId = requester.Id,
                 DepartmentId = requester.DepartmentId!.Value,
-                Type = type,
+                MarketingManagerUserId = requester.Id,
                 Title = title,
-                Description = description,
+                MainGoal = mainGoal,
                 RequestedDueDate = Due(dueDays),
                 Priority = priority,
                 Status = acceptedTask is null ? RequestStatus.New : RequestStatus.Accepted,
@@ -360,16 +360,16 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 CreatedAt = now.AddHours(-ageHours),
             });
 
-        AddRequest(design, david, RequestType.Print, "Retail partner brochure", "A 4-page brochure for retail partners covering the new product range.", Priority.High, 14, 3);
-        AddRequest(design, fatima, RequestType.Print, "Wellness week posters", "Three A3 posters for wellness week in the Johannesburg and Cape Town offices.", Priority.Medium, 10, 20);
-        AddRequest(design, kyle, RequestType.Web, "App store screenshots", "Updated screenshots for the iOS and Android listings after the redesign.", Priority.High, 12, 28);
-        AddRequest(design, fatima, RequestType.Print, "Recruitment fair banner", "A pull-up banner for the university recruitment fair.", Priority.Low, 21, 50);
-        AddRequest(design, kyle, RequestType.Social, "Webinar promo graphics", "Social tiles and an email header for the product webinar.", Priority.Medium, 9, 70);
-        AddRequest(marketing, kyle, RequestType.Copy, "Product update blog post", "A blog post announcing the November product update.", Priority.Medium, 10, 6);
-        AddRequest(marketing, david, RequestType.Copy, "Sales enablement email sequence", "A five-email nurture sequence for new leads.", Priority.High, 14, 30);
-        AddRequest(design, david, RequestType.Presentation, "Sales deck master template", "A new master template for all sales presentations.", Priority.High, 5, 200, masterTemplate);
-        AddRequest(design, fatima, RequestType.Print, "Welcome booklet for new starters", "A printed welcome booklet for the onboarding pack.", Priority.Medium, 6, 220, welcomeBooklet);
-        AddRequest(design, kyle, RequestType.Web, "Homepage hero refresh", "New hero concepts for the website homepage.", Priority.High, 7, 260, heroConcepts);
+        AddRequest(design, david, "Retail partner brochure", "A 4-page brochure for retail partners covering the new product range.", Priority.High, 14, 3);
+        AddRequest(design, fatima, "Wellness week posters", "Three A3 posters for wellness week in the Johannesburg and Cape Town offices.", Priority.Medium, 10, 20);
+        AddRequest(design, kyle, "App store screenshots", "Updated screenshots for the iOS and Android listings after the redesign.", Priority.High, 12, 28);
+        AddRequest(design, fatima, "Recruitment fair banner", "A pull-up banner for the university recruitment fair.", Priority.Low, 21, 50);
+        AddRequest(design, kyle, "Webinar promo graphics", "Social tiles and an email header for the product webinar.", Priority.Medium, 9, 70);
+        AddRequest(marketing, kyle, "Product update blog post", "A blog post announcing the November product update.", Priority.Medium, 10, 6);
+        AddRequest(marketing, david, "Sales enablement email sequence", "A five-email nurture sequence for new leads.", Priority.High, 14, 30);
+        AddRequest(design, david, "Sales deck master template", "A new master template for all sales presentations.", Priority.High, 5, 200, masterTemplate);
+        AddRequest(design, fatima, "Welcome booklet for new starters", "A printed welcome booklet for the onboarding pack.", Priority.Medium, 6, 220, welcomeBooklet);
+        AddRequest(design, kyle, "Homepage hero refresh", "New hero concepts for the website homepage.", Priority.High, 7, 260, heroConcepts);
 
         await db.SaveChangesAsync();
         LogSeeded(logger, weekStart);

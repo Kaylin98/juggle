@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Juggle.Api.Common;
 using Juggle.Api.Data.Entities;
+using Juggle.Api.Features.Auth;
 using Juggle.Api.Features.Requests;
 using Juggle.Api.Features.Tasks;
 using Juggle.Api.Features.Teams;
@@ -25,6 +26,8 @@ public sealed class RequestsTests(ApiFactory api)
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.Equal((RequestStatus.New, "Design", "Sales", "David Cohen"), (fetched!.Status, fetched.TeamName, fetched.Department, fetched.RequesterName));
+        Assert.Equal(("For the demo.", "David Cohen"), (fetched.MainGoal, fetched.MarketingManagerName));
+        Assert.Equal(["Key visual", "Social tiles x6"], fetched.Deliverables);
     }
 
     [Fact]
@@ -60,6 +63,7 @@ public sealed class RequestsTests(ApiFactory api)
             .Single(t => t.Id == accepted.TaskId);
         Assert.Equal("To Do", statuses!.Single(s => s.Id == task.StatusId).Name);
         Assert.Equal(("Onboarding video storyboard", priya.Id, 16m, _today.AddDays(10)), (task.Title, task.AssigneePersonId, task.EstimateHours, task.DueDate));
+        Assert.Equal("Main goal\nFor the demo.\n\nDeliverables\n- Key visual\n- Social tiles x6", task.Description);
         Assert.DoesNotContain(await GetInboxAsync(naledi), r => r.Id == request.Id);
 
         // The requester sees who took it on and the date the team committed to.
@@ -122,7 +126,15 @@ public sealed class RequestsTests(ApiFactory api)
         var david = await api.SignInAsAsync("David Cohen");
         var valid = await NewRequestAsync(david, "Valid");
 
-        foreach (var invalid in new[] { valid with { Title = "" }, valid with { RequestedDueDate = _today.AddDays(-1) }, valid with { TeamId = Guid.Empty } })
+        CreateRequestRequest[] invalids =
+        [
+            valid with { Title = "" },
+            valid with { RequestedDueDate = _today.AddDays(-1) },
+            valid with { TeamId = Guid.Empty },
+            valid with { MarketingManagerUserId = Guid.Empty },
+            valid with { Deliverables = "Banner\n" + new string('x', 201) },
+        ];
+        foreach (var invalid in invalids)
         {
             var response = await david.PostAsJsonAsync("/api/requests", invalid, ApiFactory.Json, _ct);
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -143,7 +155,9 @@ public sealed class RequestsTests(ApiFactory api)
     {
         var options = await client.GetFromJsonAsync<RequestOptionsDto>("/api/requests/options", ApiFactory.Json, _ct);
         var design = options!.Teams.Single(t => t.Name == "Design").Id;
-        return new CreateRequestRequest(design, RequestType.Presentation, title, "For the demo.", options.MyDepartmentId!.Value, _today.AddDays(14), Priority.High);
+        var me = await client.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct);
+        return new CreateRequestRequest(
+            design, title, "For the demo.", "Key visual\n- Social tiles x6\n\n", options.MyDepartmentId!.Value, me!.Id, _today.AddDays(14), Priority.High);
     }
 
     private async Task<RequestDto> SubmitAsync(string requester, string title)

@@ -66,34 +66,47 @@ const NOTE: Record<RequestStatus, string> = {
         }
 
         <section class="panel mt-6 p-6" aria-label="Request">
-          @if (request.description) {
-            <p class="text-sm whitespace-pre-line">{{ request.description }}</p>
-          } @else {
-            <p class="text-sm text-ink-muted">No description.</p>
-          }
-          <dl class="mt-6 grid gap-4 text-sm sm:grid-cols-3">
+          <div class="grid gap-6 sm:grid-cols-2">
+            <div>
+              <h2 class="label-caps">Main goal</h2>
+              <p class="mt-1 text-sm whitespace-pre-line" [class.text-ink-muted]="!request.mainGoal">
+                {{ request.mainGoal ?? 'No main goal given.' }}
+              </p>
+            </div>
+            <div>
+              <h2 class="label-caps">Deliverables</h2>
+              <ul class="mt-1 list-disc space-y-1 pl-5 text-sm">
+                @for (deliverable of request.deliverables; track $index) {
+                  <li>{{ deliverable }}</li>
+                } @empty {
+                  <li class="-ml-5 list-none text-ink-muted">No deliverables listed.</li>
+                }
+              </ul>
+            </div>
+          </div>
+          <dl class="mt-6 grid gap-4 border-t border-line pt-6 text-sm sm:grid-cols-3">
             <div>
               <dt class="label-caps">Team</dt>
               <dd class="mt-1">{{ request.teamName }}</dd>
-            </div>
-            <div>
-              <dt class="label-caps">Type</dt>
-              <dd class="mt-1">{{ request.type }}</dd>
-            </div>
-            <div>
-              <dt class="label-caps">Priority</dt>
-              <dd class="mt-1">{{ request.priority }}</dd>
-            </div>
-            <div>
-              <dt class="label-caps">Needed by</dt>
-              <dd class="mt-1">{{ request.requestedDueDate ? (request.requestedDueDate | date: 'EEE d MMM y') : 'No date' }}</dd>
             </div>
             <div>
               <dt class="label-caps">{{ departmentLabel() }}</dt>
               <dd class="mt-1">{{ request.department }}</dd>
             </div>
             <div>
-              <dt class="label-caps">Sent</dt>
+              <dt class="label-caps">Priority</dt>
+              <dd class="mt-1">{{ request.priority }}</dd>
+            </div>
+            <div>
+              <dt class="label-caps">Studio deadline</dt>
+              <dd class="mt-1">{{ request.requestedDueDate ? (request.requestedDueDate | date: 'EEE d MMM y') : 'No date' }}</dd>
+            </div>
+            <div>
+              <dt class="label-caps">Marketing manager</dt>
+              <dd class="mt-1">{{ request.marketingManagerName ?? request.requesterName }}</dd>
+            </div>
+            <div>
+              <dt class="label-caps">Briefed in</dt>
               <dd class="mt-1">{{ request.createdAt | date: 'EEE d MMM y, HH:mm' }} by {{ request.requesterName }}</dd>
             </div>
           </dl>

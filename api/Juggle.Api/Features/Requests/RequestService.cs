@@ -17,7 +17,12 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         var teams = await db.Teams.OrderBy(t => t.Name).Select(t => new TeamOptionDto(t.Id, t.Name, t.Colour)).ToListAsync(ct);
         var departments = await db.Departments.OrderBy(d => d.Name).Select(d => new OptionDto(d.Id, d.Name)).ToListAsync(ct);
         var myDepartmentId = await db.Users.Where(u => u.Id == currentUser.UserId).Select(u => u.DepartmentId).FirstAsync(ct);
-        return new RequestOptionsDto(teams, departments, Enum.GetValues<RequestType>(), Enum.GetValues<Priority>(), myDepartmentId);
+        var managers = await db.Users
+            .Where(u => u.DepartmentId != null || u.Id == currentUser.UserId)
+            .OrderBy(u => u.Name)
+            .Select(u => new UserOptionDto(u.Id, u.Name, u.AvatarColour))
+            .ToListAsync(ct);
+        return new RequestOptionsDto(teams, departments, managers, Enum.GetValues<Priority>(), myDepartmentId);
     }
 
     public async Task<RequestDto> CreateAsync(CreateRequestRequest request, CancellationToken ct)
@@ -31,9 +36,17 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
             var label = await db.Organisations.Select(o => o.DepartmentLabel).FirstAsync(ct);
             throw new BadRequestException($"Choose a {label.ToLowerInvariant()}.");
         }
+        if (!await db.Users.AnyAsync(u => u.Id == request.MarketingManagerUserId, ct))
+        {
+            throw new BadRequestException("Choose a marketing manager.");
+        }
+        if (Deliverables.Parse(request.Deliverables).Any(d => d.Length > Deliverables.MaxLength))
+        {
+            throw new BadRequestException($"Keep each deliverable under {Deliverables.MaxLength} characters.");
+        }
         if (request.RequestedDueDate < clock.Today)
         {
-            throw new BadRequestException("The due date can't be in the past.");
+            throw new BadRequestException("The deadline can't be in the past.");
         }
 
         var entity = new Request
@@ -42,9 +55,10 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
             TeamId = request.TeamId,
             RequesterUserId = currentUser.UserId,
             DepartmentId = request.DepartmentId,
-            Type = request.Type,
+            MarketingManagerUserId = request.MarketingManagerUserId,
             Title = request.Title.Trim(),
-            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            MainGoal = string.IsNullOrWhiteSpace(request.MainGoal) ? null : request.MainGoal.Trim(),
+            Deliverables = string.IsNullOrWhiteSpace(request.Deliverables) ? null : request.Deliverables.Trim(),
             RequestedDueDate = request.RequestedDueDate,
             Priority = request.Priority,
             Status = RequestStatus.New,
@@ -115,7 +129,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
             TeamId = request.TeamId,
             ProjectId = accept.ProjectId,
             Title = request.Title,
-            Description = request.Description,
+            Description = BriefDescription(request),
             StatusId = status.Id,
             AssigneePersonId = accept.AssigneePersonId,
             EstimateHours = accept.EstimateHours,
@@ -159,6 +173,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         .Include(r => r.Team)
         .Include(r => r.Department)
         .Include(r => r.Requester)
+        .Include(r => r.MarketingManager)
         .AsNoTracking();
 
     private async Task<RequestDto> ToDtoAsync(Request request, CancellationToken ct) => (await ToDtosAsync([request], ct))[0];
@@ -182,11 +197,12 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         r.Id,
         r.TeamId,
         r.Team.Name,
-        r.Type,
         r.Title,
-        r.Description,
+        r.MainGoal,
+        Deliverables.Parse(r.Deliverables),
         r.Department.Name,
         r.Requester.Name,
+        r.MarketingManager?.Name,
         r.RequestedDueDate,
         r.Priority,
         r.Status,
@@ -195,4 +211,20 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         r.CreatedAt,
         assigneeName,
         committedDueDate);
+
+    /// <summary>The brief as one task's description: the main goal and the deliverables under headings.</summary>
+    private static string? BriefDescription(Request request)
+    {
+        var deliverables = Deliverables.Parse(request.Deliverables);
+        var parts = new List<string>();
+        if (request.MainGoal is { } goal)
+        {
+            parts.Add($"Main goal\n{goal}");
+        }
+        if (deliverables.Count > 0)
+        {
+            parts.Add("Deliverables\n" + string.Join("\n", deliverables.Select(d => $"- {d}")));
+        }
+        return parts.Count == 0 ? null : string.Join("\n\n", parts);
+    }
 }

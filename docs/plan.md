@@ -8,8 +8,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | C - Client demo for The Core Group |
 | Phase status | In progress |
-| Last completed task | C.3 Department label |
-| Next task | C.4 Request fields (with the rest of C.2) |
+| Last completed task | C.4 Request fields |
+| Next task | C.5 Job codes and C.6 Accept as new brief |
 | Blockers / open questions | None |
 | Last updated | 2026-10-31 |
 
@@ -719,9 +719,9 @@ Built after demo-v1 (approved 2026-10-31), one commit per item.
 **Tasks**
 
 - [x] C.1 Confirm the financial year start month for the demo org (D52): October; brands and prefixes confirmed too
-- [ ] C.2 Migration: `Organisation.DepartmentLabel` and `FinancialYearStartMonth`, `Department.JobCodePrefix`, `Request.Description` renamed to `MainGoal`, `Request.Deliverables` and `MarketingManagerUserId` added, `Request.Type` dropped
+- [x] C.2 Migration (two: `BrandSettings` with C.3, `BriefFields` with C.4): `Organisation.DepartmentLabel` and `FinancialYearStartMonth`, `Department.JobCodePrefix`, `Request.Description` renamed to `MainGoal`, `Request.Deliverables` and `MarketingManagerUserId` added, `Request.Type` dropped
 - [x] C.3 Department label through `/api/auth/me` and `AuthService`; every "department" in user-facing text uses it (D48)
-- [ ] C.4 Request API and form: new fields, "Type of work" removed, labels from their template, detail, My requests and triage show them (D50)
+- [x] C.4 Request API and form: new fields, "Type of work" removed, labels from their template, detail, My requests and triage show them (D50)
 - [ ] C.5 Job codes: next number, quarter and year, unused colour (D52), with unit tests for the quarter at year and financial-year boundaries
 - [ ] C.6 Accept as new brief: API (new-brief suggestion, accept with a new project, one task per deliverable) and the accept drawer's "New brief" / "Existing project" choice with the editable code (D51)
 - [ ] C.7 Dashboard "Awaiting review" card (D53)

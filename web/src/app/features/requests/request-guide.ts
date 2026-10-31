@@ -39,9 +39,9 @@ export class RequestGuide {
   ];
 
   protected readonly tips = [
-    'A clear goal: what the work is for and what a good result looks like.',
-    'The audience: who will see or use it.',
-    'Links to references, examples or brand assets.',
-    'A realistic needed-by date, with time for a round of changes.',
+    'A clear main goal: what the work is for and what a good result looks like.',
+    'Every deliverable on its own line, with sizes or formats, such as "A4 insert: Kloppers".',
+    'Links to references, examples or brand assets in the main goal.',
+    'A realistic studio deadline, with time for a round of feedback.',
   ];
 }

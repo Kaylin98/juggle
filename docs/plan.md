@@ -750,3 +750,4 @@ Built after demo-v1 (approved 2026-10-31), one commit per item, tagged `demo-v2`
 - 2026-10-31: Schedule bookings use a brighter project tint (`hue-booking`). Build with no warnings, lint and 97 web tests pass.
 - 2026-10-31: Stretch approved (with decisions on declined requests, self-approval and leave on behalf). S.1 My work built and checked at 1440. Build with no warnings, lint, 49 API tests and 102 web tests pass.
 - 2026-10-31: S.2 Time off request and approval built (D47) and checked at 1440 through the UI. Build with no warnings, lint, 56 API tests and 108 web tests pass. Demo data reset. Stretch awaiting review.
+- 2026-10-31: Review of the stretch: My tasks columns show three cards and scroll inside the column (thin scrollbar, the next card peeking in) instead of growing; task cards drop their 1px border and rely on the soft shadow, on the board too, as the card is shared. Checked at 1440 and 2000. Build with no warnings, lint and 108 web tests pass.

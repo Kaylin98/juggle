@@ -20,7 +20,7 @@ export interface BoardCard {
     @let task = card().task;
     <button
       type="button"
-      class="block w-full rounded-card border border-line bg-surface px-4 py-3 text-left shadow-soft transition-shadow hover:shadow-lifted focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
+      class="block w-full rounded-card bg-surface px-4 py-3 text-left shadow-soft transition-shadow hover:shadow-lifted focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
       [class.cursor-grab]="card().canEdit && movable()"
       (click)="opened.emit()"
     >

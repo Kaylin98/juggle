@@ -69,6 +69,11 @@
   background-color: color-mix(in oklch, var(--hue) 18%, var(--color-surface));
 }
 
+/* Schedule bookings: a brighter tint, so projects tell apart at a glance, still light under ink text. */
+@utility hue-booking {
+  background-color: color-mix(in oklch, var(--hue) 28%, var(--color-surface));
+}
+
 @utility hue-edge {
   border-color: var(--hue);
 }

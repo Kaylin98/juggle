@@ -17,7 +17,7 @@ export type BarGrip = 'body' | 'start' | 'end';
     class: 'group relative mx-0.5 mb-1 flex min-w-0 flex-col justify-center rounded-bar border-l-3 px-2 leading-tight',
     '[class.z-10]': '!held()',
     '[class.z-15]': 'held()',
-    '[class.hue-tint]': '!allocation().otherTeam',
+    '[class.hue-booking]': '!allocation().otherTeam',
     '[class.hue-edge]': '!allocation().otherTeam',
     '[class.text-ink]': '!allocation().otherTeam',
     '[class.bg-surface-muted]': 'allocation().otherTeam',

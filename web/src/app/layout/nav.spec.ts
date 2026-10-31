@@ -33,13 +33,13 @@ describe('Nav', () => {
 
   it('groups the request pages under Requests, closed away from them, with the triage count on the group', async () => {
     const { fixture, group, links } = await render('TeamAdmin', '/t/design/board');
-    expect(links()).toEqual(['Schedule', 'Board', 'Dashboard']);
+    expect(links()).toEqual(['Dashboard', 'Schedule', 'Board']);
     expect(group().getAttribute('aria-expanded')).toBe('false');
     expect(group().textContent).toContain('3');
 
     group().click();
     await fixture.whenStable();
-    expect(links()).toEqual(['Schedule', 'Board', 'Dashboard', 'My requests', 'New request', 'Triage 3']);
+    expect(links()).toEqual(['Dashboard', 'Schedule', 'Board', 'Triage 3', 'My requests', 'New request']);
     expect(group().textContent).not.toContain('3');
   });
 

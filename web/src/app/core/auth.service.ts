@@ -47,11 +47,11 @@ export class AuthService {
     return this.teams().find((t) => t.id === teamId)?.myRole ?? null;
   }
 
-  /** Admins land on the capacity grid, members on the board, requesters on their requests. */
+  /** Admins land on the dashboard, members on the board, requesters on their requests (D26). */
   landingUrl(): string {
     const team = this.teams()[0];
     if (!team) return '/requests';
-    return team.myRole === 'TeamAdmin' ? `/t/${team.id}/capacity` : `/t/${team.id}/board`;
+    return team.myRole === 'TeamAdmin' ? `/t/${team.id}/dashboard` : `/t/${team.id}/board`;
   }
 
   private async load(): Promise<boolean> {

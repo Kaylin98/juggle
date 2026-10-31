@@ -103,7 +103,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 - [ ] Lists seeded users with name, role and team; clicking one signs in
 - [ ] Header shows the user and a "Switch user" action
 
-**2. Schedule (default landing page for admins)**
+**2. Schedule**
 
 - [ ] Rows = people in the current team; columns = weekdays (weekends shown as narrow shaded columns); view 1, 2, 4 or 8 weeks; previous/next/today
 - [ ] Allocation bars show project colour, name and hours/day; one person can have several bars per day
@@ -132,7 +132,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 - [ ] Accept: choose project, assignee, estimate, committed due date; creates a task in the first column after Triage (e.g. To Do)
 - [ ] Reject with a reason
 
-**6. Dashboard (Team Admin)**
+**6. Dashboard (Team Admin; default landing page for admins)**
 
 - [ ] Utilisation bar per person for this week and the next 4 weeks
 - [ ] Cards: overdue tasks, requests waiting in triage, people over capacity this week
@@ -191,7 +191,7 @@ One milestone per day, each ending with something runnable. The schedule gets th
 About 10 minutes, following one request from submission to booked capacity.
 
 1. **Sign in as a requester** (Sales). Submit a request: "Sales deck for Q1 roadshow", due in 2 weeks
-2. **Switch to the Head of Design.** The triage badge shows a new request. Open the triage inbox
+2. **Switch to the Head of Design.** The Dashboard opens; the triage badge and the "Requests in triage" card show the new request. Open Triage from the card
 3. **Check capacity first:** open the schedule. Point out the red day (someone over capacity), the person on leave, and the under-loaded designer
 4. **Accept the request:** assign it to the under-loaded designer, estimate 16 h, set a committed due date. It appears on the board in To Do
 5. **Book it:** from the task drawer, "Book on schedule" for 4 h/day over 4 days. Back on the schedule, their load turns from green to amber

@@ -55,12 +55,12 @@ export class TeamContextService {
     void this.router.navigate(['/t', this.teamId(), this.page()], { queryParams: { teams: ALL_TEAMS } });
   }
 
-  /** Opens the same page in another team, falling back to the role's landing page. */
+  /** Opens the same page in another team, falling back to the role's landing page (dashboard or board). */
   switchTo(teamId: string): void {
     const isAdmin = this.auth.roleIn(teamId) === 'TeamAdmin';
     const current = this.page();
     const allowed = current !== null && (isAdmin || current === 'board' || current === 'capacity');
-    const page = allowed ? current : isAdmin ? 'capacity' : 'board';
+    const page = allowed ? current : isAdmin ? 'dashboard' : 'board';
     void this.router.navigate(['/t', teamId, page]);
   }
 }

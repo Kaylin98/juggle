@@ -66,29 +66,27 @@ export class Nav {
   protected readonly icons = ICONS;
   protected readonly flyoutPositions = FLYOUT_POSITIONS;
 
+  /** Dashboard (admins), Schedule, Board. */
   protected readonly teamLinks = computed<NavItem[]>(() => {
     const teamId = this.teamContext.teamId();
     if (!teamId) return [];
-    const links: NavItem[] = [
+    return [
+      ...(this.isAdmin() ? [{ label: 'Dashboard', link: ['/t', teamId, 'dashboard'], icon: ICONS.dashboard }] : []),
       { label: 'Schedule', link: ['/t', teamId, 'capacity'], icon: ICONS.capacity },
       { label: 'Board', link: ['/t', teamId, 'board'], icon: ICONS.board },
     ];
-    if (this.isAdmin()) {
-      links.push({ label: 'Dashboard', link: ['/t', teamId, 'dashboard'], icon: ICONS.dashboard });
-    }
-    return links;
   });
 
+  /** Triage (admins), My requests, New request; the same order in the rail's flyout. */
   protected readonly requestLinks = computed<NavItem[]>(() => {
     const teamId = this.teamContext.teamId();
-    const links: NavItem[] = [
+    return [
+      ...(teamId && this.isAdmin()
+        ? [{ label: 'Triage', link: ['/t', teamId, 'triage'], icon: ICONS.triage, count: this.triageCount() }]
+        : []),
       { label: 'My requests', link: ['/requests'], icon: ICONS.myRequests },
       { label: 'New request', link: ['/request'], icon: ICONS.newRequest },
     ];
-    if (teamId && this.isAdmin()) {
-      links.push({ label: 'Triage', link: ['/t', teamId, 'triage'], icon: ICONS.triage, count: this.triageCount() });
-    }
-    return links;
   });
 
   protected readonly triageCount = computed(() => {

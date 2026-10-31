@@ -95,6 +95,8 @@ export interface DayLoad {
   allocated: number;
   /** Why the day is not worked (leave, a public holiday), or null on a working day. */
   timeOff: string | null;
+  /** The day is a public holiday; timeOff is then its name. */
+  publicHoliday: boolean;
 }
 
 export interface SchedulePerson {

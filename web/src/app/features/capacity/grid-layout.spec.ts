@@ -1,5 +1,5 @@
 import { Allocation, DayLoad } from '../../core/models';
-import { PlacedBar, dayColumn, placeBars, timeOffBlocks } from './grid-layout';
+import { PlacedBar, dayColumn, placeBars, publicHolidays, timeOffBlocks } from './grid-layout';
 
 // Two weeks: Mon 2 Nov to Fri 13 Nov 2026.
 const dates = [
@@ -7,8 +7,15 @@ const dates = [
   '2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13',
 ];
 
-function days(timeOff: Record<number, string> = {}): DayLoad[] {
-  return dates.map((date, i) => ({ date, capacity: timeOff[i] ? 0 : 8, allocated: 0, timeOff: timeOff[i] ?? null }));
+/** Days off by index; the indexes in publicHolidays are public holidays. */
+function days(timeOff: Record<number, string> = {}, publicHolidays: number[] = []): DayLoad[] {
+  return dates.map((date, i) => ({
+    date,
+    capacity: timeOff[i] ? 0 : 8,
+    allocated: 0,
+    timeOff: timeOff[i] ?? null,
+    publicHoliday: publicHolidays.includes(i),
+  }));
 }
 
 function allocation(id: string, startDate: string, endDate: string): Allocation {
@@ -86,5 +93,26 @@ describe('timeOffBlocks', () => {
       { start: 5, end: 5, label: 'Leave', from: '2026-11-05', to: '2026-11-09' },
       { start: 8, end: 8, label: 'Holiday', from: '2026-11-12', to: '2026-11-12' },
     ]);
+  });
+
+  it('leaves out public holidays, which the grid shows across every row', () => {
+    expect(timeOffBlocks(days({ 1: 'Leave', 2: 'Heritage Day' }, [2]))).toEqual([
+      { start: 1, end: 1, label: 'Leave', from: '2026-11-03', to: '2026-11-03' },
+    ]);
+  });
+});
+
+describe('publicHolidays', () => {
+  it('names each public holiday once, even when someone is on leave that day', () => {
+    const onLeave = { days: days({ 2: 'Annual leave', 7: 'Annual leave' }) };
+    const atWork = { days: days({ 2: 'Heritage Day', 7: 'Reconciliation Day' }, [2, 7]) };
+    expect(publicHolidays([onLeave, atWork])).toEqual([
+      { index: 2, name: 'Heritage Day' },
+      { index: 7, name: 'Reconciliation Day' },
+    ]);
+  });
+
+  it('finds none without people', () => {
+    expect(publicHolidays([])).toEqual([]);
   });
 });

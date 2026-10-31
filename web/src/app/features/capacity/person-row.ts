@@ -37,8 +37,9 @@ const LANE_TRACKS = 8;
     '[attr.data-person-id]': 'person().id',
   },
   template: `
+    <!-- The 1px shadow draws the row's bottom border over anything scrolled under this column (a holiday). -->
     <div
-      class="sticky left-0 z-20 flex items-center gap-3 border-r border-line px-4 py-3"
+      class="sticky left-0 z-20 flex items-center gap-3 border-r border-line px-4 py-3 shadow-[0_1px_0_var(--color-line)]"
       [class]="highlighted() ? 'bg-accent-50' : 'bg-surface'"
     >
       <app-avatar [name]="person().name" [colour]="person().avatarColour" />

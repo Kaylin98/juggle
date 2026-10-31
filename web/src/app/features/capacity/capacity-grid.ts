@@ -2,8 +2,9 @@ import { DatePipe } from '@angular/common';
 import { Component, ElementRef, afterEveryRender, computed, input, output, signal, viewChild } from '@angular/core';
 import { Allocation, Schedule } from '../../core/models';
 import { isoWeek } from '../../shared/dates';
+import { Tooltip } from '../../shared/tooltip';
 import { BarGrip } from './allocation-bar';
-import { Dated, dayColumn } from './grid-layout';
+import { Dated, dayColumn, publicHolidays } from './grid-layout';
 import { clashDays, withBookings } from './live-load';
 import { PersonRow } from './person-row';
 import { ScheduleDrag, draggedAllocation, selectedDays } from './schedule-drag';
@@ -36,7 +37,7 @@ export interface NewBooking {
  */
 @Component({
   selector: 'app-capacity-grid',
-  imports: [DatePipe, PersonRow],
+  imports: [DatePipe, PersonRow, Tooltip],
   host: {
     '[class]': 'hostClass()',
     '(pointerdown)': 'press($event)',
@@ -106,6 +107,21 @@ export interface NewBooking {
           [style.grid-row]="'2 / span ' + schedule().people.length"
         ></div>
       }
+
+      <!-- A public holiday is everyone's day off: one block down every row, its text running upwards to fit a day. -->
+      @for (holiday of holidays(); track holiday.index) {
+        <div
+          class="z-10 mx-0.5 my-1 flex items-start justify-center overflow-hidden rounded-bar bg-ink py-4 text-xs leading-tight text-white"
+          [style.grid-column]="column(holiday.index)"
+          [style.grid-row]="'2 / span ' + schedule().people.length"
+          [appTooltip]="'Public holiday: ' + holiday.name"
+        >
+          <span class="rotate-180 whitespace-nowrap [writing-mode:vertical-rl]">
+            <span class="block font-semibold">Public holiday</span>
+            <span class="block">{{ holiday.name }}</span>
+          </span>
+        </div>
+      }
     </div>
   `,
 })
@@ -162,6 +178,8 @@ export class CapacityGrid {
   );
 
   protected readonly todayIndex = computed(() => this.schedule().days.indexOf(this.today()));
+
+  protected readonly holidays = computed(() => publicHolidays(this.schedule().people));
 
   /** Where the drag would leave the booking it holds, once it is a drag. */
   private readonly dragged = computed(() => {

@@ -1,6 +1,6 @@
 import { bookedShare, dayState, loadLevel, totalLoad, utilisationLevel } from './load-colour';
 
-const day = (allocated: number, capacity = 8) => ({ date: '2026-11-02', capacity, allocated, timeOff: null });
+const day = (allocated: number, capacity = 8) => ({ date: '2026-11-02', capacity, allocated, timeOff: null, publicHoliday: false });
 
 describe('loadLevel', () => {
   it('is green under 80%, amber from 80% to 100%, red over 100%', () => {

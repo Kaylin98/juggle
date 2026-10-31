@@ -85,10 +85,25 @@ export function placeBars<T extends Dated>(allocations: T[], days: DayLoad[]): P
     });
 }
 
+/** A public holiday among the days shown: its weekday (0-based index) and name. */
+export interface PublicHoliday {
+  index: number;
+  name: string;
+}
+
+/** The public holidays among the days shown. Everyone shares them, so any person's days can name one. */
+export function publicHolidays(people: { days: DayLoad[] }[]): PublicHoliday[] {
+  return (people[0]?.days ?? []).flatMap((_, index) => {
+    const name = people.map((person) => person.days[index]).find((day) => day.publicHoliday)?.timeOff;
+    return name ? [{ index, name }] : [];
+  });
+}
+
+/** A person's own days off. Public holidays are left out: the grid shows each one once, across every row. */
 export function timeOffBlocks(days: DayLoad[]): TimeOffBlock[] {
   const runs: { run: Run; label: string }[] = [];
   days.forEach((day, i) => {
-    if (!day.timeOff) return;
+    if (!day.timeOff || day.publicHoliday) return;
     const last = runs.at(-1);
     if (last && last.run[1] === i - 1 && last.label === day.timeOff) last.run[1] = i;
     else runs.push({ run: [i, i], label: day.timeOff });

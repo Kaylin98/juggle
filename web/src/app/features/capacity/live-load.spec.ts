@@ -7,6 +7,7 @@ const days: DayLoad[] = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05',
   capacity: date === '2026-11-04' ? 0 : 8,
   allocated: 0,
   timeOff: date === '2026-11-04' ? 'Annual leave' : null,
+  publicHoliday: false,
 }));
 
 function booking(startDate: string, endDate: string, hoursPerDay: number): Allocation {

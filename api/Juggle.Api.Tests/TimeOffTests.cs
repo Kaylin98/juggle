@@ -62,7 +62,7 @@ public sealed class TimeOffTests(ApiFactory api)
         Assert.Empty(await ApprovalsAsync(jason));
 
         // Jason is also in Marketing, so Megan decides his; the Org Admin decides anyone's.
-        Assert.Contains(await ApprovalsAsync(megan), a => a.Id == jasons.Id && a.Teams.SequenceEqual(["Design", "Marketing"]));
+        Assert.Contains(await ApprovalsAsync(megan), a => a.Id == jasons.Id && a.Teams.SequenceEqual(["Marketing", "Studio"]));
         Assert.Equal(HttpStatusCode.NoContent, (await megan.PostAsync($"/api/time-off/{jasons.Id}/approve", null, _ct)).StatusCode);
         var naledi = await api.SignInAsAsync("Naledi Khumalo");
         Assert.Equal(HttpStatusCode.NoContent, (await naledi.PostAsync($"/api/time-off/{priyas.Id}/approve", null, _ct)).StatusCode);
@@ -85,7 +85,7 @@ public sealed class TimeOffTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.NoContent, declined.StatusCode);
         var mine = (await MyWorkAsync(ruben)).TimeOff.Single(t => t.Id == request.Id);
         Assert.Equal((TimeOffStatus.Declined, "Launch week", "Time off"), (mine.Status, mine.DeclineReason, mine.Label));
-        var schedule = await ScheduleAsync(naledi, "Design", monday);
+        var schedule = await ScheduleAsync(naledi, "Studio", monday);
         var day = schedule.People.Single(p => p.Name == "Ruben Fourie").Days[0];
         Assert.Equal((null, null, 5m), (day.TimeOff, day.PendingTimeOff, day.Capacity));
     }
@@ -114,11 +114,11 @@ public sealed class TimeOffTests(ApiFactory api)
     public async Task Requests_are_checked()
     {
         var ethan = await api.SignInAsAsync("Ethan Pillay");
-        var david = await api.SignInAsAsync("David Cohen");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
         var monday = await WorkingMondayAsync(28);
         await RequestAsync(ethan, TimeOffType.AnnualLeave, monday, monday.AddDays(1));
 
-        Assert.Equal(HttpStatusCode.Forbidden, (await PostLeaveAsync(david, TimeOffType.AnnualLeave, monday, monday)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await PostLeaveAsync(zanele, TimeOffType.AnnualLeave, monday, monday)).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await PostLeaveAsync(ethan, TimeOffType.AnnualLeave, monday.AddDays(3), monday.AddDays(2))).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await PostLeaveAsync(ethan, TimeOffType.AnnualLeave, monday.AddDays(5), monday.AddDays(6))).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await PostLeaveAsync(ethan, TimeOffType.PublicHoliday, monday.AddDays(3), monday.AddDays(3))).StatusCode);
@@ -146,8 +146,8 @@ public sealed class TimeOffTests(ApiFactory api)
         var monday = await WorkingMondayAsync(32);
         var leave = await RequestAsync(ruben, TimeOffType.AnnualLeave, monday, monday.AddDays(1));
         await naledi.PostAsync($"/api/time-off/{leave.Id}/approve", null, _ct);
-        var designId = await TeamIdAsync(naledi, "Design");
-        var project = (await naledi.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{designId}/projects", ApiFactory.Json, _ct))![0];
+        var studioId = await TeamIdAsync(naledi, "Studio");
+        var project = (await naledi.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))![0];
         var rubenId = (await ruben.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct))!.PersonId!.Value;
 
         var response = await naledi.PostAsJsonAsync(
@@ -177,7 +177,7 @@ public sealed class TimeOffTests(ApiFactory api)
         (await client.GetFromJsonAsync<MyWorkDto>("/api/my-work", ApiFactory.Json, _ct))!;
 
     private async Task<IReadOnlyList<DayLoad>> LeratoDaysAsync(HttpClient client, DateOnly monday) =>
-        (await ScheduleAsync(client, "Design", monday)).People.Single(p => p.Name == "Lerato Mokoena").Days;
+        (await ScheduleAsync(client, "Studio", monday)).People.Single(p => p.Name == "Lerato Mokoena").Days;
 
     /// <param name="team">A team name, or "all".</param>
     private async Task<CapacityDto> ScheduleAsync(HttpClient client, string team, DateOnly start)

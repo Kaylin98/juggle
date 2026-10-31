@@ -8,8 +8,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | C - Client demo for The Core Group |
 | Phase status | In progress |
-| Last completed task | C.7 Dashboard "Awaiting review" card |
-| Next task | C.8 Seed rewrite and C.9 tests |
+| Last completed task | C.9 Seed rewrite and tests |
+| Next task | C.10 Demo brief and C.11 browser check |
 | Blockers / open questions | None |
 | Last updated | 2026-10-31 |
 
@@ -725,8 +725,8 @@ Built after demo-v1 (approved 2026-10-31), one commit per item.
 - [x] C.5 Job codes: next number, quarter and year, unused colour (D52), with unit tests for the quarter at year and financial-year boundaries
 - [x] C.6 Accept as new brief: API (new-brief suggestion, accept with a new project, one task per deliverable) and the accept drawer's "New brief" / "Existing project" choice with the editable code (D51)
 - [x] C.7 Dashboard "Awaiting review" card (D53)
-- [ ] C.8 Seed rewrite (D54); `--reset-demo`
-- [ ] C.9 Tests updated for the new seed; new tests for the label, the request fields, new brief and the dashboard card
+- [x] C.8 Seed rewrite (D54); `--reset-demo`
+- [x] C.9 Tests updated for the new seed; new tests for the label, the request fields, new brief and the dashboard card
 - [ ] C.10 `docs/demo-brief.md`: seed table, org name and the demo script below
 - [ ] C.11 Build with no warnings, lint, all tests; restart the API and `ng serve`; run the demo script in a browser at 1440; screenshots of the dashboard, schedule, board and request form for the user
 

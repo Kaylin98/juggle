@@ -36,7 +36,7 @@ public sealed class MyWorkTests(ApiFactory api)
         var myWork = await GetMyWorkAsync(jason);
 
         Assert.Equal(expected.Order(), myWork.Tasks.Select(t => t.Task.Id).Order());
-        Assert.Equal(["Design", "Marketing"], myWork.Tasks.Select(t => t.TeamName).Distinct().Order());
+        Assert.Equal(["Marketing", "Studio"], myWork.Tasks.Select(t => t.TeamName).Distinct().Order());
         Assert.DoesNotContain(myWork.Tasks, t => t.Category == StatusCategory.Done);
         Assert.True(myWork.Tasks[0].Task.IsOverdue);
         Assert.Equal(myWork.Tasks.OrderByDescending(t => t.Task.IsOverdue).ThenBy(t => t.Task.DueDate ?? DateOnly.MaxValue), myWork.Tasks);
@@ -65,9 +65,9 @@ public sealed class MyWorkTests(ApiFactory api)
     [Fact]
     public async Task Requesters_get_403()
     {
-        var david = await api.SignInAsAsync("David Cohen");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
 
-        Assert.Equal(HttpStatusCode.Forbidden, (await david.GetAsync("/api/my-work", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await zanele.GetAsync("/api/my-work", _ct)).StatusCode);
     }
 
     private async Task<MyWorkDto> GetMyWorkAsync(HttpClient client) =>

@@ -30,15 +30,15 @@ public sealed class AccessTests(ApiFactory api)
     public async Task Requester_only_uses_requests()
     {
         var data = await DesignDataAsync();
-        var david = await api.SignInAsAsync("David Cohen");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
         var team = $"/api/teams/{data.TeamId}";
 
-        await AssertGetStatusAsync(david, HttpStatusCode.Forbidden,
+        await AssertGetStatusAsync(zanele, HttpStatusCode.Forbidden,
             $"{team}/tasks", $"{team}/statuses", $"{team}/projects", $"{team}/people",
             $"{team}/requests", $"/api/capacity?teamId={data.TeamId}&start={_monday:yyyy-MM-dd}",
             $"/api/dashboard?teamId={data.TeamId}", $"/api/requests/{data.SomeoneElsesRequest}");
-        await AssertGetStatusAsync(david, HttpStatusCode.OK, "/api/requests/mine", "/api/requests/options");
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(david, $"{team}/tasks", new CreateTaskRequest("Mine", data.ProjectId, null, null, null, null, null)));
+        await AssertGetStatusAsync(zanele, HttpStatusCode.OK, "/api/requests/mine", "/api/requests/options");
+        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(zanele, $"{team}/tasks", new CreateTaskRequest("Mine", data.ProjectId, null, null, null, null, null)));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class AccessTests(ApiFactory api)
     {
         var naledi = await api.SignInAsAsync("Naledi Khumalo");
         var teams = await naledi.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct);
-        var teamId = teams!.Single(t => t.Name == "Design").Id;
+        var teamId = teams!.Single(t => t.Name == "Studio").Id;
         var people = await naledi.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{teamId}/people", ApiFactory.Json, _ct);
         var projects = await naledi.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{teamId}/projects", ApiFactory.Json, _ct);
         var tasks = await naledi.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{teamId}/tasks", ApiFactory.Json, _ct);
@@ -97,7 +97,7 @@ public sealed class AccessTests(ApiFactory api)
             naledisPerson,
             tasks!.First(t => t.AssigneePersonId == naledisPerson),
             inbox.First().Id,
-            inbox.First(r => r.RequesterName != "David Cohen").Id);
+            inbox.First(r => r.RequesterName != "Zanele Mthembu").Id);
     }
 
     private SaveAllocationRequest Booking(DesignData data) =>

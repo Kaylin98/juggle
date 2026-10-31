@@ -15,9 +15,9 @@ public sealed class AuthTests(ApiFactory api)
     {
         var users = await api.CreateClient().GetFromJsonAsync<List<DemoUserDto>>("/api/auth/demo-users", ApiFactory.Json, _ct);
 
-        Assert.Equal(14, users!.Count);
+        Assert.Equal(17, users!.Count);
         Assert.Equal("Org Admin", users[0].Role);
-        Assert.Equal(3, users.Count(u => u.Role == "Requester"));
+        Assert.Equal(6, users.Count(u => u.Role == "Requester"));
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public sealed class AuthTests(ApiFactory api)
         var teams = await client.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct);
 
         Assert.Equal((OrgRole.OrgAdmin, "Brand"), (me!.OrgRole, me.DepartmentLabel));
-        Assert.Equal(["Design", "Marketing"], teams!.Select(t => t.Name));
+        Assert.Equal(["Marketing", "Studio"], teams!.Select(t => t.Name));
         Assert.All(teams!, t => Assert.Equal(TeamRole.TeamAdmin, t.MyRole));
     }
 

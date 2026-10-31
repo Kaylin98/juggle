@@ -72,7 +72,7 @@ public sealed class CapacityTests(ApiFactory api)
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
 
-        var schedule = await GetAsync(client, await GetTeamIdAsync(client, "Design"), _nextWeek, 1);
+        var schedule = await GetAsync(client, await GetTeamIdAsync(client, "Studio"), _nextWeek, 1);
 
         Assert.Equal(5, schedule.Days.Count);
         Assert.Equal(8, schedule.People.Count);
@@ -88,12 +88,12 @@ public sealed class CapacityTests(ApiFactory api)
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
 
-        var schedule = await GetAsync(client, await GetTeamIdAsync(client, "Design"), _nextWeek, 2);
+        var schedule = await GetAsync(client, await GetTeamIdAsync(client, "Studio"), _nextWeek, 2);
 
         var jason = schedule.People.Single(p => p.Name == "Jason van Wyk");
         var jasonBars = schedule.Allocations.Where(a => a.PersonId == jason.Id).ToList();
-        Assert.Contains(jasonBars, a => a.OtherTeam && a.ProjectName == "Social Calendar" && a.TeamName == "Marketing" && a.ProjectDepartment == "Marketing");
-        Assert.Contains(jasonBars, a => !a.OtherTeam && a.ProjectName == "Q1 Campaign");
+        Assert.Contains(jasonBars, a => a.OtherTeam && a.ProjectName.EndsWith("_Social Calendar", StringComparison.Ordinal) && a.TeamName == "Marketing" && a.ProjectDepartment == "GoPro");
+        Assert.Contains(jasonBars, a => !a.OtherTeam && a.ProjectName.EndsWith("_Summer Campaign", StringComparison.Ordinal));
         Assert.Contains(jason.Days, d => d.TimeOff is null && d.Allocated == 6.5m);
     }
 

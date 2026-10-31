@@ -11,14 +11,14 @@ public sealed class TasksTests(ApiFactory api)
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task Design_and_Marketing_have_different_columns()
+    public async Task Studio_and_Marketing_have_different_columns()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
 
-        var design = await GetStatusesAsync(client, "Design");
+        var studio = await GetStatusesAsync(client, "Studio");
         var marketing = await GetStatusesAsync(client, "Marketing");
 
-        Assert.Equal(["Triage", "To Do", "In Design", "Internal Review", "With Requester", "Changes Requested", "Done"], design.Select(s => s.Name));
+        Assert.Equal(["Triage", "Briefed in", "Working on it", "Feedback needed", "Awaiting approval", "Done"], studio.Select(s => s.Name));
         Assert.Equal(["Triage", "Planned", "Writing", "Review", "Scheduled", "Published"], marketing.Select(s => s.Name));
     }
 
@@ -26,14 +26,14 @@ public sealed class TasksTests(ApiFactory api)
     public async Task Move_puts_the_task_at_the_index_and_persists()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
-        var inDesign = (await GetStatusesAsync(client, "Design")).Single(s => s.Name == "In Design");
-        var task = (await GetTasksAsync(client, "Design")).Single(t => t.Title == "Customer logo wall");
+        var feedback = (await GetStatusesAsync(client, "Studio")).Single(s => s.Name == "Feedback needed");
+        var task = (await GetTasksAsync(client, "Studio")).Single(t => t.Title == "Social carousel");
 
-        var response = await client.PostAsJsonAsync($"/api/tasks/{task.Id}/move", new MoveTaskRequest(inDesign.Id, 1), ApiFactory.Json, _ct);
+        var response = await client.PostAsJsonAsync($"/api/tasks/{task.Id}/move", new MoveTaskRequest(feedback.Id, 1), ApiFactory.Json, _ct);
         response.EnsureSuccessStatusCode();
 
-        var column = (await GetTasksAsync(client, "Design")).Where(t => t.StatusId == inDesign.Id).OrderBy(t => t.SortOrder).ToList();
-        Assert.Equal("Customer logo wall", column[1].Title);
+        var column = (await GetTasksAsync(client, "Studio")).Where(t => t.StatusId == feedback.Id).OrderBy(t => t.SortOrder).ToList();
+        Assert.Equal("Social carousel", column[1].Title);
         Assert.Equal(Enumerable.Range(0, column.Count), column.Select(t => t.SortOrder));
     }
 
@@ -41,10 +41,10 @@ public sealed class TasksTests(ApiFactory api)
     public async Task Sending_a_task_back_from_review_raises_the_review_cycle()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
-        var changesRequested = (await GetStatusesAsync(client, "Design")).Single(s => s.Name == "Changes Requested");
-        var task = (await GetTasksAsync(client, "Design")).Single(t => t.Title == "Office map illustration");
+        var workingOnIt = (await GetStatusesAsync(client, "Studio")).Single(s => s.Name == "Working on it");
+        var task = (await GetTasksAsync(client, "Studio")).Single(t => t.Title == "A4 insert: Incredible Connection");
 
-        var response = await client.PostAsJsonAsync($"/api/tasks/{task.Id}/move", new MoveTaskRequest(changesRequested.Id, 0), ApiFactory.Json, _ct);
+        var response = await client.PostAsJsonAsync($"/api/tasks/{task.Id}/move", new MoveTaskRequest(workingOnIt.Id, 0), ApiFactory.Json, _ct);
         var moved = await response.Content.ReadFromJsonAsync<TaskDto>(ApiFactory.Json, _ct);
 
         Assert.Equal(1, task.ReviewCycle);
@@ -55,9 +55,9 @@ public sealed class TasksTests(ApiFactory api)
     public async Task Member_can_edit_their_own_task_but_not_someone_elses()
     {
         var client = await api.SignInAsAsync("Jason van Wyk");
-        var tasks = await GetTasksAsync(client, "Design");
+        var tasks = await GetTasksAsync(client, "Studio");
         var own = tasks.Single(t => t.Title == "Billboard adaptation");
-        var others = tasks.Single(t => t.Title == "Icon set refresh");
+        var others = tasks.Single(t => t.Title == "Campus poster series");
 
         var ownResponse = await client.PutAsJsonAsync($"/api/tasks/{own.Id}", ToUpdate(own) with { EstimateHours = 10 }, ApiFactory.Json, _ct);
         var othersResponse = await client.PutAsJsonAsync($"/api/tasks/{others.Id}", ToUpdate(others), ApiFactory.Json, _ct);
@@ -71,15 +71,15 @@ public sealed class TasksTests(ApiFactory api)
     public async Task Member_cannot_reassign_their_own_task()
     {
         var client = await api.SignInAsAsync("Jason van Wyk");
-        var task = (await GetTasksAsync(client, "Design")).Single(t => t.Title == "Campaign key visual");
-        var designId = await GetTeamIdAsync(client, "Design");
-        var people = await client.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{designId}/people", ApiFactory.Json, _ct);
+        var task = (await GetTasksAsync(client, "Studio")).Single(t => t.Title == "Campaign key visual");
+        var studioId = await GetTeamIdAsync(client, "Studio");
+        var people = await client.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct);
         var colleague = people!.First(p => p.Id != task.AssigneePersonId);
 
         var response = await client.PutAsJsonAsync($"/api/tasks/{task.Id}", ToUpdate(task) with { AssigneePersonId = colleague.Id }, ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        var after = (await GetTasksAsync(client, "Design")).Single(t => t.Id == task.Id);
+        var after = (await GetTasksAsync(client, "Studio")).Single(t => t.Id == task.Id);
         Assert.Equal(task.AssigneePersonId, after.AssigneePersonId);
     }
 
@@ -87,7 +87,7 @@ public sealed class TasksTests(ApiFactory api)
     public async Task Update_without_a_title_returns_400()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
-        var task = (await GetTasksAsync(client, "Design")).Single(t => t.Title == "CEO letter spread");
+        var task = (await GetTasksAsync(client, "Studio")).Single(t => t.Title == "Retailer toolkit");
 
         var response = await client.PutAsJsonAsync($"/api/tasks/{task.Id}", ToUpdate(task) with { Title = " " }, ApiFactory.Json, _ct);
 
@@ -98,10 +98,10 @@ public sealed class TasksTests(ApiFactory api)
     public async Task Member_cannot_see_another_teams_tasks()
     {
         var naledi = await api.SignInAsAsync("Naledi Khumalo");
-        var designId = await GetTeamIdAsync(naledi, "Design");
+        var studioId = await GetTeamIdAsync(naledi, "Studio");
         var thabo = await api.SignInAsAsync("Thabo Mahlangu");
 
-        var response = await thabo.GetAsync($"/api/teams/{designId}/tasks", _ct);
+        var response = await thabo.GetAsync($"/api/teams/{studioId}/tasks", _ct);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -129,7 +129,7 @@ public sealed class TasksTests(ApiFactory api)
     public async Task Member_adds_a_task_for_themselves_in_the_first_column()
     {
         var client = await api.SignInAsAsync("Ethan Pillay");
-        var teamId = await GetTeamIdAsync(client, "Design");
+        var teamId = await GetTeamIdAsync(client, "Studio");
         var people = await GetPeopleAsync(client, teamId);
         var project = (await GetProjectsAsync(client, teamId))[0];
         var create = new CreateTaskRequest("Icon audit", project.Id, null, people.Single(p => p.Name == "Ethan Pillay").Id, null, null, null);
@@ -141,7 +141,7 @@ public sealed class TasksTests(ApiFactory api)
 
         Assert.Equal(HttpStatusCode.Created, own.StatusCode);
         var created = (await own.Content.ReadFromJsonAsync<TaskDto>(ApiFactory.Json, _ct))!;
-        Assert.Equal("To Do", (await GetStatusesAsync(client, "Design")).Single(s => s.Id == created.StatusId).Name);
+        Assert.Equal("Briefed in", (await GetStatusesAsync(client, "Studio")).Single(s => s.Id == created.StatusId).Name);
         Assert.Equal(HttpStatusCode.Forbidden, forColleague.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, unassigned.StatusCode);
     }
@@ -150,17 +150,17 @@ public sealed class TasksTests(ApiFactory api)
     public async Task Adding_a_task_rejects_non_members_triage_and_other_teams_projects()
     {
         var naledi = await api.SignInAsAsync("Naledi Khumalo");
-        var designId = await GetTeamIdAsync(naledi, "Design");
+        var studioId = await GetTeamIdAsync(naledi, "Studio");
         var marketingId = await GetTeamIdAsync(naledi, "Marketing");
-        var triage = (await GetStatusesAsync(naledi, "Design")).Single(s => s.Name == "Triage");
-        var designProject = (await GetProjectsAsync(naledi, designId))[0];
+        var triage = (await GetStatusesAsync(naledi, "Studio")).Single(s => s.Name == "Triage");
+        var designProject = (await GetProjectsAsync(naledi, studioId))[0];
         var marketingProject = (await GetProjectsAsync(naledi, marketingId))[0];
         var create = new CreateTaskRequest("Not added", designProject.Id, null, null, null, null, null);
-        var david = await api.SignInAsAsync("David Cohen");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
 
-        var requester = await david.PostAsJsonAsync($"/api/teams/{designId}/tasks", create, ApiFactory.Json, _ct);
-        var inTriage = await naledi.PostAsJsonAsync($"/api/teams/{designId}/tasks", create with { StatusId = triage.Id }, ApiFactory.Json, _ct);
-        var otherProject = await naledi.PostAsJsonAsync($"/api/teams/{designId}/tasks", create with { ProjectId = marketingProject.Id }, ApiFactory.Json, _ct);
+        var requester = await zanele.PostAsJsonAsync($"/api/teams/{studioId}/tasks", create, ApiFactory.Json, _ct);
+        var inTriage = await naledi.PostAsJsonAsync($"/api/teams/{studioId}/tasks", create with { StatusId = triage.Id }, ApiFactory.Json, _ct);
+        var otherProject = await naledi.PostAsJsonAsync($"/api/teams/{studioId}/tasks", create with { ProjectId = marketingProject.Id }, ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.Forbidden, requester.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, inTriage.StatusCode);

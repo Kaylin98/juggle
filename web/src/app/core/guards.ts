@@ -38,3 +38,11 @@ export const personGuard: CanActivateFn = async () => {
   await auth.ensureLoaded();
   return auth.me()?.personId != null || router.parseUrl(auth.landingUrl());
 };
+
+/** Time off approvals are for Team Admins of any team, and Org Admins (D47). */
+export const approverGuard: CanActivateFn = async () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  await auth.ensureLoaded();
+  return auth.isApprover() || router.parseUrl(auth.landingUrl());
+};

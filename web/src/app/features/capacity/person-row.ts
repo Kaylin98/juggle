@@ -2,6 +2,7 @@ import { Component, LOCALE_ID, computed, inject, input } from '@angular/core';
 import { Allocation, SchedulePerson } from '../../core/models';
 import { Avatar } from '../../shared/avatar';
 import { formatDateRange } from '../../shared/dates';
+import { Tooltip } from '../../shared/tooltip';
 import {
   Load,
   UTILISATION_BAR,
@@ -13,7 +14,7 @@ import {
   utilisationLevel,
 } from '../../shared/load-colour';
 import { AllocationBar, BarGrip } from './allocation-bar';
-import { Dated, PlacedBar, TimeOffBlock, dayColumn, placeBars, timeOffBlocks } from './grid-layout';
+import { Dated, PlacedBar, TimeOffBlock, dayColumn, pendingTimeOffBlocks, placeBars, timeOffBlocks } from './grid-layout';
 
 /**
  * Lane tracks in every row. The count stays the same as bookings stack and unstack (unused lanes are 0 high), so the
@@ -30,7 +31,7 @@ const LANE_TRACKS = 8;
  */
 @Component({
   selector: 'app-person-row',
-  imports: [Avatar, AllocationBar],
+  imports: [Avatar, AllocationBar, Tooltip],
   host: {
     class: 'col-span-full grid grid-cols-subgrid border-b border-line',
     '[class.bg-accent-50]': 'highlighted()',
@@ -61,7 +62,7 @@ const LANE_TRACKS = 8;
 
     <div
       class="col-[2/-1] grid grid-cols-subgrid transition-[grid-template-rows] duration-150 ease-out motion-reduce:transition-none"
-      [class.cursor-cell]="editable()"
+      [class.cursor-cell]="pickable()"
       [style.grid-template-rows]="rows()"
     >
       @for (day of person().days; track day.date; let i = $index) {
@@ -99,6 +100,25 @@ const LANE_TRACKS = 8;
           [style.grid-row]="piece.lane + 4"
           data-booking="draft"
         ></div>
+      }
+
+      <!--
+        Leave waiting for approval: a light hatch behind the bookings, which still count (D17). The row has a lane
+        more than its bookings need, so the label shows under them.
+      -->
+      @for (block of pendingBlocks(); track block.start) {
+        <div
+          class="hatch-pending mx-0.5 mb-1 flex items-end overflow-hidden rounded-bar bg-surface-muted p-1.5"
+          [style.grid-column]="span(block.start, block.end)"
+          [style.grid-row]="'4 / span ' + lanes()"
+          [appTooltip]="'Pending approval: ' + block.label + ' · ' + dateRange(block)"
+          data-pending-time-off
+        >
+          <span class="min-w-0 rounded-control bg-surface px-2 py-0.5 text-[11px] leading-tight">
+            <span class="block truncate font-semibold">Pending</span>
+            <span class="block truncate text-ink-muted">{{ block.label }}</span>
+          </span>
+        </div>
       }
 
       @for (bar of bars(); track bar.allocation.id + ':' + bar.start) {
@@ -140,6 +160,8 @@ export class PersonRow {
   readonly allocations = input.required<Allocation[]>();
   /** The viewer can book and change this team's work (D24). */
   readonly editable = input(false);
+  /** Days can be picked on this row: for a booking, or for time off on the viewer's own row. */
+  readonly pickable = input(false);
   /** Days picked for a new booking: while dragging, and until it is saved or cancelled. */
   readonly draft = input<Dated | null>(null);
   /** A booking is being moved onto this row. */
@@ -168,7 +190,10 @@ export class PersonRow {
   protected readonly draftPieces = computed(() => this.placed().filter((bar) => bar.allocation === this.draft()));
 
   protected readonly blocks = computed(() => timeOffBlocks(this.person().days));
-  protected readonly lanes = computed(() => Math.max(1, ...this.placed().map((b) => b.lane + 1)));
+  protected readonly pendingBlocks = computed(() => pendingTimeOffBlocks(this.person().days));
+  protected readonly lanes = computed(
+    () => Math.max(1, ...this.placed().map((b) => b.lane + 1)) + (this.pendingBlocks().length ? 1 : 0),
+  );
 
   /**
    * Top spacer and gap, strip, gap, then each lane: a booking (2.5rem) and the gap under it (its margin). The

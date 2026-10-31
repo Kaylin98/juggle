@@ -101,12 +101,23 @@ export function publicHolidays(people: { days: DayLoad[] }[]): PublicHoliday[] {
 
 /** A person's own days off. Public holidays are left out: the grid shows each one once, across every row. */
 export function timeOffBlocks(days: DayLoad[]): TimeOffBlock[] {
+  return blocks(days, (day) => (day.publicHoliday ? null : day.timeOff));
+}
+
+/** A person's leave waiting for approval, which still counts as working days (D17). */
+export function pendingTimeOffBlocks(days: DayLoad[]): TimeOffBlock[] {
+  return blocks(days, (day) => day.pendingTimeOff);
+}
+
+/** Consecutive days with the same label, cut at weekends. */
+function blocks(days: DayLoad[], labelOf: (day: DayLoad) => string | null): TimeOffBlock[] {
   const runs: { run: Run; label: string }[] = [];
   days.forEach((day, i) => {
-    if (!day.timeOff || day.publicHoliday) return;
+    const label = labelOf(day);
+    if (!label) return;
     const last = runs.at(-1);
-    if (last && last.run[1] === i - 1 && last.label === day.timeOff) last.run[1] = i;
-    else runs.push({ run: [i, i], label: day.timeOff });
+    if (last && last.run[1] === i - 1 && last.label === label) last.run[1] = i;
+    else runs.push({ run: [i, i], label });
   });
   return runs.flatMap(({ run, label }) =>
     splitAtWeekends(run).map(([start, end]) => ({ start, end, label, from: days[run[0]].date, to: days[run[1]].date })),

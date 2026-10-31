@@ -41,8 +41,8 @@
           appTooltipPlacement="right"
         >
           <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.requests }" />
-          @if (triageCount()) {
-            <span class="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent-600" [attr.aria-label]="triageCount() + ' new'"></span>
+          @if (waitingCount()) {
+            <span class="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent-600" [attr.aria-label]="waitingCount() + ' new'"></span>
           }
         </button>
       } @else {
@@ -57,8 +57,8 @@
           <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.requests }" />
           <span class="whitespace-nowrap">Requests</span>
           <span class="ml-auto flex items-center gap-2">
-            @if (triageCount() && !requestsOpen()) {
-              <ng-container *ngTemplateOutlet="badge; context: { $implicit: triageCount() }" />
+            @if (waitingCount() && !requestsOpen()) {
+              <ng-container *ngTemplateOutlet="badge; context: { $implicit: waitingCount() }" />
             }
             <!-- Heroicons chevron-down (mini, MIT) -->
             <svg

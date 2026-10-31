@@ -11,7 +11,7 @@ import { CapacityGrid, NewBooking, PopoverOrigin } from './capacity-grid';
 import { CapacityService, Weeks } from './capacity.service';
 import { ClashDialog } from './clash-dialog';
 import { GridToolbar } from './grid-toolbar';
-import { clashDays, withBookings } from './live-load';
+import { clashDays, leaveDays, withBookings } from './live-load';
 
 // Beside the pointer or booking, flipping to the other side when there is no room.
 const POPOVER_POSITIONS: ConnectedPosition[] = [
@@ -58,6 +58,9 @@ export class CapacityPage {
   /** Team Admins book and change their team's work; Members see the schedule read-only (D24). */
   protected readonly editable = computed(() => this.teamContext.allTeams() || this.teamContext.isTeamAdmin());
 
+  /** The viewer's own row, where anyone with a Person record picks days to ask for time off (D47). */
+  protected readonly ownPersonId = computed(() => this.auth.me()?.personId ?? null);
+
   protected readonly projects = resource({
     params: () => {
       if (!this.editable()) return undefined;
@@ -99,7 +102,12 @@ export class CapacityPage {
   protected async onChanged({ allocation, origin }: { allocation: Allocation; origin: PopoverOrigin }): Promise<void> {
     const previous = this.data()!.allocations.find((a) => a.id === allocation.id)!;
     this.replace(allocation);
-    await this.saveUnlessClash({ ...allocation, origin }, () => this.save(allocation.id, toSave(allocation)), () => this.replace(previous));
+    await this.saveUnlessClash(
+      { ...allocation, origin },
+      previous,
+      () => this.save(allocation.id, toSave(allocation)),
+      () => this.replace(previous),
+    );
   }
 
   /** The popover stays open while the clash dialog asks, so Cancel goes back to it. */
@@ -110,7 +118,13 @@ export class CapacityPage {
       this.popover.set(null);
       await this.save(allocation?.id ?? null, request);
     };
-    await this.saveUnlessClash({ id: allocation?.id ?? null, ...request, origin }, book, () => undefined);
+    await this.saveUnlessClash({ id: allocation?.id ?? null, ...request, origin }, allocation, book, () => undefined);
+  }
+
+  /** Time off asked for from the popover's Time off tab: it shows as pending once the schedule reloads. */
+  protected onTimeOffRequested(): void {
+    this.popover.set(null);
+    this.schedule.reload();
   }
 
   protected async confirmClash(): Promise<void> {
@@ -137,16 +151,33 @@ export class CapacityPage {
   }
 
   /**
-   * Books straight away, unless the booking would put its person over capacity on the days shown (D16): then the
-   * clash dialog asks first. Worked out from the schedule's data, so nothing is sent until the user decides.
+   * Books straight away, unless the booking would put its person over capacity on the days shown (D16), or onto
+   * days of their approved leave it did not cover before: then the clash dialog asks first. Worked out from the
+   * schedule's data, so nothing is sent until the user decides.
    */
-  private async saveUnlessClash(booking: BookingCheck, book: () => Promise<void>, cancel: () => void): Promise<void> {
+  private async saveUnlessClash(
+    booking: BookingCheck,
+    previous: Allocation | null,
+    book: () => Promise<void>,
+    cancel: () => void,
+  ): Promise<void> {
     const data = this.data()!;
     const person = data.people.find((p) => p.id === booking.personId)!;
     const others = data.allocations.filter((a) => a.personId === booking.personId && a.id !== booking.id);
-    const days = clashDays(booking, withBookings(person.days, [...others, booking]));
-    if (days.length === 0) return book();
-    this.clash.set({ personId: booking.personId, personName: person.name, days, origin: booking.origin, book, cancel });
+    const overDays = clashDays(booking, withBookings(person.days, [...others, booking]));
+    const wasOnLeave = (day: string) =>
+      previous?.personId === booking.personId && previous.startDate <= day && day <= previous.endDate;
+    const onLeave = leaveDays(booking, person.days).filter((day) => !wasOnLeave(day));
+    if (overDays.length === 0 && onLeave.length === 0) return book();
+    this.clash.set({
+      personId: booking.personId,
+      personName: person.name,
+      clashDays: overDays,
+      leaveDays: onLeave,
+      origin: booking.origin,
+      book,
+      cancel,
+    });
   }
 
   /** Saves and reloads the schedule for the new load. */
@@ -178,7 +209,8 @@ type BookingCheck = Pick<Allocation, 'personId' | 'startDate' | 'endDate' | 'hou
 interface Clash {
   personId: string;
   personName: string;
-  days: string[];
+  clashDays: string[];
+  leaveDays: string[];
   origin: PopoverOrigin;
   book: () => Promise<void>;
   cancel: () => void;

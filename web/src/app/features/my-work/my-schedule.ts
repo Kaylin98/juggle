@@ -81,6 +81,12 @@ export function scheduleWeeks(days: DayLoad[], bookings: Allocation[], locale: s
                     }
                   </div>
                 }
+                @if (day.load.pendingTimeOff; as pending) {
+                  <div class="hatch-pending rounded-bar bg-surface-muted px-2 py-1 text-xs">
+                    <span class="rounded-full bg-surface px-1.5 font-semibold">Pending</span>
+                    <span class="text-ink-muted"> {{ pending }}</span>
+                  </div>
+                }
                 @for (booking of day.bookings; track booking.id) {
                   <div
                     class="hue-booking hue-edge flex items-baseline gap-1 rounded-bar border-l-3 px-2 py-1 text-xs"

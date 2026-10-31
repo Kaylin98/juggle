@@ -32,7 +32,7 @@ function task(title: string, category: StatusCategory): MyTask {
 const MONDAY = '2026-11-02';
 
 function day(offset: number, allocated: number, timeOff: string | null = null): DayLoad {
-  return { date: addDays(MONDAY, offset), capacity: timeOff ? 0 : 8, allocated, timeOff, publicHoliday: false };
+  return { date: addDays(MONDAY, offset), capacity: timeOff ? 0 : 8, allocated, timeOff, publicHoliday: false, pendingTimeOff: null };
 }
 
 function booking(id: string, from: number, to: number): Allocation {

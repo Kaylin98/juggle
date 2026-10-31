@@ -25,3 +25,10 @@ export function clashDays(booking: Dated, days: DayLoad[]): string[] {
     .filter((d) => booking.startDate <= d.date && d.date <= booking.endDate && d.capacity > 0 && d.allocated > d.capacity)
     .map((d) => d.date);
 }
+
+/** The days of a booking on which its person is on approved leave (public holidays are everyone's, so not counted). */
+export function leaveDays(booking: Dated, days: DayLoad[]): string[] {
+  return days
+    .filter((d) => booking.startDate <= d.date && d.date <= booking.endDate && d.timeOff !== null && !d.publicHoliday)
+    .map((d) => d.date);
+}

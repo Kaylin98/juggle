@@ -37,6 +37,15 @@ public sealed class TeamAccess(JuggleDbContext db, CurrentUser currentUser)
         }
     }
 
+    /// <summary>
+    /// The people whose time off the viewer approves, and whose sick leave they may see: everyone for Org Admins,
+    /// otherwise the people in the teams they admin.
+    /// </summary>
+    public IQueryable<Person> ManagedPeople() => currentUser.IsOrgAdmin
+        ? db.People
+        : db.People.Where(p => p.User.Memberships.Any(m => db.TeamMemberships.Any(a =>
+            a.TeamId == m.TeamId && a.UserId == currentUser.UserId && a.Role == TeamRole.TeamAdmin)));
+
     /// <summary>Team Admins edit any task in their team; Members only the tasks assigned to them.</summary>
     public async Task EnsureCanEditTaskAsync(TaskItem task, CancellationToken ct)
     {

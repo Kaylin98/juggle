@@ -8,6 +8,7 @@ import { filter, map } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { RequestsService } from '../core/requests.service';
 import { TeamContextService } from '../core/team-context.service';
+import { TimeOffService } from '../core/time-off.service';
 import { BRANDING } from '../branding';
 import { Tooltip } from '../shared/tooltip';
 import { NavPrefsService } from './nav-prefs.service';
@@ -16,7 +17,7 @@ interface NavItem {
   label: string;
   link: string[];
   icon: string;
-  /** Shown as a badge when above zero: New requests waiting in triage. */
+  /** Shown as a badge when above zero: New requests waiting in triage, or time off waiting for approval. */
   count?: number;
 }
 
@@ -36,10 +37,12 @@ const ICONS = {
   newRequest: 'M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
   triage:
     'M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z',
+  timeOff:
+    'M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z',
 };
 
-/** Pages inside the Requests group: My requests and a request, New request, and a team's Triage. */
-const REQUEST_PAGE = /^\/(requests?|t\/[^/]+\/triage)(\/|\?|$)/;
+/** Pages inside the Requests group: My requests and a request, New request, a team's Triage, and Time off. */
+const REQUEST_PAGE = /^\/(requests?|time-off|t\/[^/]+\/triage)(\/|\?|$)/;
 
 /** In the rail, the Requests group opens beside its icon. */
 const FLYOUT_POSITIONS: ConnectedPosition[] = [
@@ -48,7 +51,7 @@ const FLYOUT_POSITIONS: ConnectedPosition[] = [
 ];
 
 /**
- * The side menu: the team pages, then a "Requests" group (My requests, New request and, for admins, Triage),
+ * The side menu: the team pages, then a "Requests" group (Triage and Time off for admins, My requests, New request),
  * open while one of its pages is shown. A toggle shrinks it to a 64px icon rail with tooltips, where badges
  * become dots and the group opens as a flyout; the choice is remembered per user.
  */
@@ -61,6 +64,7 @@ export class Nav {
   private readonly auth = inject(AuthService);
   private readonly teamContext = inject(TeamContextService);
   private readonly requests = inject(RequestsService);
+  private readonly timeOff = inject(TimeOffService);
   private readonly prefs = inject(NavPrefsService);
   private readonly router = inject(Router);
 
@@ -80,12 +84,15 @@ export class Nav {
     ];
   });
 
-  /** Triage (admins), My requests, New request; the same order in the rail's flyout. */
+  /** Triage (admins of this team), Time off (admins of any team), My requests, New request; the same in the flyout. */
   protected readonly requestLinks = computed<NavItem[]>(() => {
     const teamId = this.teamContext.teamId();
     return [
       ...(teamId && this.isAdmin()
         ? [{ label: 'Triage', link: ['/t', teamId, 'triage'], icon: ICONS.triage, count: this.triageCount() }]
+        : []),
+      ...(this.auth.isApprover()
+        ? [{ label: 'Time off', link: ['/time-off'], icon: ICONS.timeOff, count: this.timeOffCount() }]
         : []),
       { label: 'My requests', link: ['/requests'], icon: ICONS.myRequests },
       { label: 'New request', link: ['/request'], icon: ICONS.newRequest },
@@ -96,6 +103,14 @@ export class Nav {
     const inbox = this.requests.inbox;
     return this.isAdmin() && inbox.hasValue() ? inbox.value().length : 0;
   });
+
+  protected readonly timeOffCount = computed(() => {
+    const approvals = this.timeOff.approvals;
+    return this.auth.isApprover() && approvals.hasValue() ? approvals.value().length : 0;
+  });
+
+  /** Everything waiting for the viewer in the group, shown on it while it is closed. */
+  protected readonly waitingCount = computed(() => this.triageCount() + this.timeOffCount());
 
   private readonly url = toSignal(
     this.router.events.pipe(

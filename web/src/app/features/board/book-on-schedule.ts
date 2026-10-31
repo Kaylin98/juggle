@@ -96,7 +96,7 @@ export class BookOnSchedule {
           hoursPerDay: hoursPerDay!,
           notes: null,
         });
-        const clash = clashMessage(this.assignee().name, saved.clashDays, this.locale);
+        const clash = clashMessage(this.assignee().name, saved.clashDays, saved.leaveDays, this.locale);
         const date = (d: string) => formatDate(d, 'EEE d MMM', this.locale);
         this.toast.show(
           clash ?? `Booked ${this.assignee().name} for ${hoursPerDay}h/day, ${date(startDate)} to ${date(endDate)}.`,

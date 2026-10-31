@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, landingGuard, personGuard, teamAdminGuard, teamMemberGuard } from './core/guards';
+import { approverGuard, authGuard, landingGuard, personGuard, teamAdminGuard, teamMemberGuard } from './core/guards';
 import { LoginPage } from './features/login/login-page';
 import { Shell } from './layout/shell';
 
@@ -16,6 +16,12 @@ export const routes: Routes = [
         canActivate: [personGuard],
         loadComponent: () => import('./features/my-work/my-work-page').then((m) => m.MyWorkPage),
         title: 'My work',
+      },
+      {
+        path: 'time-off',
+        canActivate: [approverGuard],
+        loadComponent: () => import('./features/time-off/time-off-page').then((m) => m.TimeOffPage),
+        title: 'Time off',
       },
       {
         path: 'request',

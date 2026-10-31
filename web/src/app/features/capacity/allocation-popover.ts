@@ -4,6 +4,8 @@ import { Component, LOCALE_ID, computed, inject, input, linkedSignal, output } f
 import { FormField, form, max, maxLength, min, required, submit } from '@angular/forms/signals';
 import { Allocation, Project } from '../../core/models';
 import { Select, SelectOption } from '../../shared/select';
+import { Tooltip } from '../../shared/tooltip';
+import { TimeOffForm } from '../time-off/time-off-form';
 
 /** A booking being made or changed: who, which days, and the booking itself when it exists. */
 export interface BookingDraft {
@@ -26,76 +28,103 @@ interface BookingForm {
   notes: string;
 }
 
+type Tab = 'booking' | 'timeOff';
+
 const DEFAULT_HOURS_PER_DAY = 4;
 
-/** Project and hours/day for a new booking; hours/day and notes for an existing one, which can also be deleted (D29). */
+/**
+ * Days picked on the grid open this. The Booking tab takes project and hours/day for a new booking (Team Admins);
+ * the Time off tab asks for time off on the viewer's own row (D47). An existing booking shows hours/day and notes,
+ * and can be deleted (D29).
+ */
 @Component({
   selector: 'app-allocation-popover',
-  imports: [CdkTrapFocus, FormField, Select],
+  imports: [CdkTrapFocus, FormField, Select, TimeOffForm, Tooltip],
   template: `
-    <form
+    <div
       class="w-80 rounded-card bg-surface p-6 shadow-raised"
       role="dialog"
       [attr.aria-label]="heading()"
-      novalidate
       cdkTrapFocus
       [cdkTrapFocusAutoCapture]="true"
-      (submit)="save($event)"
     >
       <h2 class="font-display text-base font-semibold">{{ heading() }}</h2>
       <p class="mt-1 text-sm text-ink-muted">{{ draft().personName }} &middot; {{ dates() }}</p>
 
-      <!-- Time off cannot be added yet: the API has no endpoint for it (see "Later" in docs/plan.md). -->
       @if (!draft().allocation) {
         <div class="mt-4 flex rounded-full border border-line bg-surface p-1" role="tablist" aria-label="What to add">
-          <button type="button" class="flex-1 rounded-full bg-accent-600 px-3 py-1 text-sm font-semibold text-white" role="tab" aria-selected="true">
-            Booking
-          </button>
-          <button
-            type="button"
-            class="flex-1 cursor-not-allowed rounded-full px-3 py-1 text-sm font-semibold text-ink-muted opacity-60"
-            role="tab"
-            aria-selected="false"
-            disabled
-            title="Time off can't be added from the schedule yet"
-          >
-            Time off
-          </button>
+          <span class="flex flex-1" [appTooltip]="canBook() ? '' : 'Only team admins book work'">
+            <button
+              type="button"
+              role="tab"
+              [class]="tabClass('booking')"
+              [attr.aria-selected]="tab() === 'booking'"
+              [disabled]="!canBook()"
+              (click)="tab.set('booking')"
+            >
+              Booking
+            </button>
+          </span>
+          <span class="flex flex-1" [appTooltip]="isOwnRow() ? '' : 'You can only ask for time off for yourself'">
+            <button
+              type="button"
+              role="tab"
+              [class]="tabClass('timeOff')"
+              [attr.aria-selected]="tab() === 'timeOff'"
+              [disabled]="!isOwnRow()"
+              (click)="tab.set('timeOff')"
+            >
+              Time off
+            </button>
+          </span>
         </div>
       }
 
-      <div class="mt-6 space-y-4">
-        <div>
-          <label class="form-label" for="booking-project">Project</label>
-          <app-select triggerId="booking-project" [options]="projectOptions()" [formField]="bookingForm.projectId" />
-          @if (bookingForm.projectId().touched() && bookingForm.projectId().invalid()) {
-            <p class="field-error">{{ bookingForm.projectId().errors()[0].message }}</p>
-          }
-        </div>
-        <div>
-          <label class="form-label" for="booking-hours">Hours per day</label>
-          <input id="booking-hours" class="form-input" type="number" step="0.5" [formField]="bookingForm.hoursPerDay" />
-          @if (bookingForm.hoursPerDay().touched() && bookingForm.hoursPerDay().invalid()) {
-            <p class="field-error">{{ bookingForm.hoursPerDay().errors()[0].message }}</p>
-          }
-        </div>
-        <div>
-          <label class="form-label" for="booking-notes">Notes</label>
-          <textarea id="booking-notes" class="form-input" rows="2" [formField]="bookingForm.notes"></textarea>
-          @if (bookingForm.notes().touched() && bookingForm.notes().invalid()) {
-            <p class="field-error">{{ bookingForm.notes().errors()[0].message }}</p>
-          }
-        </div>
-      </div>
+      @if (tab() === 'timeOff') {
+        <app-time-off-form
+          class="mt-6"
+          [startDate]="draft().startDate"
+          [endDate]="draft().endDate"
+          [showDates]="false"
+          (requested)="timeOffRequested.emit()"
+          (cancelled)="closed.emit()"
+        />
+      } @else {
+        <form novalidate (submit)="save($event)">
+          <div class="mt-6 space-y-4">
+            <div>
+              <label class="form-label" for="booking-project">Project</label>
+              <app-select triggerId="booking-project" [options]="projectOptions()" [formField]="bookingForm.projectId" />
+              @if (bookingForm.projectId().touched() && bookingForm.projectId().invalid()) {
+                <p class="field-error">{{ bookingForm.projectId().errors()[0].message }}</p>
+              }
+            </div>
+            <div>
+              <label class="form-label" for="booking-hours">Hours per day</label>
+              <input id="booking-hours" class="form-input" type="number" step="0.5" [formField]="bookingForm.hoursPerDay" />
+              @if (bookingForm.hoursPerDay().touched() && bookingForm.hoursPerDay().invalid()) {
+                <p class="field-error">{{ bookingForm.hoursPerDay().errors()[0].message }}</p>
+              }
+            </div>
+            <div>
+              <label class="form-label" for="booking-notes">Notes</label>
+              <textarea id="booking-notes" class="form-input" rows="2" [formField]="bookingForm.notes"></textarea>
+              @if (bookingForm.notes().touched() && bookingForm.notes().invalid()) {
+                <p class="field-error">{{ bookingForm.notes().errors()[0].message }}</p>
+              }
+            </div>
+          </div>
 
-      <div class="mt-6 flex items-center gap-2">
-        @if (draft().allocation) {
-          <button type="button" class="btn-quiet text-over-700" (click)="deleted.emit()">Delete</button>
-        }
-        <button type="button" class="btn-secondary ml-auto" (click)="closed.emit()">Cancel</button>
-        <button type="submit" class="btn-primary">{{ draft().allocation ? 'Save' : 'Book' }}</button>
-      </div>
-    </form>
+          <div class="mt-6 flex items-center gap-2">
+            @if (draft().allocation) {
+              <button type="button" class="btn-quiet text-over-700" (click)="deleted.emit()">Delete</button>
+            }
+            <button type="button" class="btn-secondary ml-auto" (click)="closed.emit()">Cancel</button>
+            <button type="submit" class="btn-primary">{{ draft().allocation ? 'Save' : 'Book' }}</button>
+          </div>
+        </form>
+      }
+    </div>
   `,
 })
 export class AllocationPopover {
@@ -103,11 +132,24 @@ export class AllocationPopover {
 
   readonly draft = input.required<BookingDraft>();
   readonly projects = input.required<Project[]>();
+  /** Team Admins book work (D24); everyone else can only ask for time off on their own row. */
+  readonly canBook = input(true);
+  /** The viewer's own person, whose row's days can be asked for as time off. */
+  readonly ownPersonId = input<string | null>(null);
   readonly saved = output<BookingDetails>();
   readonly deleted = output<void>();
+  readonly timeOffRequested = output<void>();
   readonly closed = output<void>();
 
-  protected readonly heading = computed(() => (this.draft().allocation ? 'Booking' : 'New booking'));
+  protected readonly isOwnRow = computed(() => this.draft().personId === this.ownPersonId());
+
+  /** Opens on Booking for those who can book, otherwise on Time off. */
+  protected readonly tab = linkedSignal<Tab>(() => (this.canBook() || this.draft().allocation ? 'booking' : 'timeOff'));
+
+  protected readonly heading = computed(() => {
+    if (this.draft().allocation) return 'Booking';
+    return this.tab() === 'timeOff' ? 'Time off' : 'New booking';
+  });
 
   /** "Tue 3 Nov" or "Tue 3 Nov – Fri 6 Nov". */
   protected readonly dates = computed(() => {
@@ -137,6 +179,12 @@ export class AllocationPopover {
     max(booking.hoursPerDay, 24, { message: 'A day has 24 hours.' });
     maxLength(booking.notes, 1000, { message: 'Keep the notes under 1000 characters.' });
   });
+
+  protected tabClass(tab: Tab): string {
+    const base = 'flex-1 rounded-full px-3 py-1 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none';
+    if (this.tab() === tab) return `${base} bg-accent-600 text-white`;
+    return `${base} text-ink-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:text-ink-muted`;
+  }
 
   protected async save(event: Event): Promise<void> {
     event.preventDefault();

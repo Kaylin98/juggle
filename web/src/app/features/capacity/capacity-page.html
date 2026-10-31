@@ -24,8 +24,9 @@
         [schedule]="data"
         [today]="today"
         [editable]="editable()"
+        [ownPersonId]="ownPersonId()"
         [pending]="pending()"
-        [overbooked]="clash()?.personId ?? null"
+        [overbooked]="clash()?.clashDays?.length ? clash()!.personId : null"
         (created)="openNew($event)"
         (opened)="openExisting($event)"
         (changed)="onChanged($event)"
@@ -42,12 +43,16 @@
     [cdkConnectedOverlayOrigin]="draft.origin"
     [cdkConnectedOverlayOpen]="true"
     [cdkConnectedOverlayPositions]="popoverPositions"
+    [cdkConnectedOverlayPush]="true"
     (overlayOutsideClick)="popover.set(null)"
     (overlayKeydown)="$event.key === 'Escape' && popover.set(null)"
   >
     <app-allocation-popover
       [draft]="draft"
       [projects]="projects.hasValue() ? projects.value() : []"
+      [canBook]="editable()"
+      [ownPersonId]="ownPersonId()"
+      (timeOffRequested)="onTimeOffRequested()"
       (saved)="onPopoverSaved($event)"
       (deleted)="onPopoverDeleted()"
       (closed)="popover.set(null)"
@@ -69,7 +74,8 @@
   >
     <app-clash-dialog
       [personName]="clash.personName"
-      [days]="clash.days"
+      [clashDays]="clash.clashDays"
+      [leaveDays]="clash.leaveDays"
       (cancelled)="cancelClash()"
       (confirmed)="confirmClash()"
     />

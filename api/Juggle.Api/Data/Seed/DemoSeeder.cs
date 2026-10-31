@@ -306,22 +306,25 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
 
         // Leave and public holidays
 
-        void AddLeave(Person person, int fromWeek, int fromDay, int toWeek, int toDay) =>
+        void AddLeave(Person person, int fromWeek, int fromDay, int toWeek, int toDay,
+            TimeOffType type = TimeOffType.AnnualLeave, TimeOffStatus status = TimeOffStatus.Approved, string? note = null) =>
             db.TimeOff.Add(new TimeOff
             {
                 OrgId = org.Id,
                 PersonId = person.Id,
                 StartDate = weekStart.AddDays((fromWeek * 7) + fromDay),
                 EndDate = weekStart.AddDays((toWeek * 7) + toDay),
-                Type = TimeOffType.AnnualLeave,
-                Status = TimeOffStatus.Approved,
-                Description = "Annual leave",
+                Type = type,
+                Status = status,
+                Note = note,
             });
 
-        // Two Design people are on leave in the next weeks; Sipho's runs over a weekend.
+        // Two Design people are on leave in the next weeks; Sipho's runs over a weekend. Thabo's sick leave reads
+        // "Unavailable" to everyone but him and the admins (POPIA). Ethan's request waits for the Head of Design.
         AddLeave(amahle, 1, 0, 1, 2);
         AddLeave(sipho, 2, 3, 3, 1);
-        AddLeave(thabo, 1, 3, 1, 4);
+        AddLeave(thabo, 0, 0, 0, 1, TimeOffType.SickLeave);
+        AddLeave(ethan, 2, 3, 2, 4, status: TimeOffStatus.Pending, note: "Family wedding in Durban");
 
         foreach (var (date, name) in SouthAfricanHolidays.For(today.Year).Concat(SouthAfricanHolidays.For(today.Year + 1)))
         {

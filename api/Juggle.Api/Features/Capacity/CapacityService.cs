@@ -42,24 +42,29 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
 
         var teamNames = await db.Teams.ToDictionaryAsync(t => t.Id, t => t.Name, ct);
 
+        // Approved leave and holidays reduce capacity; pending leave is shown but does not (D17).
         var timeOff = await db.TimeOff
-            .Where(t => t.Status == TimeOffStatus.Approved
+            .Where(t => (t.Status == TimeOffStatus.Approved || t.Status == TimeOffStatus.Pending)
                 && (t.PersonId == null || personIds.Contains(t.PersonId.Value))
                 && t.StartDate <= to && t.EndDate >= from)
             .AsNoTracking()
             .ToListAsync(ct);
 
+        // Sick leave shows only to the person and their admins (POPIA); everyone else sees "Unavailable".
+        var managed = await teamAccess.ManagedPeople().Where(p => personIds.Contains(p.Id)).Select(p => p.Id).ToListAsync(ct);
+
         var people = team.Select(person =>
         {
             var personAllocations = allocations.Where(a => a.PersonId == person.Id).ToList();
             var personTimeOff = timeOff.Where(t => t.PersonId == null || t.PersonId == person.Id).ToList();
+            var showSickLeave = person.UserId == currentUser.UserId || managed.Contains(person.Id);
             return new CapacityPersonDto(
                 person.Id,
                 person.User.Name,
                 person.User.AvatarColour,
                 person.JobTitle,
                 person.HoursPerDay,
-                days.Select(d => CapacityCalculator.ForDay(person, d, personAllocations, personTimeOff)).ToList());
+                days.Select(d => CapacityCalculator.ForDay(person, d, personAllocations, personTimeOff, showSickLeave)).ToList());
         }).ToList();
 
         return new CapacityDto(

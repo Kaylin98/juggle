@@ -5,6 +5,7 @@ using Juggle.Api.Data.Entities;
 using Juggle.Api.Features.Capacity;
 using Juggle.Api.Features.Tasks;
 using Juggle.Api.Features.Teams;
+using Juggle.Api.Features.TimeOffRequests;
 using Microsoft.EntityFrameworkCore;
 
 namespace Juggle.Api.Features.MyWork;
@@ -44,9 +45,12 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, O
             .AsNoTracking()
             .ToListAsync(ct);
 
-        // Their leave and the public holidays, from this week on: for the schedule and to count working days.
+        // Their leave (not cancelled) and the public holidays, from this week on: for the schedule, which shows
+        // approved and pending leave, the list, which adds declined requests and their reasons, and to count working days.
         var timeOff = await db.TimeOff
-            .Where(t => t.Status == TimeOffStatus.Approved && (t.PersonId == null || t.PersonId == person.Id) && t.EndDate >= from)
+            .Where(t => ((t.PersonId == null && t.Status == TimeOffStatus.Approved)
+                    || (t.PersonId == person.Id && t.Status != TimeOffStatus.Cancelled))
+                && t.EndDate >= from)
             .OrderBy(t => t.StartDate)
             .AsNoTracking()
             .ToListAsync(ct);
@@ -76,12 +80,7 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, O
             bookings.Select(a => AllocationDto.From(a, teamNames[a.Project.TeamId], false)).ToList(),
             timeOff
                 .Where(t => t.PersonId == person.Id && t.EndDate >= today)
-                .Select(t => new MyTimeOffDto(t.Id, t.Description!, t.StartDate, t.EndDate, WorkingDays(t, holidays)))
+                .Select(t => MyTimeOffDto.From(t, holidays))
                 .ToList());
     }
-
-    private static int WorkingDays(TimeOff timeOff, HashSet<DateOnly> holidays) =>
-        Enumerable.Range(0, timeOff.EndDate.DayNumber - timeOff.StartDate.DayNumber + 1)
-            .Select(timeOff.StartDate.AddDays)
-            .Count(d => !d.IsWeekend() && !holidays.Contains(d));
 }

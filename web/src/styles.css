@@ -87,6 +87,15 @@
   color: color-mix(in oklch, var(--hue) 42%, var(--color-ink));
 }
 
+/* Leave waiting for approval: a light ink hatch, so it reads as time off that is not confirmed yet. */
+@utility hatch-pending {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--color-ink) 14%, transparent) 0 1.5px,
+    transparent 1.5px 7px
+  );
+}
+
 /* Scroll areas: a thin, quiet scrollbar; scroll-quiet shows it only while the area is hovered. */
 @utility scroll-thin {
   scrollbar-width: thin;

@@ -20,7 +20,7 @@ public sealed class CapacityCalculatorTests
 
     private static readonly TimeOff[] Leave =
     [
-        new() { StartDate = Monday.AddDays(2), EndDate = Monday.AddDays(2), Description = "Annual leave" },
+        new() { StartDate = Monday.AddDays(2), EndDate = Monday.AddDays(2), Type = TimeOffType.AnnualLeave, Status = TimeOffStatus.Approved },
     ];
 
     [Fact]
@@ -28,7 +28,7 @@ public sealed class CapacityCalculatorTests
     {
         var day = CapacityCalculator.ForDay(Person, Monday.AddDays(1), Allocations, Leave);
 
-        Assert.Equal(new DayLoad(Monday.AddDays(1), 8, 9, null, false), day);
+        Assert.Equal(new DayLoad(Monday.AddDays(1), 8, 9, null, false, null), day);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public sealed class CapacityCalculatorTests
     {
         var day = CapacityCalculator.ForDay(Person, Monday.AddDays(2), Allocations, Leave);
 
-        Assert.Equal(new DayLoad(Monday.AddDays(2), 0, 0, "Annual leave", false), day);
+        Assert.Equal(new DayLoad(Monday.AddDays(2), 0, 0, "Annual leave", false, null), day);
     }
 
     [Fact]
@@ -44,12 +44,12 @@ public sealed class CapacityCalculatorTests
     {
         TimeOff[] holiday =
         [
-            new() { StartDate = Monday.AddDays(3), EndDate = Monday.AddDays(3), Type = TimeOffType.PublicHoliday, Description = "Heritage Day" },
+            new() { StartDate = Monday.AddDays(3), EndDate = Monday.AddDays(3), Type = TimeOffType.PublicHoliday, Status = TimeOffStatus.Approved, Description = "Heritage Day" },
         ];
 
         var day = CapacityCalculator.ForDay(Person, Monday.AddDays(3), Allocations, holiday);
 
-        Assert.Equal(new DayLoad(Monday.AddDays(3), 0, 0, "Heritage Day", true), day);
+        Assert.Equal(new DayLoad(Monday.AddDays(3), 0, 0, "Heritage Day", true, null), day);
     }
 
     [Fact]

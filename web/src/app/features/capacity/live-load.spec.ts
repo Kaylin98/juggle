@@ -1,5 +1,5 @@
 import { Allocation, DayLoad } from '../../core/models';
-import { clashDays, withBookings } from './live-load';
+import { clashDays, leaveDays, withBookings } from './live-load';
 
 // Mon 2 to Fri 6 Nov 2026, 8h a day, with Wednesday on leave.
 const days: DayLoad[] = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06'].map((date) => ({
@@ -8,6 +8,7 @@ const days: DayLoad[] = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05',
   allocated: 0,
   timeOff: date === '2026-11-04' ? 'Annual leave' : null,
   publicHoliday: false,
+  pendingTimeOff: null,
 }));
 
 function booking(startDate: string, endDate: string, hoursPerDay: number): Allocation {
@@ -48,5 +49,14 @@ describe('clashDays', () => {
   it('only looks at the days of the booking', () => {
     const loaded = withBookings(days, [booking('2026-11-02', '2026-11-02', 10)]);
     expect(clashDays({ startDate: '2026-11-03', endDate: '2026-11-06' }, loaded)).toEqual([]);
+  });
+});
+
+describe('leaveDays', () => {
+  it('lists the days of a booking on leave, but not public holidays, which are everyone\'s', () => {
+    const withHoliday = days.map((d) => (d.date === '2026-11-06' ? { ...d, capacity: 0, timeOff: 'Diwali', publicHoliday: true } : d));
+
+    expect(leaveDays({ startDate: '2026-11-03', endDate: '2026-11-06' }, withHoliday)).toEqual(['2026-11-04']);
+    expect(leaveDays({ startDate: '2026-11-05', endDate: '2026-11-06' }, withHoliday)).toEqual([]);
   });
 });

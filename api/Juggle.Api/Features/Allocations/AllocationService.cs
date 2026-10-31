@@ -80,19 +80,24 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
         allocation.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
     }
 
-    private async Task<SavedAllocationDto> ToDtoAsync(Allocation allocation, CancellationToken ct) => new(
-        allocation.Id,
-        allocation.PersonId,
-        allocation.ProjectId,
-        allocation.TaskId,
-        allocation.StartDate,
-        allocation.EndDate,
-        allocation.HoursPerDay,
-        allocation.Notes,
-        await ClashDaysAsync(allocation, ct));
+    private async Task<SavedAllocationDto> ToDtoAsync(Allocation allocation, CancellationToken ct)
+    {
+        var days = await DayLoadsAsync(allocation, ct);
+        return new(
+            allocation.Id,
+            allocation.PersonId,
+            allocation.ProjectId,
+            allocation.TaskId,
+            allocation.StartDate,
+            allocation.EndDate,
+            allocation.HoursPerDay,
+            allocation.Notes,
+            days.Where(d => d.Allocated > d.Capacity).Select(d => d.Date).ToList(),
+            days.Where(d => d.TimeOff is not null && !d.PublicHoliday && !d.Date.IsWeekend()).Select(d => d.Date).ToList());
+    }
 
-    /// <summary>The allocation's days on which the person's bookings, across every team, exceed their capacity.</summary>
-    private async Task<IReadOnlyList<DateOnly>> ClashDaysAsync(Allocation allocation, CancellationToken ct)
+    /// <summary>The person's load on each of the allocation's days, with their bookings across every team.</summary>
+    private async Task<IReadOnlyList<DayLoad>> DayLoadsAsync(Allocation allocation, CancellationToken ct)
     {
         var (from, to) = (allocation.StartDate, allocation.EndDate);
         var person = await db.People.AsNoTracking().FirstAsync(p => p.Id == allocation.PersonId, ct);
@@ -110,8 +115,6 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
         return Enumerable.Range(0, to.DayNumber - from.DayNumber + 1)
             .Select(from.AddDays)
             .Select(date => CapacityCalculator.ForDay(person, date, allocations, timeOff))
-            .Where(day => day.Allocated > day.Capacity)
-            .Select(day => day.Date)
             .ToList();
     }
 }

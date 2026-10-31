@@ -10,8 +10,18 @@ export function clashDaysText(clashDays: string[], locale: string): string {
   return days.length === 1 ? days[0] : `${days.slice(0, -1).join(', ')} and ${days.at(-1)}`;
 }
 
-/** The warning after a booking pushes someone over capacity (D16), or null when it did not. */
-export function clashMessage(personName: string, clashDays: string[], locale: string): string | null {
-  if (clashDays.length === 0) return null;
-  return `Saved, but ${personName} is now over capacity on ${clashDaysText(clashDays, locale)}.`;
+/** What a booking runs into: "on leave on Mon 2 Nov", "over capacity on Tue 3 Nov", or both; null when nothing. */
+export function clashText(clashDays: string[], leaveDays: string[], locale: string): string | null {
+  const parts = [
+    ...(leaveDays.length ? [`on leave on ${clashDaysText(leaveDays, locale)}`] : []),
+    ...(clashDays.length ? [`over capacity on ${clashDaysText(clashDays, locale)}`] : []),
+  ];
+  return parts.length ? parts.join(', and ') : null;
+}
+
+/** The warning after a booking pushes someone over capacity (D16) or lands on their leave, or null when neither. */
+export function clashMessage(personName: string, clashDays: string[], leaveDays: string[], locale: string): string | null {
+  const text = clashText(clashDays, leaveDays, locale);
+  if (!text) return null;
+  return `Saved, but ${personName} is ${leaveDays.length ? '' : 'now '}${text}.`;
 }

@@ -13,6 +13,7 @@ public sealed record SaveAllocationRequest(
     [MaxLength(1000)] string? Notes);
 
 /// <param name="ClashDays">Days of this allocation on which the person is now booked over capacity (D16).</param>
+/// <param name="LeaveDays">Days of this allocation on which the person is on approved leave.</param>
 public sealed record SavedAllocationDto(
     Guid Id,
     Guid PersonId,
@@ -22,4 +23,5 @@ public sealed record SavedAllocationDto(
     DateOnly EndDate,
     decimal HoursPerDay,
     string? Notes,
-    IReadOnlyList<DateOnly> ClashDays);
+    IReadOnlyList<DateOnly> ClashDays,
+    IReadOnlyList<DateOnly> LeaveDays);

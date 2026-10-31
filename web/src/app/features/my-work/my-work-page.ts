@@ -32,7 +32,7 @@ import { MyWorkService } from './my-work.service';
           [hoursPerDay]="data.person.hoursPerDay"
           [today]="today"
         />
-        <app-my-time-off class="mt-8" [timeOff]="data.timeOff" />
+        <app-my-time-off class="mt-8" [timeOff]="data.timeOff" (changed)="myWork.reload()" />
       } @else {
         <p class="empty-state mt-6">Loading your work...</p>
       }

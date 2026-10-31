@@ -12,6 +12,6 @@ public enum RequestType { Presentation, Social, Print, Web, Video, Copy, Other }
 
 public enum Priority { Low, Medium, High, Urgent }
 
-public enum TimeOffType { AnnualLeave, SickLeave, PublicHoliday }
+public enum TimeOffType { AnnualLeave, SickLeave, FamilyResponsibility, StudyLeave, Other, PublicHoliday }
 
-public enum TimeOffStatus { Pending, Approved, Declined }
+public enum TimeOffStatus { Pending, Approved, Declined, Cancelled }

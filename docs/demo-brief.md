@@ -88,7 +88,7 @@ Twelve tables; the full model's comments, audit, notifications and custom reques
 | Project | Id, OrgId, TeamId, DepartmentId, Name, Colour, DueDate |
 | Task | Id, OrgId, TeamId, ProjectId, Title, Description, StatusId, AssigneePersonId, EstimateHours, DueDate, ReviewCycle, SortOrder, Link |
 | Allocation | Id, OrgId, PersonId, ProjectId, TaskId (nullable), StartDate, EndDate, HoursPerDay, Notes |
-| TimeOff / PublicHoliday | Id, OrgId, PersonId (null for holidays), StartDate, EndDate, Type, Status |
+| TimeOff / PublicHoliday | Id, OrgId, PersonId (null for holidays), StartDate, EndDate, Type, Status (Pending/Approved/Declined/Cancelled), Note, DeclineReason |
 
 - One assignee per task for the demo (the full plan allows many)
 - Allocation has no TeamId: its team comes from the project, so a person's load is totalled across teams
@@ -159,7 +159,7 @@ Realistic, fictional data that tells the story; dates are relative to the curren
 | Projects | 8 to 10, each with a colour and department (e.g. Q1 Campaign, Website Refresh, Sales Deck, HR Onboarding Pack) |
 | Tasks | About 40 spread across columns; 3 overdue; some with review cycle 2 or 3 |
 | Allocations | 6 weeks (2 back, 4 ahead); most people 60 to 90% loaded; 1 person over 100% next week; 1 person under 40% |
-| Time off | 2 people with leave in the next 2 weeks |
+| Time off | Approved leave for 2 Design people in the next 2 weeks; 1 Marketing person on sick leave this week ("Unavailable" to everyone but them and their admins); 1 pending request in Design for the demo |
 | Public holidays | South African public holidays for the current and next year |
 | Requests | 5 New in Design triage, 2 in Marketing, 3 already accepted |
 
@@ -198,8 +198,9 @@ About 10 minutes, following one request from submission to booked capacity.
 6. **Show a clash:** drag another allocation onto a full day; the clash warning appears
 7. **Move work on the board:** drag a card to Internal Review, then to Changes Requested; the review cycle increases
 8. **Dashboard:** utilisation per person, overdue tasks, triage queue now one shorter
-9. **Switch team to Marketing:** different columns, different people. The shared designer's load includes Design work
-10. **Close:** "The same tool works for every department; Design is the pilot." Then ask the discovery questions
+9. **Time off:** switch to a designer; My work opens. "Request time off" for Monday and Tuesday of the week after next: the schedule shows a hatched "Pending" block, and their hours still count. Switch back to the Head of Design and approve it under Requests > Time off: the schedule shows the solid leave block and those days come off their capacity
+10. **Switch team to Marketing:** different columns, different people. The shared designer's load includes Design work
+11. **Close:** "The same tool works for every department; Design is the pilot." Then ask the discovery questions
 
 ## Coding standards
 

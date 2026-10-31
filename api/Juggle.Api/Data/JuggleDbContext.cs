@@ -75,7 +75,12 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
 
         modelBuilder.Entity<Project>().HasOne<Team>().WithMany().HasForeignKey(p => p.TeamId);
         modelBuilder.Entity<Allocation>().HasOne<TaskItem>().WithMany().HasForeignKey(a => a.TaskId);
-        modelBuilder.Entity<TimeOff>().HasOne<Person>().WithMany().HasForeignKey(t => t.PersonId);
+        modelBuilder.Entity<TimeOff>(e =>
+        {
+            e.Property(t => t.Note).HasMaxLength(500);
+            e.Property(t => t.DeclineReason).HasMaxLength(500);
+            e.HasOne<Person>().WithMany().HasForeignKey(t => t.PersonId);
+        });
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes().Where(t => t.ClrType != typeof(Organisation)).ToList())
         {

@@ -1,5 +1,5 @@
 import { Allocation, DayLoad } from '../../core/models';
-import { PlacedBar, dayColumn, placeBars, publicHolidays, timeOffBlocks } from './grid-layout';
+import { PlacedBar, dayColumn, pendingTimeOffBlocks, placeBars, publicHolidays, timeOffBlocks } from './grid-layout';
 
 // Two weeks: Mon 2 Nov to Fri 13 Nov 2026.
 const dates = [
@@ -15,6 +15,7 @@ function days(timeOff: Record<number, string> = {}, publicHolidays: number[] = [
     allocated: 0,
     timeOff: timeOff[i] ?? null,
     publicHoliday: publicHolidays.includes(i),
+    pendingTimeOff: null,
   }));
 }
 
@@ -114,5 +115,17 @@ describe('publicHolidays', () => {
 
   it('finds none without people', () => {
     expect(publicHolidays([])).toEqual([]);
+  });
+});
+
+describe('pendingTimeOffBlocks', () => {
+  it('runs pending leave together, cut at weekends, apart from approved leave', () => {
+    const loads = days({ 1: 'Annual leave' }).map((day, i) => ({ ...day, pendingTimeOff: [4, 5, 6].includes(i) ? 'Study leave' : null }));
+
+    expect(pendingTimeOffBlocks(loads)).toEqual([
+      { start: 4, end: 4, label: 'Study leave', from: '2026-11-06', to: '2026-11-10' },
+      { start: 5, end: 6, label: 'Study leave', from: '2026-11-06', to: '2026-11-10' },
+    ]);
+    expect(timeOffBlocks(loads).map((b) => b.label)).toEqual(['Annual leave']);
   });
 });

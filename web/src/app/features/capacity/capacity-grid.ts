@@ -29,7 +29,8 @@ export interface NewBooking {
  *
  * When editable, pointer drags book and change work: across empty cells to pick days for a new booking, on a
  * booking to move it (to other days or another person), on its end grips to resize it. A press that moves less
- * than the drag threshold is a click, which opens a booking. Esc cancels a drag.
+ * than the drag threshold is a click, which opens a booking. Esc cancels a drag. Anyone can drag across the
+ * days of their own row to ask for time off (D47).
  *
  * The dragged booking is its own preview: the grid shows the bookings as the drop would leave them, snapped to
  * whole days, so stacking, availability strips and utilisation follow the drag live, worked out from the
@@ -91,6 +92,7 @@ export interface NewBooking {
           [person]="person"
           [allocations]="allocationsByPerson().get(person.id) ?? []"
           [editable]="editable()"
+          [pickable]="editable() || person.id === ownPersonId()"
           [draft]="draft()?.personId === person.id ? draft() : null"
           [highlighted]="targetRow() === person.id"
           [held]="held()"
@@ -130,6 +132,8 @@ export class CapacityGrid {
   readonly today = input.required<string>();
   /** The viewer can book and change this team's work: Team Admins, and Org Admins on "All teams" (D24, D25). */
   readonly editable = input(false);
+  /** The viewer's own row: days can be picked there to ask for time off, even when the grid is read-only. */
+  readonly ownPersonId = input<string | null>(null);
   /** Days picked for a new booking whose popover is open, kept in place. */
   readonly pending = input<NewBooking | null>(null);
   /** The person a dropped booking would put over capacity, while the page asks whether to book it anyway. */
@@ -244,7 +248,7 @@ export class CapacityGrid {
   protected readonly hostClass = computed(() => {
     const grip = this.held()?.grip;
     const cursor = !grip ? '' : grip === 'body' ? 'cursor-grabbing **:cursor-grabbing!' : 'cursor-ew-resize **:cursor-ew-resize!';
-    return `${this.editable() ? 'select-none' : ''} ${cursor}`;
+    return `${this.editable() || this.ownPersonId() ? 'select-none' : ''} ${cursor}`;
   });
 
   /** The grid column of a weekday, after the people column. */
@@ -254,7 +258,7 @@ export class CapacityGrid {
 
   protected press(event: PointerEvent): void {
     const cell = this.cellAt(event.clientX, event.clientY);
-    if (!this.editable() || event.button !== 0 || !cell) return;
+    if (event.button !== 0 || !cell || !(this.editable() || cell.personId === this.ownPersonId())) return;
 
     const target = event.target as Element;
     const allocation = this.findAllocation(target.closest<HTMLElement>('[data-allocation-id]'));

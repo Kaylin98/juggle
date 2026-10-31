@@ -11,6 +11,7 @@ using Juggle.Api.Features.MyWork;
 using Juggle.Api.Features.Requests;
 using Juggle.Api.Features.Tasks;
 using Juggle.Api.Features.Teams;
+using Juggle.Api.Features.TimeOffRequests;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,7 @@ builder.Services.AddScoped<AllocationService>();
 builder.Services.AddScoped<RequestService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<MyWorkService>();
+builder.Services.AddScoped<TimeOffService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

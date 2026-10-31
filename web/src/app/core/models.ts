@@ -97,6 +97,8 @@ export interface DayLoad {
   timeOff: string | null;
   /** The day is a public holiday; timeOff is then its name. */
   publicHoliday: boolean;
+  /** Leave waiting for approval on a working day; it does not reduce capacity (D17). */
+  pendingTimeOff: string | null;
 }
 
 export interface SchedulePerson {
@@ -147,6 +149,8 @@ export interface SavedAllocation extends SaveAllocation {
   id: string;
   /** Days of this allocation on which the person is now booked over capacity (D16). */
   clashDays: string[];
+  /** Days of this allocation on which the person is on approved leave. */
+  leaveDays: string[];
 }
 
 export type RequestType = 'Presentation' | 'Social' | 'Print' | 'Web' | 'Video' | 'Copy' | 'Other';
@@ -260,13 +264,45 @@ export interface MyTask {
   category: StatusCategory;
 }
 
+export type TimeOffType = 'AnnualLeave' | 'SickLeave' | 'FamilyResponsibility' | 'StudyLeave' | 'Other';
+export type TimeOffStatus = 'Pending' | 'Approved' | 'Declined';
+
+/** The signed-in person's own time off; cancelled requests are left out. */
 export interface MyTimeOff {
   id: string;
+  type: TimeOffType;
   label: string;
+  status: TimeOffStatus;
   startDate: string;
   endDate: string;
   /** Weekdays in the range that are not public holidays. */
   workingDays: number;
+  note: string | null;
+  declineReason: string | null;
+}
+
+/** Asks for time off for the signed-in person. Dates are inclusive. */
+export interface RequestTimeOff {
+  type: TimeOffType;
+  startDate: string;
+  endDate: string;
+  note: string | null;
+}
+
+/** A pending request, for one of the person's team admins or an Org Admin. */
+export interface TimeOffApproval {
+  id: string;
+  personId: string;
+  personName: string;
+  avatarColour: string;
+  jobTitle: string;
+  /** The person's teams, by name. */
+  teams: string[];
+  label: string;
+  startDate: string;
+  endDate: string;
+  workingDays: number;
+  note: string | null;
 }
 
 /** The signed-in person's work across all their teams. */
@@ -278,6 +314,6 @@ export interface MyWork {
   days: DayLoad[];
   /** Bookings on those days, in every team. */
   bookings: Allocation[];
-  /** Leave that has not ended yet, earliest first. */
+  /** Pending, approved and declined leave that has not ended yet, earliest first. */
   timeOff: MyTimeOff[];
 }

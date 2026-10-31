@@ -7,13 +7,17 @@ namespace Juggle.Api.Features.Teams;
 
 public sealed class TeamsService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess)
 {
-    /// <summary>Teams the current user can open. Org Admins see every team as Team Admin.</summary>
+    /// <summary>
+    /// Teams the current user can open, by name. Org Admins see every team as Team Admin, their own teams first, so
+    /// they land on their own team.
+    /// </summary>
     public async Task<IReadOnlyList<TeamDto>> GetMyTeamsAsync(CancellationToken ct)
     {
         if (currentUser.IsOrgAdmin)
         {
             return await db.Teams
-                .OrderBy(t => t.Name)
+                .OrderBy(t => !db.TeamMemberships.Any(m => m.TeamId == t.Id && m.UserId == currentUser.UserId))
+                .ThenBy(t => t.Name)
                 .Select(t => new TeamDto(t.Id, t.Name, t.Colour, TeamRole.TeamAdmin))
                 .ToListAsync(ct);
         }

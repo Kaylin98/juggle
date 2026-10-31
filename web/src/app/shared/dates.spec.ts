@@ -1,4 +1,4 @@
-import { addDays, addWeekdays, isWeekend, isoWeek, startOfWeek } from './dates';
+import { addDays, addWeekdays, isWeekend, isoWeek, nextWeekday, startOfWeek } from './dates';
 
 describe('dates', () => {
   it('adds days across a month end', () => {
@@ -27,5 +27,14 @@ describe('dates', () => {
     expect(addWeekdays('2026-11-02', -1)).toBe('2026-10-30');
     expect(addWeekdays('2026-10-28', 0)).toBe('2026-10-28');
     expect(addWeekdays('2026-10-31', 0)).toBe('2026-11-02');
+  });
+
+  it('finds the next working day, which is Monday from a Friday or the weekend', () => {
+    expect(['2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'].map(nextWeekday)).toEqual([
+      '2026-10-30',
+      '2026-11-02',
+      '2026-11-02',
+      '2026-11-02',
+    ]);
   });
 });

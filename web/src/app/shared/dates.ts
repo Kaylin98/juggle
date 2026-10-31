@@ -50,6 +50,11 @@ export function addWeekdays(date: string, weekdays: number): string {
   return result;
 }
 
+/** The first working day after a date: Monday from a Friday, Saturday or Sunday. */
+export function nextWeekday(date: string): string {
+  return addWeekdays(addDays(date, 1), 0);
+}
+
 /** A run of days: "16 Dec", "2–6 Nov" or "30 Oct – 3 Nov". */
 export function formatDateRange(from: string, to: string, locale: string): string {
   const date = (d: string, format: string) => formatDate(d, format, locale);

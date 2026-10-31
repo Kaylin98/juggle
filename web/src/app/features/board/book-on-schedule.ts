@@ -4,7 +4,7 @@ import { FormField, form, max, min, required, submit } from '@angular/forms/sign
 import { AllocationsService } from '../../core/allocations.service';
 import { Person, Task } from '../../core/models';
 import { clashMessage } from '../../shared/clash-message';
-import { addWeekdays, today } from '../../shared/dates';
+import { addWeekdays, nextWeekday, today } from '../../shared/dates';
 import { ToastService } from '../../shared/toast.service';
 
 interface BookingForm {
@@ -24,7 +24,7 @@ function defaults(task: Task): BookingForm {
   const estimate = task.estimateHours ?? 0;
   const days = Math.max(1, Math.ceil(estimate / DEFAULT_HOURS_PER_DAY));
   const hoursPerDay = estimate > 0 ? Math.max(0.5, Math.round((estimate / days) * 2) / 2) : DEFAULT_HOURS_PER_DAY;
-  return { startDate: addWeekdays(today(), 1), days, hoursPerDay };
+  return { startDate: nextWeekday(today()), days, hoursPerDay };
 }
 
 /** Books the task's assignee on the schedule for the task's project, linked to the task (D28). */

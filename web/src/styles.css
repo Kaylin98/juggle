@@ -157,6 +157,48 @@
   animation-timeline: scroll(self inline);
 }
 
+/* The same fade on the top or bottom edge of an area that scrolls up and down. */
+@property --fade-top {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-bottom {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes scroll-fade-y {
+  0% {
+    --fade-top: 0px;
+    --fade-bottom: 40px;
+  }
+  10% {
+    --fade-top: 40px;
+  }
+  90% {
+    --fade-bottom: 40px;
+  }
+  100% {
+    --fade-top: 40px;
+    --fade-bottom: 0px;
+  }
+}
+
+@utility scroll-fade-y {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--fade-top),
+    black calc(100% - var(--fade-bottom)),
+    transparent
+  );
+  animation: scroll-fade-y linear both;
+  animation-timeline: scroll(self block);
+}
+
 @layer base {
   body {
     @apply bg-page font-sans text-ink antialiased;

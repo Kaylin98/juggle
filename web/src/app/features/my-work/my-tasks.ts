@@ -41,8 +41,8 @@ export function groupTasks(tasks: MyTask[]): TaskGroup[] {
               </div>
               <h3 class="mt-2 text-base font-semibold">{{ group.label }}</h3>
             </div>
-            <!-- Three cards fit; a longer list scrolls inside its column, the top of the next card showing, so the schedule stays in view. -->
-            <div class="scroll-thin flex max-h-96 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4">
+            <!-- Three cards fit; a longer list scrolls inside its column, fading at an edge with more to show, so the schedule stays in view. -->
+            <div class="scroll-thin scroll-fade-y flex max-h-96 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4">
               @for (task of group.tasks; track task.task.id) {
                 <app-task-card [card]="cards().get(task.task.id)!" [movable]="false" [detail]="task.teamName + ' · ' + task.statusName" (opened)="opened.emit(task)" />
               } @empty {

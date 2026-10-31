@@ -8,10 +8,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | 6 - Dashboard, roles, polish, rehearsal |
 | Phase status | Done |
-| Last completed task | 6.10 Demo rehearsal (all steps pass); tagged `demo-v1` |
+| Last completed task | Post-demo-v1 changes (nav order, Dashboard landing, booking start fix); 6.10 re-run, all steps pass; `demo-v1` moved to the new Phase 6 commit |
 | Next task | Demo. Before it: stop the API, run `--reset-demo`, start the API. Ideas go to "Later" |
 | Blockers / open questions | None |
-| Last updated | 2026-10-30 |
+| Last updated | 2026-10-31 |
 
 ## Phase overview
 
@@ -628,6 +628,7 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - Nav order (after demo-v1, 2026-10-31, D26, D43): the menu reads Dashboard (admins), Schedule, Board, then Requests with Triage (admins, with its count), My requests, New request, the same in the rail flyout. Admins now land on the Dashboard (Members on the board, requesters on My requests); switching team keeps the current page, falling back to the Dashboard for admins. Demo step 2 opens Triage from the dashboard's "Requests in triage" card. Tests: 3 web (landing per role), nav order updated
 - Book on schedule (found in the 2026-10-31 rehearsal, a Saturday): the start defaulted to Tuesday on a weekend, because the next working day was counted from the following Monday. It now starts on the first working day after today (`nextWeekday`), so Monday from a Friday or the weekend (D28). Tests: 1 web
 - 6.10 re-run after the review fixes, through the UI at 1440x900 on freshly reset data (API stopped for the reset), with no console errors: all nine steps pass. Step 3: Priya 33% over 4 weeks (available) and 50% next week (green). Step 5: "Book on schedule" books Mon 2 to Thu 5 Nov at 4h/day; next week (1-week view) Priya goes from 50% green to 90% amber; 4 weeks 43%. Step 6: "Booking clash: Lerato Mokoena is over capacity on 4 days, from Tue 3 Nov". Step 7: Changes Requested was collapsed, opened on the drop and shows the card with R2; after a reload it is collapsed again and nothing was saved. Step 8: 3 overdue, 5 in triage, 1 over capacity. Step 9: Marketing columns and people, Jason's Design bookings greyed. Demo data reset afterwards. 6.9 (optional Playwright test in the repo) not done
+- 6.10 re-run on 2026-10-31 after the nav and landing change, through the UI at 1440x900 on freshly reset data (API stopped for the reset), with no console errors: all nine steps pass. Step 2: Naledi lands on the Dashboard; the menu reads Dashboard, Schedule, Board, Requests (6), and the "Requests in triage" card shows 6 and opens Triage, where the group lists Triage 6, My requests, New request and the new request tops the inbox. Step 5: "Book on schedule" opens on Mon 2 Nov (after the weekend fix), 4 days at 4h/day; next week Priya goes from 50% green to 90% amber. Steps 3 and 6 to 9 as on 2026-10-30. Landing checked per role: Naledi and Megan on the Dashboard (switching Naledi to Marketing keeps the Dashboard), Ethan on the board, David on My requests. Demo data reset afterwards
 
 **Acceptance criteria**
 
@@ -726,3 +727,4 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 - 2026-10-30: Demo data reset with `--reset-demo` after the dashboard (week of 26 Oct), and again after the seed change (Sipho over capacity this week). The API on 5268 restarted on the new build; it serves `/api/dashboard`, and the Design dashboard shows Sipho over this week (35h of 40h).
 - 2026-10-30: Phase 6 continued: seed puts Sipho over capacity this week; 6.4 server role audit (no gaps, `AccessTests`); 6.5 UI role audit ("All teams" only for Org Admins); 6.6 empty states; 6.7 polish at 1280; 6.8 reset and README verified; 6.10 demo rehearsed end to end through the UI with one open point (step 5 does not turn green to amber). Build with no warnings, lint, 45 API tests and 88 web tests pass. Demo data reset. Awaiting review.
 - 2026-10-30: Phase 6 review fixes: Priya at 50% next week in the seed (step 5 goes green to amber), a card dropped on a collapsed column expands it (not saved). Demo script re-run end to end with all steps passing. Build with no warnings, lint, 45 API tests and 90 web tests pass. Demo data reset. Phase 6 approved and done; tagged `demo-v1`.
+- 2026-10-31: After demo-v1: nav order (Dashboard, Schedule, Board; Triage first in Requests) and admins land on the Dashboard (D26, D43); schedule reference image removed from the repo; "Book on schedule" starts on Monday when booking at the weekend. Demo script re-run end to end with all steps passing. Build with no warnings, lint, 45 API tests and 94 web tests pass. Demo data reset. Phase 6 done; `demo-v1` moved to the new Phase 6 commit.

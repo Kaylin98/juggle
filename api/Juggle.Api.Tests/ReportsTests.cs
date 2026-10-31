@@ -1,0 +1,99 @@
+using System.Net;
+using System.Net.Http.Json;
+using Juggle.Api.Common;
+using Juggle.Api.Data.Entities;
+using Juggle.Api.Features.Reports;
+using Juggle.Api.Features.Tasks;
+using Juggle.Api.Features.Teams;
+
+namespace Juggle.Api.Tests;
+
+// Compares against the live board, which other test classes change, so these run on their own.
+[Collection(typeof(RunsAlone))]
+public sealed class ReportsTests(ApiFactory api)
+{
+    private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
+
+    [Fact]
+    public async Task Status_and_designer_counts_match_the_board()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var studioId = await GetTeamIdAsync(client, "Studio");
+        var tasks = (await client.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!;
+        var people = (await client.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct))!;
+
+        var report = await GetReportAsync(client, studioId);
+
+        Assert.Equal(["Briefed in", "Working on it", "Feedback needed", "Awaiting approval", "Done"], report.ByStatus.Select(s => s.Name));
+        Assert.All(report.ByStatus, s => Assert.Equal(tasks.Count(t => t.StatusId == s.StatusId), s.Count));
+        // Most cards are delivered briefs from earlier months.
+        var done = report.ByStatus.Single(s => s.Category == StatusCategory.Done).Count;
+        Assert.True(done > tasks.Count / 2);
+
+        // Everyone in the team, the most open work first: Lerato is the overloaded designer.
+        Assert.Equal(people.Select(p => p.Id).Order(), report.ByDesigner.Where(d => d.PersonId != null).Select(d => d.PersonId!.Value).Order());
+        Assert.Equal("Lerato Mokoena", report.ByDesigner[0].Name);
+        foreach (var designer in report.ByDesigner)
+        {
+            var theirs = tasks.Where(t => t.AssigneePersonId == designer.PersonId).ToList();
+            Assert.Equal(theirs.Count, designer.Counts.Values.Sum());
+            Assert.All(designer.Counts, c => Assert.Equal(theirs.Count(t => t.StatusId == c.Key), c.Value));
+        }
+    }
+
+    [Fact]
+    public async Task Briefs_received_cover_nine_months_ending_this_month()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var studioId = await GetTeamIdAsync(client, "Studio");
+        var today = new OrgClock(TimeProvider.System).Today;
+        var thisMonth = new DateOnly(today.Year, today.Month, 1);
+
+        var report = await GetReportAsync(client, studioId);
+
+        Assert.Equal(Enumerable.Range(0, 9).Select(i => thisMonth.AddMonths(i - 8)), report.ReceivedByMonth.Select(m => m.Month));
+        Assert.All(report.ReceivedByMonth, m => Assert.True(m.Count > 0, $"No briefs in {m.Month}"));
+    }
+
+    [Fact]
+    public async Task Brand_filter_applies_to_every_widget_and_keeps_the_brand_list()
+    {
+        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var studioId = await GetTeamIdAsync(client, "Studio");
+        var all = await GetReportAsync(client, studioId);
+        var dji = all.Brands.Single(b => b.Name == "DJI");
+        var projects = (await client.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))!;
+        var djiProjects = projects.Where(p => p.Department == "DJI").Select(p => p.Id).ToHashSet();
+        var tasks = (await client.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!;
+
+        var report = await GetReportAsync(client, studioId, dji.Id);
+
+        Assert.Equal(all.Brands, report.Brands);
+        Assert.Equal(tasks.Count(t => djiProjects.Contains(t.ProjectId)), report.ByStatus.Sum(s => s.Count));
+        Assert.Equal(report.ByStatus.Sum(s => s.Count), report.ByDesigner.Sum(d => d.Counts.Values.Sum()));
+        Assert.InRange(report.ReceivedByMonth.Sum(m => m.Count), 1, all.ReceivedByMonth.Sum(m => m.Count) - 1);
+    }
+
+    [Fact]
+    public async Task Only_the_teams_admins_see_the_report()
+    {
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var studioId = await GetTeamIdAsync(naledi, "Studio");
+        var lerato = await api.SignInAsAsync("Lerato Mokoena");
+        var megan = await api.SignInAsAsync("Megan Botha");
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await lerato.GetAsync($"/api/teams/{studioId}/reports/briefs", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await megan.GetAsync($"/api/teams/{studioId}/reports/briefs", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await megan.GetAsync($"/api/teams/{await GetTeamIdAsync(megan, "Marketing")}/reports/briefs", _ct)).StatusCode);
+    }
+
+    private async Task<BriefsReportDto> GetReportAsync(HttpClient client, Guid teamId, Guid? departmentId = null) =>
+        (await client.GetFromJsonAsync<BriefsReportDto>(
+            $"/api/teams/{teamId}/reports/briefs{(departmentId is { } id ? $"?departmentId={id}" : "")}", ApiFactory.Json, _ct))!;
+
+    private async Task<Guid> GetTeamIdAsync(HttpClient client, string name)
+    {
+        var teams = await client.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct);
+        return teams!.Single(t => t.Name == name).Id;
+    }
+}

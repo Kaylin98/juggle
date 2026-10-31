@@ -7,7 +7,10 @@ public sealed class OrgClock(TimeProvider time)
 
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
 
-    public DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(time.GetUtcNow(), Zone).DateTime);
+    public DateOnly Today => DateOf(time.GetUtcNow());
 
     public DateTimeOffset Now => time.GetUtcNow();
+
+    /// <summary>The organisation's date at an instant, such as the day a request was sent.</summary>
+    public static DateOnly DateOf(DateTimeOffset instant) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(instant, Zone).DateTime);
 }

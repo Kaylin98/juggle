@@ -35,13 +35,13 @@ describe('Nav', () => {
 
   it('groups the request pages under Requests, closed away from them, with what is waiting counted on the group', async () => {
     const { fixture, group, links } = await render('TeamAdmin', '/t/design/board');
-    expect(links()).toEqual(['Dashboard', 'My work', 'Schedule', 'Board']);
+    expect(links()).toEqual(['Dashboard', 'Briefs report', 'My work', 'Schedule', 'Board']);
     expect(group().getAttribute('aria-expanded')).toBe('false');
     expect(group().textContent).toContain('5');
 
     group().click();
     await fixture.whenStable();
-    expect(links()).toEqual(['Dashboard', 'My work', 'Schedule', 'Board', 'Triage 3', 'Time off 2', 'My requests', 'New request']);
+    expect(links()).toEqual(['Dashboard', 'Briefs report', 'My work', 'Schedule', 'Board', 'Triage 3', 'Time off 2', 'My requests', 'New request']);
     expect(group().textContent).not.toContain('5');
   });
 

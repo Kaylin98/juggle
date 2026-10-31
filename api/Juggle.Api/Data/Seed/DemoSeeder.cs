@@ -20,6 +20,82 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         ("CORE", "CORE"), ("Pure Electric", "PURE"), ("Mobile in Africa", "MIA"), ("Ultra Human", "ULTRA"),
     ];
 
+    /// <summary>
+    /// A brief from an earlier month: sent on day Day of the month MonthsAgo months back, for the Studio unless Marketing.
+    /// A rejected brief has no project, so no job number (0).
+    /// </summary>
+    private sealed record PastBrief(
+        string Brand, int Number, string JobName, int MonthsAgo, int Day, string MainGoal, string[] Deliverables,
+        bool Marketing = false, string? RejectionReason = null);
+
+    /// <summary>Briefs delivered in the eight months before this one, by the brands with a marketing manager (D56).</summary>
+    private static readonly PastBrief[] PastBriefs =
+    [
+        new("DJI", 125, "Valentine's Day", 8, 3, "Gifting for couples who travel.", ["Valentine's Takealot banners", "Couples gifting social tiles"]),
+        new("GoPro", 196, "HERO12 Price Drop", 8, 9, "Announce the HERO12 price drop online.", ["Price drop web banners"]),
+        new("MS Surface", 85, "Back to Work", 8, 14, "Surface for the return to the office.", ["Back to work email", "Retail shelf wobblers"]),
+        new("Pure Electric", 22, "Autumn Commute", 8, 22, "Keep commuters riding as the weather turns.", ["Commuter print ad"]),
+        new("DJI", 126, "Easter Specials", 7, 2, "Easter deals at the main retailers.", ["Easter Takealot banners", "Easter in-store posters"]),
+        new("Bambu Lab", 44, "Maker Month", 7, 6, "A month of maker projects and workshops.", ["Maker Month social tiles", "Workshop flyer"]),
+        new("Ultra Human", 12, "Ring Gen 2 Launch", 7, 11, "Launch the second-generation ring.",
+            ["Launch hero visual", "Launch social cut-downs", "Unboxing leaflet"]),
+        new("GoPro", 197, "Spring Adventure", 7, 17, "Get people outdoors with a GoPro this spring.", ["Spring adventure web hero"]),
+        new("MS Surface", 86, "Education Bundles", 7, 24, "Bundles for schools and universities.", ["Education bundle brochure"]),
+        new("DJI", 127, "Mini 4 Pro Launch", 6, 1, "Launch the Mini 4 Pro in store and online.",
+            ["Mini 4 Pro hero banners", "Mini 4 Pro spec sheet", "Retail launch kit"]),
+        new("Pure Electric", 23, "Easter Weekend Sale", 6, 8, "Easter weekend scooter deals.", ["Easter weekend web banners"]),
+        new("Bambu Lab", 45, "A1 Mini Promo", 6, 15, "The A1 Mini as the first 3D printer.", ["A1 Mini Takealot banners", "A1 Mini email header"]),
+        new("MS Surface", 87, "Surface Pro Trade-in", 6, 21, "Trade in an old laptop for a Surface Pro.", ["Trade-in in-store poster"]),
+        new("DJI", 128, "Mother's Day", 5, 2, "Cameras for capturing family moments.", ["Mother's Day social tiles", "Mother's Day email header"]),
+        new("GoPro", 198, "Ski Season", 5, 6, "GoPro on the slopes this winter.", ["Ski season social video", "Ski season store poster"]),
+        new("Ultra Human", 13, "Wellness Month", 5, 9, "Daily wellness habits with the ring.", ["Wellness Month social carousel"]),
+        new("Pure Electric", 24, "Winter Ready", 5, 14, "Riding safely through winter.", ["Winter Ready leaflet", "Winter Ready web hero"]),
+        new("Bambu Lab", 46, "Filament Bundles", 5, 19, "Filament bundles for regular printers.", ["Filament bundle packshots"]),
+        new("Bambu Lab", 0, "Trade Show Booth", 5, 21, "Our stand at the Maker Faire.", ["Booth graphics", "Banner stands"],
+            RejectionReason: "The events agency is designing the booth this year."),
+        new("MS Surface", 88, "Business Week", 5, 26, "Surface for small business owners.", ["Business Week presentation"]),
+        new("DJI", 129, "Osmo Pocket 3 Launch", 4, 3, "Launch the Osmo Pocket 3 for creators.", ["Osmo Pocket 3 launch video", "Osmo Pocket 3 banners"]),
+        new("GoPro", 199, "Father's Day", 4, 8, "GoPro as the Father's Day gift.", ["Father's Day Takealot banners", "Father's Day social tiles"]),
+        new("MS Surface", 89, "Mid-year Sale", 4, 12, "Mid-year Surface deals.", ["Mid-year sale banners"]),
+        new("Ultra Human", 14, "Sleep Challenge", 4, 18, "A 30-day sleep challenge with the ring.",
+            ["Sleep challenge social tiles", "Sleep challenge landing page"]),
+        new("Bambu Lab", 48, "Schools Programme", 4, 24, "3D printers in school classrooms.", ["Schools programme brochure"]),
+        new("DJI", 130, "Winter Sale", 3, 1, "DJI's winter sale across all retailers.",
+            ["Winter sale Takealot banners", "Winter sale store posters", "Winter sale email"]),
+        new("Pure Electric", 25, "Scooter Safety Week", 3, 7, "Safe riding tips for every rider.", ["Safety week social tiles"]),
+        new("GoPro", 200, "HERO13 Launch", 3, 10, "Launch the HERO13 Black.",
+            ["HERO13 launch key visual", "HERO13 retail toolkit", "HERO13 launch video"]),
+        new("MS Surface", 90, "Back to Campus", 3, 16, "Surface for the second semester.", ["Campus social tiles"]),
+        new("Bambu Lab", 49, "X1 Carbon Promo", 3, 20, "The X1 Carbon for serious makers.", ["X1 Carbon web banners"]),
+        new("Ultra Human", 15, "Corporate Wellness", 3, 25, "The ring for company wellness programmes.", ["Corporate wellness deck"]),
+        new("DJI", 131, "Women's Day", 2, 2, "Celebrate women creators on Women's Day.", ["Women's Day social tiles"]),
+        new("DJI", 132, "Avata 2 Launch", 2, 6, "Launch the Avata 2 FPV drone.", ["Avata 2 hero banners", "Avata 2 launch video"]),
+        new("GoPro", 201, "Spring Break", 2, 11, "GoPro for the spring holidays.", ["Spring break social cut-downs"]),
+        new("Pure Electric", 26, "Spring Commute", 2, 14, "Swap the car for a scooter this spring.", ["Spring commute billboard", "Spring commute web hero"]),
+        new("Bambu Lab", 50, "Spring Makers", 2, 18, "Spring projects to print at home.", ["Spring Makers email", "Spring Makers social tiles"]),
+        new("Ultra Human", 0, "Partner Webinar Slides", 2, 20, "Slides for the partner webinar.", ["Webinar slide deck"],
+            RejectionReason: "Marketing is building these from the existing template."),
+        new("MS Surface", 91, "Copilot+ PC Launch", 2, 22, "Launch Surface Copilot+ PCs in store.",
+            ["Copilot+ launch banners", "Copilot+ in-store demo cards"]),
+        new("Ultra Human", 17, "Fitness Month", 2, 26, "Train smarter with the ring.", ["Fitness Month social tiles"]),
+        new("DJI", 133, "Heritage Day", 1, 2, "Show South Africa from above on Heritage Day.", ["Heritage Day social tiles"]),
+        new("DJI", 134, "Neo Launch", 1, 5, "Launch the DJI Neo for first-time flyers.",
+            ["Neo launch banners", "Neo launch social video", "Neo retail wobblers"]),
+        new("GoPro", 202, "Summer Preview", 1, 8, "A first look at GoPro's summer range.", ["Summer preview web hero"]),
+        new("Pure Electric", 27, "Rider Rewards", 1, 11, "Launch the rider rewards programme.", ["Rider Rewards leaflet", "Rider Rewards email"]),
+        new("Bambu Lab", 51, "H2D Launch", 1, 15, "Launch the H2D printer.", ["H2D launch key visual", "H2D Takealot banners"]),
+        new("MS Surface", 92, "Surface Laptop 7 Promo", 1, 18, "Surface Laptop 7 deals for professionals.", ["Surface Laptop 7 banners"]),
+        new("Ultra Human", 18, "Spring Reset", 1, 22, "A spring reset for sleep and energy.", ["Spring Reset social carousel"]),
+        new("MS Surface", 93, "Partner Day", 1, 25, "Surface's day with reseller partners.", ["Partner Day presentation", "Partner Day pull-up banner"]),
+        new("GoPro", 205, "Adventure Blog Series", 6, 12, "Monthly adventure stories from GoPro users.", ["Adventure blog posts"], Marketing: true),
+        new("Pure Electric", 28, "Rider Survey", 5, 12, "Ask riders what they want next.", ["Rider survey email"], Marketing: true),
+        new("MS Surface", 94, "Customer Stories", 4, 10, "How businesses work on Surface.", ["Customer story write-up"], Marketing: true),
+        new("DJI", 135, "Drone Laws Explainer", 3, 12, "Explain South Africa's drone rules simply.",
+            ["Drone laws blog post", "Drone laws LinkedIn post"], Marketing: true),
+        new("Bambu Lab", 52, "Maker Spotlights", 2, 9, "Spotlight local makers each week.", ["Maker spotlight posts"], Marketing: true),
+        new("Ultra Human", 19, "Sleep Tips Newsletter", 1, 19, "Monthly sleep tips for ring owners.", ["Sleep tips newsletter copy"], Marketing: true),
+    ];
+
     /// <summary>October, so October 2026 is Q1'27, as in the studio's job codes.</summary>
     private const int FinancialYearStartMonth = 10;
 
@@ -222,6 +298,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         }
 
         // Lerato carries far more open deliverables than anyone else; six wait in Awaiting approval; four are overdue.
+        // The first deliverable of each brief that came in as a request is kept, to link the request to it.
         var takealotBanners = AddTask(blackFriday, "Takealot banners", ss["Awaiting approval"], lerato, 8, 2, reviewCycle: 2);
         AddTask(blackFriday, "iStore banners", ss["Working on it"], lerato, 6, 4);
         AddTask(blackFriday, "Bellyband", ss["Feedback needed"], lerato, 4, -1, reviewCycle: 2);
@@ -231,7 +308,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         AddTask(blackFriday, "A4 insert: Cameraland", ss["Awaiting approval"], ruben, 3, 1);
         AddTask(blackFriday, "A4 insert: Kloppers", ss["Briefed in"], ruben, 3, 5);
         AddTask(blackFriday, "A4 insert: ODP", ss["Briefed in"], lerato, 3, 5);
-        AddTask(brandStore, "Brand store hero banners", ss["Working on it"], ethan, 12, 9);
+        var heroBanners = AddTask(brandStore, "Brand store hero banners", ss["Working on it"], ethan, 12, 9);
         AddTask(brandStore, "Product tiles", ss["Briefed in"], lerato, 10, 14);
         AddTask(brandStore, "A+ content modules", ss["Briefed in"], sipho, 12, 16);
         AddTask(brandStore, "Store navigation wireframe", ss["Done"], ethan, 6, -6);
@@ -243,14 +320,14 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         AddTask(giftGuide, "Printer hero renders", ss["Feedback needed"], ethan, 8, -2, reviewCycle: 3);
         AddTask(giftGuide, "Email header set", ss["Done"], priya, 3, -4);
         AddTask(giftGuide, "Social carousel", ss["Briefed in"], priya, 6, 13);
-        AddTask(summer, "Campaign key visual", ss["Working on it"], jason, 16, 8);
+        var keyVisual = AddTask(summer, "Campaign key visual", ss["Working on it"], jason, 16, 8);
         AddTask(summer, "Billboard adaptation", ss["Briefed in"], jason, 8, 15);
         AddTask(summer, "Social launch tiles", ss["Feedback needed"], jason, 6, -1);
         AddTask(summer, "Scooter spec sheets", ss["Awaiting approval"], priya, 4, 2);
         AddTask(summer, "Rider safety leaflet", ss["Done"], ruben, 4, -9);
-        AddTask(backToSchool, "Retailer toolkit", ss["Briefed in"], ethan, 14, 30);
+        var retailerToolkit = AddTask(backToSchool, "Retailer toolkit", ss["Briefed in"], ethan, 14, 30);
         AddTask(backToSchool, "Campus poster series", ss["Briefed in"], sipho, 8, 35);
-        AddTask(retailLaunch, "Launch concept boards", ss["Awaiting approval"], naledi, 8, 1, reviewCycle: 2);
+        var conceptBoards = AddTask(retailLaunch, "Launch concept boards", ss["Awaiting approval"], naledi, 8, 1, reviewCycle: 2);
         AddTask(retailLaunch, "Retail launch video", ss["Working on it"], amahle, 14, 12);
         AddTask(retailLaunch, "Shelf strips", ss["Briefed in"], ruben, 3, 18);
         AddTask(storeRefresh, "Window graphics", ss["Working on it"], naledi, 10, 10);
@@ -263,13 +340,13 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         AddTask(newsletter, "November newsletter copy", ms["Writing"], thabo, 6, 6);
         AddTask(newsletter, "Subscriber survey", ms["Planned"], thabo, 4, 15);
         AddTask(newsletter, "October newsletter", ms["Published"], thabo, 6, -6);
-        AddTask(socialCalendar, "November social calendar", ms["Review"], chloe, 5, 3, reviewCycle: 2);
+        var novemberCalendar = AddTask(socialCalendar, "November social calendar", ms["Review"], chloe, 5, 3, reviewCycle: 2);
         AddTask(socialCalendar, "Instagram reels plan", ms["Writing"], chloe, 6, 8);
         AddTask(socialCalendar, "LinkedIn carousel graphics", ms["Planned"], jason, 6, 10);
         AddTask(socialCalendar, "Weekly social posts", ms["Scheduled"], chloe, 4, 1);
         AddTask(caseStudies, "Case study: Karoo Motors", ms["Writing"], megan, 10, 12);
         AddTask(caseStudies, "Case study: Highveld Dealers", ms["Planned"], thabo, 10, 20);
-        AddTask(riderStories, "Rider story video script", ms["Planned"], chloe, 6, 18);
+        var videoScript = AddTask(riderStories, "Rider story video script", ms["Planned"], chloe, 6, 18);
         AddTask(riderStories, "Rider of the month post", ms["Review"], megan, 4, 4);
         AddTask(riderStories, "Launch recap blog", ms["Published"], jason, 3, -9);
 
@@ -390,7 +467,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         var now = clock.Now;
 
         void AddBriefRequest(Team team, User manager, string jobName, string mainGoal, string deliverables, Priority priority, int dueDays,
-            double ageHours, TaskItem? acceptedTask = null) =>
+            double ageHours, TaskItem? acceptedTask = null, string? rejectionReason = null) =>
             db.Requests.Add(new Request
             {
                 OrgId = org.Id,
@@ -403,8 +480,11 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 Deliverables = deliverables,
                 RequestedDueDate = Due(dueDays),
                 Priority = priority,
-                Status = acceptedTask is null ? RequestStatus.New : RequestStatus.Accepted,
+                Status = acceptedTask is not null ? RequestStatus.Accepted
+                    : rejectionReason is not null ? RequestStatus.Rejected
+                    : RequestStatus.New,
                 TaskId = acceptedTask?.Id,
+                RejectionReason = rejectionReason,
                 CreatedAt = now.AddHours(-ageHours),
             });
 
@@ -439,6 +519,58 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         AddBriefRequest(studio, pieter, "Festive Bundles",
             "Sell the festive camera bundles on Takealot and in store.",
             "Bundle packshots\nTakealot bundle banners\nSocial cut-downs\nIn-store wobblers", Priority.High, 28, 260, bundlePackshots);
+        AddBriefRequest(studio, zanele, "Amazon Brand Store",
+            "Open the DJI brand store on Amazon with a full set of branded pages and product content.",
+            "Brand store hero banners\nProduct tiles\nA+ content modules\nStore navigation wireframe", Priority.High, 35, 30 * 24, heroBanners);
+        AddBriefRequest(studio, kagiso, "Summer Campaign",
+            "Make Pure Electric the summer commute, from billboards to social.",
+            "Campaign key visual\nBillboard adaptation\nSocial launch tiles\nScooter spec sheets\nRider safety leaflet",
+            Priority.High, 42, 40 * 24, keyVisual);
+        AddBriefRequest(studio, nicole, "Back to School",
+            "Get Surface on the January back-to-school lists at the main retailers and on campus.",
+            "Retailer toolkit\nCampus poster series", Priority.Medium, 70, 25 * 24, retailerToolkit);
+        AddBriefRequest(studio, bongani, "Retail Launch",
+            "Launch the ring in its first retail stores with a look that explains it at a glance.",
+            "Launch concept boards\nRetail launch video\nShelf strips", Priority.High, 30, 45 * 24, conceptBoards);
+        AddBriefRequest(marketing, pieter, "Social Calendar",
+            "Plan GoPro's November social so every channel has a post each weekday.",
+            "November social calendar\nInstagram reels plan\nLinkedIn carousel graphics\nWeekly social posts",
+            Priority.Medium, 30, 20 * 24, novemberCalendar);
+        AddBriefRequest(marketing, kagiso, "Rider Stories",
+            "Share real riders' stories to show who Pure Electric is for.",
+            "Rider story video script\nRider of the month post\nLaunch recap blog", Priority.Medium, 40, 35 * 24, videoScript);
+
+        // Briefs from the eight months before this one, delivered, so the briefs report shows nine months of work (D56).
+        // Each is a project with its job code, one Done card per deliverable and the request it came from. Job numbers
+        // stay below the open briefs' and colours repeat the brand's own, so the next job code and colour are unchanged.
+        var managers = new[] { zanele, pieter, ayesha, kagiso, nicole, bongani }.ToDictionary(m => m.DepartmentId!.Value);
+        Person[] designers = [lerato, ethan, sipho, priya, amahle, lerato, ruben, jason, ethan, naledi, sipho, lerato];
+        Person[] marketers = [thabo, chloe, megan];
+        var assigned = 0;
+        var thisMonth = new DateOnly(today.Year, today.Month, 1);
+        foreach (var past in PastBriefs.OrderBy(b => b.MonthsAgo).ThenByDescending(b => b.Day))
+        {
+            var brand = brands[past.Brand];
+            var sent = thisMonth.AddMonths(-past.MonthsAgo).AddDays(past.Day - 1);
+            var ageHours = (now - new DateTimeOffset(sent.ToDateTime(new TimeOnly(9, 0)), TimeSpan.FromHours(2))).TotalHours;
+            var dueDays = sent.DayNumber - today.DayNumber + 14;
+            var team = past.Marketing ? marketing : studio;
+            TaskItem? first = null;
+            if (past.RejectionReason is null)
+            {
+                var project = AddBrief(team, past.Brand, past.Number, past.JobName,
+                    db.Projects.Local.First(p => p.DepartmentId == brand.Id).Colour, dueDays);
+                foreach (var deliverable in past.Deliverables)
+                {
+                    var assignee = past.Marketing ? marketers[assigned++ % marketers.Length] : designers[assigned++ % designers.Length];
+                    var task = AddTask(project, deliverable, past.Marketing ? ms["Published"] : ss["Done"], assignee, 6, dueDays);
+                    first ??= task;
+                }
+            }
+
+            AddBriefRequest(team, managers[brand.Id], past.JobName, past.MainGoal, string.Join('\n', past.Deliverables),
+                Priority.Medium, dueDays, ageHours, first, past.RejectionReason);
+        }
 
         await db.SaveChangesAsync();
         LogSeeded(logger, weekStart);

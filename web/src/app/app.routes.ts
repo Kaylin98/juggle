@@ -64,6 +64,12 @@ export const routes: Routes = [
             title: 'Dashboard',
             canActivate: [teamAdminGuard],
           },
+          {
+            path: 'briefs',
+            loadComponent: () => import('./features/reports/briefs-report-page').then((m) => m.BriefsReportPage),
+            title: 'Briefs report',
+            canActivate: [teamAdminGuard],
+          },
           { path: '', pathMatch: 'full', redirectTo: 'board' },
         ],
       },

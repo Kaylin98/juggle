@@ -282,6 +282,39 @@ export interface Dashboard {
   workByDepartment: DepartmentCount[];
 }
 
+export interface StatusCount {
+  statusId: string;
+  name: string;
+  category: StatusCategory;
+  count: number;
+}
+
+export interface DesignerCount {
+  /** Null for the cards nobody is assigned to. */
+  personId: string | null;
+  name: string | null;
+  /** Cards per status id; statuses with none are left out. */
+  counts: Record<string, number>;
+}
+
+export interface MonthCount {
+  /** The first day of the month. */
+  month: string;
+  count: number;
+}
+
+/** The briefs report (D56), for every brand or one. */
+export interface BriefsReport {
+  /** The brands with work in the team, for the brand filter; the same whatever the filter. */
+  brands: Option[];
+  /** Cards per board column, in board order. */
+  byStatus: StatusCount[];
+  /** Everyone in the team, the most open cards first, then unassigned cards. */
+  byDesigner: DesignerCount[];
+  /** Requests sent to the team in each of the last 9 months, oldest first. */
+  receivedByMonth: MonthCount[];
+}
+
 /** A task assigned to the signed-in person, with what My work shows of its team, project and status. */
 export interface MyTask {
   task: Task;

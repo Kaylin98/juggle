@@ -138,6 +138,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 - [ ] Utilisation bar per person for this week and the next 4 weeks
 - [ ] Cards: overdue tasks, tasks awaiting review (Phase C), requests waiting in triage, people over capacity this week
 - [ ] Work by department (task count)
+- [ ] Briefs report (Phase C addition, D56): a brand filter over "Briefs completed vs in progress" (one bar by status, "NN% Done", legend with counts), "Studio capacity by designer" (cards per person by status) and "Briefs received over the last 9 months" (requests per month)
 
 **Roles**
 
@@ -157,12 +158,12 @@ Realistic, fictional data that tells the story; dates are relative to the curren
 | Brands | CGA, DJI, ARP, Bambu Lab, InRetail, Reloved, MS Surface, GoPro, CVM, CCB, CORE, Pure Electric, Mobile in Africa, Ultra Human, each with a job code prefix (DJI, GOPRO, BAMBU, PURE, MSS...) |
 | Studio statuses | Triage, Briefed in, Working on it, Feedback needed, Awaiting approval, Done |
 | Marketing statuses | Triage, Planned, Writing, Review, Scheduled, Published |
-| Projects | Briefs named with job codes, 10 in Studio and 4 in Marketing across 9 brands, coloured from the palette (e.g. `DJI0141_Q1'27_Black Friday`, `DJI0142_Q1'27_Amazon Brand Store`, `GOPRO0213_Q1'27_Festive Bundles`) |
-| Tasks | About 50 deliverables (Black Friday: Takealot banners, iStore banners, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP); 6 in Awaiting approval; 4 overdue; some on round 2 or 3 |
+| Projects | Briefs named with job codes, 10 in Studio and 4 in Marketing across 9 brands, coloured from the palette (e.g. `DJI0141_Q1'27_Black Friday`, `DJI0142_Q1'27_Amazon Brand Store`, `GOPRO0213_Q1'27_Festive Bundles`); plus 51 delivered briefs from the 8 months before, in their brand's colour and with lower job numbers |
+| Tasks | About 50 open deliverables, plus a Done card per deliverable of the delivered briefs (about 80) (Black Friday: Takealot banners, iStore banners, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP); 6 in Awaiting approval; 4 overdue; some on round 2 or 3 |
 | Allocations | Last week to 5 weeks ahead; one designer (Lerato) at 11h on seven days this week and next; one under-loaded (Priya, 50% next week); the rest 60 to 90% |
 | Time off | Approved leave for 2 Studio people in the next 2 weeks; 1 Marketing person on sick leave this week ("Unavailable" to everyone but them and their admins); 1 pending request in Studio for the demo |
 | Public holidays | South African public holidays for the current and next year |
-| Requests | Briefs in their template (job name, main goal, deliverables, studio deadline), each from a brand's marketing manager: 5 New in Studio triage, 2 in Marketing, 3 already accepted |
+| Requests | Briefs in their template (job name, main goal, deliverables, studio deadline), each from a brand's marketing manager: 5 New in Studio triage, 2 in Marketing; 9 open briefs accepted 1 to 6 weeks ago; 53 earlier briefs spread over the 8 months before this one (all delivered except 2 rejected), so the briefs report shows 9 months |
 
 - Fictional people only, with made-up South African names; no real staff names
 - Brands are names and palette colours only: no brand logos anywhere
@@ -192,7 +193,7 @@ One milestone per day, each ending with something runnable. The schedule gets th
 
 About 10 minutes, told as The Core Group's studio (Phase C): the pain points they live with today on Monday.com, then one DJI brief from the marketing manager to booked capacity.
 
-1. **Dashboard, as Naledi Khumalo (Head of Studio).** Lerato Mokoena is "Over capacity this week" and tops utilisation, while others have room: one designer carries far more than the rest. "Awaiting review" shows the approval backlog, and "Overdue tasks" the deadlines already missed
+1. **Dashboard, as Naledi Khumalo (Head of Studio).** Lerato Mokoena is "Over capacity this week" and tops utilisation, while others have room: one designer carries far more than the rest. "Awaiting review" shows the approval backlog, and "Overdue tasks" the deadlines already missed. Then **Briefs report**, their Monday report without the spreadsheet: about 70% of briefs done, Lerato's column carries the most open work, and briefs received month by month over the last 9 months. Pick DJI in the Brand filter and all three widgets show DJI only
 2. **Schedule:** Lerato's red days this week and next, Priya Naidoo clearly available, Amahle on leave next week. Bookings read as job codes, so every brand's work is in one view
 3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), studio deadline in 2 weeks. It goes in as from Zanele, with no "Requested by" field; Studio members would see "Requested by" to log a brief for a manager
 4. **Triage, as a new brief:** switch back to Naledi; the triage badge shows it. Accept: "New brief" proposes `DJI0143_Q<n>'<YY>_Summer Holiday Sale` (editable); assign Priya, estimate 16 h, keep the committed date. The board shows a new DJI project, in its own colour, with three cards in Briefed in

@@ -6,11 +6,11 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
 | | |
 | --- | --- |
-| Current phase | Stretch - My work, time off |
-| Phase status | Awaiting review |
-| Last completed task | S.2 Time off request and approval (D47) |
-| Next task | Review of the stretch; tag `demo-v2` once approved. Before the demo: stop the API, run `--reset-demo`, start the API |
-| Blockers / open questions | None |
+| Current phase | C - Client demo for The Core Group |
+| Phase status | Approved, not started |
+| Last completed task | Stretch approved and tagged `demo-v2` |
+| Next task | C.1 when the user says "Start Phase C" |
+| Blockers / open questions | Financial year start for the demo org (see D52): confirm at the start of Phase C |
 | Last updated | 2026-10-31 |
 
 ## Phase overview
@@ -27,7 +27,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | 5 | Thu pm | Requests + triage | Done |
 | P | Fri | Post-Phase 5 round | Done |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Done |
-| S | Sat | Stretch: My work, time off | Awaiting review |
+| S | Sat | Stretch: My work, time off | Done |
+| C | - | Client demo for The Core Group | Approved, not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
 
@@ -662,7 +663,9 @@ Requested by the user on 2026-10-30, after Phase 5 was approved.
 
 ## Stretch (only if ahead by Thursday)
 
-Built after demo-v1 (approved 2026-10-31), one commit per item, tagged `demo-v2` once approved.
+**Status:** Done (approved 2026-10-31, tagged `demo-v2`)
+
+Built after demo-v1 (approved 2026-10-31), one commit per item.
 
 - [x] S.1 My Work view for members (D46)
 - [x] S.2 Time off request and approve flow (D47)
@@ -676,6 +679,93 @@ Built after demo-v1 (approved 2026-10-31), one commit per item, tagged `demo-v2`
 
 - S.1 checked in Chromium at 1440 against the API on 5268 with the demo data: Jason (Member, Design and Marketing) and Amahle land on My work, Naledi on the Dashboard; the switcher is hidden; Jason's tasks come from both teams; Amahle's leave shows in the schedule strip and the time off list; the drawer opens with the assignee locked; no console errors. Fixed while checking: the schedule shared a row with time off, so day cells were about 100px and booking names truncated; each section now takes the full width (about 180px a day). Tests: 3 API (tasks across teams and their order, loads match the schedule, 403 for requesters), 5 web (grouping, weeks and bookings per day, landing, nav)
 - S.2 checked in Chromium at 1440 against the API on 5268 with freshly reset demo data: Naledi's Requests group shows 6 (5 triage, 1 time off) and Time off lists Ethan's request with its note; the Design schedule shows his pending block with the tooltip "Pending approval: Annual leave · 12–13 Nov"; Jason and Chloe see Thabo's sick leave as "Unavailable", Megan and Naledi as "Sick leave". As Lerato (Member): a drag on Priya's row opens nothing; a drag on her own row opens the popover on Time off with Booking disabled; the request shows as pending on the schedule and on My work, with "Cancel request". As Naledi: approving Lerato's turns it into the ink block; declining Ethan's needs a reason, which he sees on My work, and his block goes; the group badge drops to 5; booking Amahle over her leave opens "Amahle Dlamini is on leave on Tue 3 Nov and Wed 4 Nov, and over capacity on Thu 5 Nov." No console errors. Fixed while checking: the pending label was cut to "Pending · Ann..." on a two-day block (now two lines); the taller popover ran off the top of the screen (now pushed on screen, and without date fields, which repeated the days picked); "Declined:" before the reason repeated the pill (now "Reason:"). Utilisation can rise when leave is approved, if the days off were lighter than the rest of the period; the demo script says the days come off capacity rather than that the load drops. Tests: 7 API (pending vs approved capacity, approvers per role, decline reason, cancel, validation, sick leave masking, leave days on a booking; each test picks a week with no public holiday), 6 web (pending blocks, leave days, clash and toast wording, popover tabs per role, nav)
+
+---
+
+## Phase C - Client demo for The Core Group
+
+**Status:** Approved, not started (plan approved 2026-10-31; start when the user says "Start Phase C")
+**Done when:** the demo data and wording mirror The Core Group's studio process (today on Monday.com), a brief can be accepted as a new job, and the rewritten demo script runs start to finish
+
+**Context.** The Core Group's creative studio serves internal brand teams (DJI, GoPro, Bambu Lab, Pure Electric, MS Surface, Ultra Human, Reloved, CGA, ARP, InRetail, Mobile in Africa). Each brief has a job code such as `DJI0141_Q1'27_Black Friday` and many deliverables (Takealot banners, iStore, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP). Their statuses: Briefed in, Working on it, Feedback needed, Awaiting approval, Done. Their brief template: date briefed in, marketing manager, studio deadline, main goal, deliverables. Pain points the demo makes visible: one designer carries far more work than the others, work stuck in "Awaiting approval", overdue deadlines, briefs arriving as free text.
+
+**Decisions (approved 2026-10-31)**
+
+- D48 Department label. `Organisation.DepartmentLabel` (default "Department") names the department concept in all user-facing text; the demo org sets it to "Brand". Sent with `GET /api/auth/me` and read once by `AuthService`. Used on the request form, request detail, triage ("From Zanele Mthembu, DJI"), the dashboard panel ("Work by brand", "Open tasks, by the brand each project is for") and the API's request validation message ("Choose a brand."). Lower case mid-sentence. Code, routes and DTOs keep "department" (as D35 and D44 do)
+- D49 Studio workflow (replaces the Design statuses in D19). Team "Studio" replaces Design: Triage, Briefed in = Todo; Working on it = InProgress; Feedback needed, Awaiting approval = Review; Done = Done. Accepted requests land in Briefed in (D18). Moving from Feedback needed or Awaiting approval back to Working on it bumps the review round through the existing Review to InProgress rule (D20), so no code change. Marketing keeps its statuses
+- D50 Request fields (replaces D11). The request follows their brief template: team, brand (the department, defaults to the user's own), job name (`Title`), main goal (`MainGoal`, the renamed `Description`, 2000), deliverables (`Deliverables`, one per line, 4000, each line up to 200 so it can become a task title), marketing manager (`MarketingManagerUserId`, required, defaults to the requester; offered from the users with a brand plus the requester), studio deadline (`RequestedDueDate`, labelled "Studio deadline"), priority. "Type of work" is dropped: the column, the `RequestType` enum and D11, since one brief mixes banners, video and print. Detail and triage show "Briefed in" (the sent date), the marketing manager, the main goal and the deliverables as a list. Accepting into an existing project makes one task whose description is the main goal and the deliverables under headings
+- D51 Accept as new brief. The triage accept drawer offers "New brief" (default) or "Existing project". New brief creates a project in the request's team (Studio in the demo) for the request's brand, named with the next job code (D52), shown in an editable field before saving (required, 200). Its due date is the studio deadline and its colour the first palette hue not yet used by that brand's projects (the first hue again once all 8 are used). Each non-empty deliverables line, trimmed and without a leading bullet (`-`, `*`, `•`), becomes a task in the first column after Triage (D18), in the order given, assigned to the chosen designer, due on the committed due date (which defaults to the studio deadline), with the main goal as its description. No deliverables: one task named after the job name. The estimate stays whole on the first task, the others have none (simpler than splitting, which needs rounding, and "Book on schedule" from the first card books the whole brief, as the demo does). `Request.TaskId` points to the first task. "New brief" is disabled with a tooltip when the brand has no job code prefix. API: `GET /api/requests/{id}/new-brief` -> `{ projectName, colour }`; `POST /api/requests/{id}/accept` takes `projectId` or `newProjectName` (exactly one, 400 otherwise)
+- D52 Job codes. `<PREFIX><NNNN>_Q<n>'<YY>_<job name>`. The prefix is stored on the brand (`Department.JobCodePrefix`, nullable, 10): DJI, GOPRO, BAMBU, PURE, MSS, and for the others proposed ULTRA (Ultra Human), RELOVED, CGA, ARP, INRETAIL, MIA (Mobile in Africa). The number is one more than the highest 4-digit number after the prefix in that brand's project names, from 0001. The quarter comes from the studio deadline (today when none) and the financial year start month (`Organisation.FinancialYearStartMonth`, default 3, so Q1 = March to May); the year is the last two digits of the calendar year the financial year ends in. Seeded job codes use the same rule from each project's due date, so seed and generated codes agree. **Open question:** their recording shows Black Friday as Q1'27, which fits a November start (Q1 = November to January), not March; confirm the demo org's start month at the start of the phase
+- D53 Dashboard "Awaiting review" card. A fourth summary card: open tasks in Review-category statuses (Feedback needed and Awaiting approval for Studio), linking to the board; with "All teams" one line per team, as the overdue card does (D45)
+- D54 Seed (replaces D31). Org "The Core Group", emails `@thecoregroup.example`. Departments are the 11 brands, with job code prefixes; team people have no brand. Teams Studio and Marketing. People keep the current made-up South African names: Naledi becomes Head of Studio (Org Admin, Studio Team Admin); Studio job titles such as Senior Designer, Digital Designer, Motion Designer, Artworker (the 5h/day part-timer) and Junior Designer; Jason stays shared with Marketing; Marketing keeps Megan (Team Admin), Thabo and Chloe. The three requesters are replaced by about 6 fictional brand marketing managers (one each for DJI, GoPro, Bambu Lab, Pure Electric, MS Surface and Ultra Human). Projects are briefs with job codes across about 8 brands, about 10 in Studio (for example `DJI0141_..._Black Friday`, `DJI0142_..._Amazon Brand Store`, GoPro, Bambu Lab, Pure Electric, MS Surface) and 4 in Marketing, coloured from the palette. About 40 tasks are deliverables (Black Friday has the deliverables listed above); about 6 in Awaiting approval, 3 or 4 overdue, some on round 2 or 3. Load: Lerato heavily overloaded this week and next with several red days, and the only person over this week; Priya under-loaded at 50% next week, so the demo's 16h booking takes her to amber; everyone else at 60 to 90%, with a day at exactly 8h left for the clash step; two Studio people on approved leave; Ethan's pending leave and Thabo's masked sick leave stay. Triage: 5 New briefs in Studio and 2 in Marketing written like their template (main goal, deliverables, marketing manager), plus 3 accepted. No brand logos anywhere: brands are names and palette colours only
+
+**Files**
+
+- API data: `Data/Entities/{Organisation, Department, Request}.cs`, `Data/Entities/Enums.cs` (drop `RequestType`), `Data/JuggleDbContext.cs`, one migration, `Data/Seed/DemoSeeder.cs`
+- API features: `Features/Auth/{AuthDtos, AuthService}.cs` (label), `Features/Requests/{RequestDtos, RequestService, RequestsController}.cs`, `Features/Requests/JobCodes.cs` (next code, quarter, colour), `Features/Dashboard/{DashboardDtos, DashboardService}.cs`
+- Tests: `AuthTests`, `RequestsTests` (new fields, new brief), `DashboardTests`, and the seed-dependent tests (`CapacityTests`, `TasksTests`, `MyWorkTests`, `TimeOffTests`, `AccessTests`, `AllocationsTests`)
+- Web: `core/{models, auth.service}.ts`, `features/requests/{request-form, request-detail, my-requests, request-guide}`, `features/triage/{triage-page, request-summary}` and the accept drawer, `features/dashboard/{dashboard-page, department-panel}` and the summary cards, specs
+- Docs: `docs/demo-brief.md` (seed table, org name, demo script), this plan (D11, D19, D31 marked replaced)
+
+**Endpoints**
+
+- `GET /api/auth/me` adds `departmentLabel`
+- `GET /api/requests/options` drops types, adds marketing managers
+- `POST /api/requests` takes `mainGoal`, `deliverables`, `marketingManagerUserId`; no `type`
+- `GET /api/requests/{id}/new-brief` -> `{ projectName, colour }` (team admins; 400 when the brand has no prefix)
+- `POST /api/requests/{id}/accept` takes `projectId` or `newProjectName`
+- `GET /api/dashboard` adds `awaitingReview` per team
+
+**Tasks**
+
+- [ ] C.1 Confirm the financial year start month for the demo org (D52)
+- [ ] C.2 Migration: `Organisation.DepartmentLabel` and `FinancialYearStartMonth`, `Department.JobCodePrefix`, `Request.Description` renamed to `MainGoal`, `Request.Deliverables` and `MarketingManagerUserId` added, `Request.Type` dropped
+- [ ] C.3 Department label through `/api/auth/me` and `AuthService`; every "department" in user-facing text uses it (D48)
+- [ ] C.4 Request API and form: new fields, "Type of work" removed, labels from their template, detail, My requests and triage show them (D50)
+- [ ] C.5 Job codes: next number, quarter and year, unused colour (D52), with unit tests for the quarter at year and financial-year boundaries
+- [ ] C.6 Accept as new brief: API (new-brief suggestion, accept with a new project, one task per deliverable) and the accept drawer's "New brief" / "Existing project" choice with the editable code (D51)
+- [ ] C.7 Dashboard "Awaiting review" card (D53)
+- [ ] C.8 Seed rewrite (D54); `--reset-demo`
+- [ ] C.9 Tests updated for the new seed; new tests for the label, the request fields, new brief and the dashboard card
+- [ ] C.10 `docs/demo-brief.md`: seed table, org name and the demo script below
+- [ ] C.11 Build with no warnings, lint, all tests; restart the API and `ng serve`; run the demo script in a browser at 1440; screenshots of the dashboard, schedule, board and request form for the user
+
+**Demo script (to write into `docs/demo-brief.md` in C.10)**
+
+1. **Dashboard as the Head of Studio:** Lerato is over capacity this week and tops utilisation; the "Awaiting review" card shows the approval backlog; overdue deliverables are counted
+2. **Schedule:** Lerato's red days this week and next; Priya clearly available; the person on leave
+3. **A DJI marketing manager submits a brief:** job name, main goal, three deliverables, studio deadline in two weeks. No more free-text briefs
+4. **Accept as a new brief:** in Triage, "New brief" proposes `DJI0143_Q<n>'<YY>_<job name>` (editable); assign Priya, 16h, committed date. A new DJI project appears with the next unused colour and three cards in Briefed in
+5. **Book it:** from the first card, "Book on schedule" for 4h/day over 4 days; Priya goes from green to amber
+6. **Clash:** drag a booking onto a full day; the clash dialog appears
+7. **Review round:** drag a card from Awaiting approval back to Working on it; it shows R2
+8. **Time off:** as a designer, request Monday and Tuesday of the week after next; approve it as the Head of Studio
+9. **Switch team to Marketing:** different columns and people; Jason's load includes Studio work
+10. **Close:** "One place for every brand: who is busy, who is free and what is waiting." Then the discovery questions
+
+Ask Juggle is not built (the AI assistant is out of scope), so the script has no Ask Juggle step.
+
+**Acceptance criteria**
+
+- [ ] Users see "Brand" wherever the department concept appears; code names are unchanged
+- [ ] The Studio board has Briefed in, Working on it, Feedback needed, Awaiting approval and Done; sending a card back from either review column bumps the round
+- [ ] Projects are briefs with job codes across several brands, coloured from the palette; tasks are deliverables
+- [ ] Only fictional people; one designer clearly overloaded this week and next, one clearly under-loaded, the rest normal
+- [ ] Several deliverables in Awaiting approval and a few overdue; the dashboard shows the backlog
+- [ ] The request form follows their template, with no "Type of work"
+- [ ] A brief accepted as new creates the job-coded project and one task per deliverable for the chosen designer
+- [ ] Clash, green to amber, pending leave and sick leave masking still work
+- [ ] No brand logos anywhere
+- [ ] The demo script runs start to finish
+
+**Review gate**
+
+- [ ] Build passes with no warnings, lint passes, smoke tests pass
+- [ ] Acceptance criteria ticked
+- [ ] Committed as `Phase C: Client demo for The Core Group`
+- [ ] "Where we left off" and the phase status updated to Awaiting review
+- [ ] **STOP** for review, with the screenshots
+- [ ] Approved by user
 
 ## Later
 
@@ -751,3 +841,4 @@ Built after demo-v1 (approved 2026-10-31), one commit per item, tagged `demo-v2`
 - 2026-10-31: Stretch approved (with decisions on declined requests, self-approval and leave on behalf). S.1 My work built and checked at 1440. Build with no warnings, lint, 49 API tests and 102 web tests pass.
 - 2026-10-31: S.2 Time off request and approval built (D47) and checked at 1440 through the UI. Build with no warnings, lint, 56 API tests and 108 web tests pass. Demo data reset. Stretch awaiting review.
 - 2026-10-31: Review of the stretch: My tasks columns show three cards (384px, the top of a fourth showing) and scroll inside the column (thin scrollbar, and `scroll-fade-y`, the vertical twin of the board's edge fade, on an edge with more to show) instead of growing; task cards drop their 1px border and rely on the soft shadow, on the board too, as the card is shared. Checked at 1440 and 2000. Build with no warnings, lint and 108 web tests pass.
+- 2026-10-31: Stretch approved and done; `demo-v2` tagged on its last commit (1b35be2). Phase C (client demo for The Core Group) planned and approved (D48 to D54); not started.

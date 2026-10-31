@@ -3,6 +3,7 @@ import { formatDate } from '@angular/common';
 import { Component, LOCALE_ID, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { FormField, form, max, maxLength, min, required, submit } from '@angular/forms/signals';
 import { Allocation, Project } from '../../core/models';
+import { segmentClass } from '../../shared/segment';
 import { Select, SelectOption } from '../../shared/select';
 import { Tooltip } from '../../shared/tooltip';
 import { TimeOffForm } from '../time-off/time-off-form';
@@ -181,9 +182,7 @@ export class AllocationPopover {
   });
 
   protected tabClass(tab: Tab): string {
-    const base = 'flex-1 rounded-full px-3 py-1 text-sm font-semibold focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none';
-    if (this.tab() === tab) return `${base} bg-accent-600 text-white`;
-    return `${base} text-ink-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:text-ink-muted`;
+    return segmentClass(this.tab() === tab);
   }
 
   protected async save(event: Event): Promise<void> {

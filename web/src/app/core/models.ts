@@ -221,12 +221,22 @@ export interface CreateRequest {
   priority: Priority;
 }
 
-/** Turns a request into a task: its project, who does it, the estimate and the committed due date. */
+/**
+ * Turns a request into work, with who does it, the estimate and the committed due date: into an existing project
+ * (`projectId`, one task) or as a new brief (`newProjectName`, one task per deliverable), never both (D51).
+ */
 export interface AcceptRequest {
-  projectId: string;
+  projectId: string | null;
+  newProjectName: string | null;
   assigneePersonId: string | null;
   estimateHours: number | null;
   dueDate: string | null;
+}
+
+/** What accepting as a new brief proposes: the next job code (null when the department has no prefix) and colour. */
+export interface NewBrief {
+  projectName: string | null;
+  colour: string;
 }
 
 /** Booked and available hours over a period; capacity is 0 when the person has no working days in it. */

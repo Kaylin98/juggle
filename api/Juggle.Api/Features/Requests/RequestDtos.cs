@@ -58,11 +58,22 @@ public sealed record CreateRequestRequest(
     DateOnly? RequestedDueDate,
     Priority Priority);
 
-/// <summary>Turns a request into a task: its project, who does it, the estimate and the committed due date.</summary>
+/// <summary>
+/// Turns a request into work, with who does it, the estimate and the committed due date. Either into an existing
+/// project (one task), or as a new brief: a project named <paramref name="NewProjectName"/> with one task per
+/// deliverable (D51).
+/// </summary>
 public sealed record AcceptRequestRequest(
-    Guid ProjectId,
+    Guid? ProjectId,
+    [MaxLength(200)] string? NewProjectName,
     Guid? AssigneePersonId,
     [Range(0.0, 999.0)] decimal? EstimateHours,
     DateOnly? DueDate);
+
+/// <summary>
+/// What accepting as a new brief proposes (D51): the next job code, or null when the department has no job code prefix,
+/// and the colour the project will take.
+/// </summary>
+public sealed record NewBriefDto(string? ProjectName, string Colour);
 
 public sealed record RejectRequestRequest([Required, MaxLength(1000)] string Reason);

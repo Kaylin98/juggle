@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, resource } from '@angular/core';
 import { firstValueFrom, forkJoin } from 'rxjs';
-import { AcceptRequest, CreateRequest, Person, Project, RequestOptions, WorkRequest } from './models';
+import { AcceptRequest, CreateRequest, NewBrief, Person, Project, RequestOptions, WorkRequest } from './models';
 import { TeamContextService } from './team-context.service';
 
 /** Work intake: the request form and the user's own requests, and the triage inbox with its nav badge. */
@@ -45,6 +45,11 @@ export class RequestsService {
         people: this.http.get<Person[]>(`/api/teams/${teamId}/people`),
       }),
     );
+  }
+
+  /** The job code and colour a new brief from this request would get (D51). */
+  newBrief(id: string): Promise<NewBrief> {
+    return firstValueFrom(this.http.get<NewBrief>(`/api/requests/${id}/new-brief`));
   }
 
   accept(id: string, accept: AcceptRequest): Promise<WorkRequest> {

@@ -29,6 +29,9 @@ public sealed class RequestsController(RequestService requests) : ControllerBase
     [HttpPost("api/requests/{id:guid}/accept")]
     public Task<RequestDto> Accept(Guid id, AcceptRequestRequest accept, CancellationToken ct) => requests.AcceptAsync(id, accept, ct);
 
+    [HttpGet("api/requests/{id:guid}/new-brief")]
+    public Task<NewBriefDto> GetNewBrief(Guid id, CancellationToken ct) => requests.GetNewBriefAsync(id, ct);
+
     [HttpPost("api/requests/{id:guid}/reject")]
     public Task<RequestDto> Reject(Guid id, RejectRequestRequest reject, CancellationToken ct) => requests.RejectAsync(id, reject, ct);
 }

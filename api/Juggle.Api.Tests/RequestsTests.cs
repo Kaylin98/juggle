@@ -52,7 +52,7 @@ public sealed class RequestsTests(ApiFactory api)
         var priya = (await naledi.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{designId}/people", ApiFactory.Json, _ct))!
             .Single(p => p.Name == "Priya Naidoo");
 
-        var accept = new AcceptRequestRequest(project.Id, priya.Id, 16, _today.AddDays(10));
+        var accept = new AcceptRequestRequest(project.Id, null, priya.Id, 16, _today.AddDays(10));
         var response = await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/accept", accept, ApiFactory.Json, _ct);
         var accepted = await response.Content.ReadFromJsonAsync<RequestDto>(ApiFactory.Json, _ct);
 
@@ -70,6 +70,36 @@ public sealed class RequestsTests(ApiFactory api)
         var kyle = await api.SignInAsAsync("Kyle Govender");
         var seen = await kyle.GetFromJsonAsync<RequestDto>($"/api/requests/{request.Id}", ApiFactory.Json, _ct);
         Assert.Equal(("Priya Naidoo", _today.AddDays(10)), (seen!.AssigneeName, seen.CommittedDueDate));
+    }
+
+    [Fact]
+    public async Task Accept_as_a_new_brief_creates_the_project_with_a_task_per_deliverable()
+    {
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var request = await SubmitAsync("Kyle Govender", "Launch kit");
+        var designId = await GetTeamIdAsync(naledi, "Design");
+        var priya = (await naledi.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{designId}/people", ApiFactory.Json, _ct))!
+            .Single(p => p.Name == "Priya Naidoo");
+        var brief = await naledi.GetFromJsonAsync<NewBriefDto>($"/api/requests/{request.Id}/new-brief", ApiFactory.Json, _ct);
+
+        var neither = new AcceptRequestRequest(null, null, priya.Id, 16, _today.AddDays(10));
+        Assert.Equal(HttpStatusCode.BadRequest, (await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/accept", neither, ApiFactory.Json, _ct)).StatusCode);
+        var accept = neither with { NewProjectName = " PRD0001_Q1'27_Launch kit " };
+        var response = await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/accept", accept, ApiFactory.Json, _ct);
+        var accepted = await response.Content.ReadFromJsonAsync<RequestDto>(ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var project = (await naledi.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{designId}/projects", ApiFactory.Json, _ct))!
+            .Single(p => p.Name == "PRD0001_Q1'27_Launch kit");
+        Assert.Equal((brief!.Colour, "Product"), (project.Colour, project.Department));
+        var tasks = (await naledi.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{designId}/tasks", ApiFactory.Json, _ct))!
+            .Where(t => t.ProjectId == project.Id)
+            .OrderBy(t => t.SortOrder)
+            .ToList();
+        Assert.Equal(["Key visual", "Social tiles x6"], tasks.Select(t => t.Title));
+        Assert.Equal([16m, null], tasks.Select(t => t.EstimateHours));
+        Assert.All(tasks, t => Assert.Equal((priya.Id, _today.AddDays(10), "For the demo."), (t.AssigneePersonId, t.DueDate, t.Description)));
+        Assert.Equal(tasks[0].Id, accepted!.TaskId);
     }
 
     [Fact]

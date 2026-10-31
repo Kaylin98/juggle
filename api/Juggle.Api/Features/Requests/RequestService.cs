@@ -102,11 +102,37 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         return await ToDtosAsync(requests, ct);
     }
 
-    /// <summary>Makes a task from the request, at the end of the first column after Triage (D18).</summary>
+    /// <summary>
+    /// What accepting as a new brief proposes: the next job code for the request's department, from its studio deadline
+    /// (today without one), and the department's next unused colour (D51, D52).
+    /// </summary>
+    public async Task<NewBriefDto> GetNewBriefAsync(Guid id, CancellationToken ct)
+    {
+        var request = await FindNewAsync(id, ct);
+        var colour = await NextColourAsync(request.DepartmentId, ct);
+        if (request.Department.JobCodePrefix is not { } prefix)
+        {
+            return new NewBriefDto(null, colour);
+        }
+
+        var names = await db.Projects.Where(p => p.DepartmentId == request.DepartmentId).Select(p => p.Name).ToListAsync(ct);
+        var startMonth = await db.Organisations.Select(o => o.FinancialYearStartMonth).FirstAsync(ct);
+        var name = JobCodes.Name(prefix, JobCodes.NextNumber(prefix, names), request.RequestedDueDate ?? clock.Today, startMonth, request.Title);
+        return new NewBriefDto(name, colour);
+    }
+
+    /// <summary>
+    /// Accepts the request at the end of the first column after Triage (D18): into an existing project as one task, or
+    /// as a new brief, a project with one task per deliverable (D51). The estimate stays whole on the first task.
+    /// </summary>
     public async Task<RequestDto> AcceptAsync(Guid id, AcceptRequestRequest accept, CancellationToken ct)
     {
         var request = await FindNewAsync(id, ct);
-        if (!await db.Projects.AnyAsync(p => p.Id == accept.ProjectId && p.TeamId == request.TeamId, ct))
+        if (accept.ProjectId is null == string.IsNullOrWhiteSpace(accept.NewProjectName))
+        {
+            throw new BadRequestException("Choose a project, or name the new brief.");
+        }
+        if (accept.ProjectId is { } projectId && !await db.Projects.AnyAsync(p => p.Id == projectId && p.TeamId == request.TeamId, ct))
         {
             throw new BadRequestException("Choose a project in this team.");
         }
@@ -121,27 +147,54 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
             .OrderBy(s => s.Order)
             .Skip(1)
             .FirstAsync(ct);
-        var lastInColumn = await db.Tasks.Where(t => t.StatusId == status.Id).MaxAsync(t => (int?)t.SortOrder, ct);
+        var sortOrder = (await db.Tasks.Where(t => t.StatusId == status.Id).MaxAsync(t => (int?)t.SortOrder, ct) ?? -1) + 1;
 
-        var task = new TaskItem
+        TaskItem NewTask(Guid projectId, string title, string? description, decimal? estimate) => new()
         {
             OrgId = request.OrgId,
             TeamId = request.TeamId,
-            ProjectId = accept.ProjectId,
-            Title = request.Title,
-            Description = BriefDescription(request),
+            ProjectId = projectId,
+            Title = title,
+            Description = description,
             StatusId = status.Id,
             AssigneePersonId = accept.AssigneePersonId,
-            EstimateHours = accept.EstimateHours,
+            EstimateHours = estimate,
             DueDate = accept.DueDate,
-            SortOrder = (lastInColumn ?? -1) + 1,
+            SortOrder = sortOrder++,
         };
-        db.Tasks.Add(task);
+
+        List<TaskItem> tasks;
+        if (accept.ProjectId is { } existing)
+        {
+            tasks = [NewTask(existing, request.Title, BriefDescription(request), accept.EstimateHours)];
+        }
+        else
+        {
+            var project = new Project
+            {
+                OrgId = request.OrgId,
+                TeamId = request.TeamId,
+                DepartmentId = request.DepartmentId,
+                Name = accept.NewProjectName!.Trim(),
+                Colour = await NextColourAsync(request.DepartmentId, ct),
+                DueDate = request.RequestedDueDate,
+            };
+            db.Projects.Add(project);
+            var deliverables = Deliverables.Parse(request.Deliverables);
+            tasks = (deliverables.Count > 0 ? deliverables : [request.Title])
+                .Select((title, i) => NewTask(project.Id, title, request.MainGoal, i == 0 ? accept.EstimateHours : null))
+                .ToList();
+        }
+
+        db.Tasks.AddRange(tasks);
         request.Status = RequestStatus.Accepted;
-        request.TaskId = task.Id;
+        request.TaskId = tasks[0].Id;
         await db.SaveChangesAsync(ct);
         return await ToDtoAsync(request, ct);
     }
+
+    private async Task<string> NextColourAsync(Guid departmentId, CancellationToken ct) =>
+        JobCodes.NextColour(await db.Projects.Where(p => p.DepartmentId == departmentId).Select(p => p.Colour).ToListAsync(ct));
 
     public async Task<RequestDto> RejectAsync(Guid id, RejectRequestRequest reject, CancellationToken ct)
     {

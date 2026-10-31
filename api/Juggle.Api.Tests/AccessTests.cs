@@ -51,11 +51,11 @@ public sealed class AccessTests(ApiFactory api)
         await AssertGetStatusAsync(ethan, HttpStatusCode.OK,
             $"{team}/tasks", $"/api/capacity?teamId={data.TeamId}&start={_monday:yyyy-MM-dd}");
         await AssertGetStatusAsync(ethan, HttpStatusCode.Forbidden,
-            $"{team}/requests", $"/api/dashboard?teamId={data.TeamId}", "/api/dashboard?teamId=all",
+            $"{team}/requests", $"/api/requests/{data.NewRequest}/new-brief", $"/api/dashboard?teamId={data.TeamId}", "/api/dashboard?teamId=all",
             $"/api/capacity?teamId=all&start={_monday:yyyy-MM-dd}");
 
         var others = data.OthersTask;
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, $"/api/requests/{data.NewRequest}/accept", new AcceptRequestRequest(data.ProjectId, null, null, null)));
+        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, $"/api/requests/{data.NewRequest}/accept", new AcceptRequestRequest(data.ProjectId, null, null, null, null)));
         Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, $"/api/requests/{data.NewRequest}/reject", new RejectRequestRequest("No")));
         Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, "/api/allocations", Booking(data)));
         Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, $"/api/tasks/{others.Id}/move", new MoveTaskRequest(others.StatusId, 0)));

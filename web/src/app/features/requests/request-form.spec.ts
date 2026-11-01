@@ -34,6 +34,7 @@ async function render() {
         provide: AuthService,
         useValue: {
           departmentLabel: signal('Brand'),
+          terms: signal({ department: 'Brand', brief: 'Brief', job: 'Job' }),
         },
       },
       { provide: TeamContextService, useValue: { teamId: signal('studio') } },

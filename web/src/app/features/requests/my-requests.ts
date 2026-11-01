@@ -16,7 +16,7 @@ import { StatusPill } from './status-pill';
           <h1 class="page-title">My requests</h1>
           <p class="mt-1 text-sm text-ink-muted">Work you have asked teams for, newest first.</p>
         </div>
-        <a routerLink="/request" class="btn-primary inline-flex items-center">New request</a>
+        <a routerLink="/request" class="btn-primary inline-flex items-center">New {{ terms().brief.toLowerCase() }}</a>
       </div>
 
       @if (requests.error()) {
@@ -59,7 +59,7 @@ import { StatusPill } from './status-pill';
         } @else {
           <div class="empty-state mt-6">
             <p>You haven't asked a team for work yet.</p>
-            <a routerLink="/request" class="btn-primary mt-4 inline-flex items-center">New request</a>
+            <a routerLink="/request" class="btn-primary mt-4 inline-flex items-center">New {{ terms().brief.toLowerCase() }}</a>
           </div>
         }
       } @else {
@@ -70,7 +70,10 @@ import { StatusPill } from './status-pill';
 })
 export class MyRequestsPage {
   private readonly service = inject(RequestsService);
-  protected readonly departmentLabel = inject(AuthService).departmentLabel;
+  private readonly auth = inject(AuthService);
+  protected readonly departmentLabel = this.auth.departmentLabel;
+  /** The organisation's word for a request for work, such as "Brief" (D77). */
+  protected readonly terms = this.auth.terms;
 
   protected readonly requests = resource({ loader: () => this.service.mine() });
 }

@@ -2,7 +2,7 @@ using Juggle.Api.Data.Entities;
 
 namespace Juggle.Api.Features.Teams;
 
-public sealed record TeamDto(Guid Id, string Name, string Colour, TeamRole MyRole);
+public sealed record TeamDto(Guid Id, string Name, string Colour);
 
 public sealed record StatusDto(Guid Id, string Name, int Order, StatusCategory Category);
 

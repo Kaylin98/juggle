@@ -52,7 +52,7 @@ const FLYOUT_POSITIONS: ConnectedPosition[] = [
 ];
 
 /**
- * The side menu: the team pages, then a "Requests" group (Triage and Time off for admins, My requests, New request),
+ * The side menu: the team pages, then a "Requests" group (Triage, Time off, My requests, New brief, by capability),
  * open while one of its pages is shown. A toggle shrinks it to a 64px icon rail with tooltips, where badges
  * become dots and the group opens as a flyout; the choice is remembered per user.
  */
@@ -73,46 +73,49 @@ export class Nav {
   protected readonly icons = ICONS;
   protected readonly flyoutPositions = FLYOUT_POSITIONS;
 
-  /** Dashboard and Briefs report (admins), My work (anyone on a schedule), Schedule, Board. */
+  /** Dashboard and Briefs report, My work (anyone on a schedule), Schedule, Board: each shown by capability (D77). */
   protected readonly teamLinks = computed<NavItem[]>(() => {
     const teamId = this.teamContext.teamId();
-    if (!teamId) return [];
+    const auth = this.auth;
     return [
-      ...(this.isAdmin()
-        ? [
-            { label: 'Dashboard', link: ['/t', teamId, 'dashboard'], icon: ICONS.dashboard },
-            { label: 'Briefs report', link: ['/t', teamId, 'briefs'], icon: ICONS.report },
-          ]
+      ...(teamId && auth.can('ViewAllJobs') ? [{ label: 'Dashboard', link: ['/t', teamId, 'dashboard'], icon: ICONS.dashboard }] : []),
+      ...(teamId && auth.can('ViewAllJobs') && auth.can('ViewReports')
+        ? [{ label: 'Briefs report', link: ['/t', teamId, 'briefs'], icon: ICONS.report }]
         : []),
-      ...(this.auth.me()?.personId ? [{ label: 'My work', link: ['/my-work'], icon: ICONS.myWork }] : []),
-      { label: 'Schedule', link: ['/t', teamId, 'capacity'], icon: ICONS.capacity },
-      { label: 'Board', link: ['/t', teamId, 'board'], icon: ICONS.board },
+      ...(auth.me()?.personId ? [{ label: 'My work', link: ['/my-work'], icon: ICONS.myWork }] : []),
+      ...(teamId && auth.can('ViewSchedule') ? [{ label: 'Schedule', link: ['/t', teamId, 'capacity'], icon: ICONS.capacity }] : []),
+      ...(teamId && auth.can('ViewBoard') ? [{ label: 'Board', link: ['/t', teamId, 'board'], icon: ICONS.board }] : []),
     ];
   });
 
-  /** Triage (admins of this team), Time off (admins of any team), My requests, New request; the same in the flyout. */
+  /** Triage, Time off, My requests and New brief, each shown by capability; the same in the flyout. */
   protected readonly requestLinks = computed<NavItem[]>(() => {
     const teamId = this.teamContext.teamId();
+    const auth = this.auth;
     return [
-      ...(teamId && this.isAdmin()
+      ...(teamId && auth.can('TriageBriefs')
         ? [{ label: 'Triage', link: ['/t', teamId, 'triage'], icon: ICONS.triage, count: this.triageCount() }]
         : []),
-      ...(this.auth.isApprover()
+      ...(auth.can('ApproveTimeOff')
         ? [{ label: 'Time off', link: ['/time-off'], icon: ICONS.timeOff, count: this.timeOffCount() }]
         : []),
-      { label: 'My requests', link: ['/requests'], icon: ICONS.myRequests },
-      { label: 'New request', link: ['/request'], icon: ICONS.newRequest },
+      ...(auth.can('SubmitBrief')
+        ? [
+            { label: 'My requests', link: ['/requests'], icon: ICONS.myRequests },
+            { label: `New ${auth.terms().brief.toLowerCase()}`, link: ['/request'], icon: ICONS.newRequest },
+          ]
+        : []),
     ];
   });
 
   protected readonly triageCount = computed(() => {
     const inbox = this.requests.inbox;
-    return this.isAdmin() && inbox.hasValue() ? inbox.value().length : 0;
+    return this.auth.can('TriageBriefs') && inbox.hasValue() ? inbox.value().length : 0;
   });
 
   protected readonly timeOffCount = computed(() => {
     const approvals = this.timeOff.approvals;
-    return this.auth.isApprover() && approvals.hasValue() ? approvals.value().length : 0;
+    return this.auth.can('ApproveTimeOff') && approvals.hasValue() ? approvals.value().length : 0;
   });
 
   /** Everything waiting for the viewer in the group, shown on it while it is closed. */
@@ -143,10 +146,5 @@ export class Nav {
   protected toggleCollapsed(): void {
     this.collapsed.update((collapsed) => !collapsed);
     this.prefs.saveCollapsed(this.auth.me()!.id, this.collapsed());
-  }
-
-  private isAdmin(): boolean {
-    const teamId = this.teamContext.teamId();
-    return teamId !== null && this.auth.roleIn(teamId) === 'TeamAdmin';
   }
 }

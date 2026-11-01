@@ -3,10 +3,20 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthService } from './auth.service';
+import { Capability } from './models';
 
 const TEAM_URL = /^\/t\/([^/?#]+)(?:\/([^/?#]+))?/;
 
 export const ALL_TEAMS = 'all';
+
+/** What each team page needs (D77): the routes guard on it, and switching team keeps a page the role can open. */
+export const TEAM_PAGES: Record<string, Capability[]> = {
+  dashboard: ['ViewAllJobs'],
+  briefs: ['ViewAllJobs', 'ViewReports'],
+  capacity: ['ViewSchedule'],
+  board: ['ViewBoard'],
+  triage: ['TriageBriefs'],
+};
 
 /** The team being viewed, taken from the `/t/:teamId/...` URL. Pages outside a team keep the last one. */
 @Injectable({ providedIn: 'root' })
@@ -35,32 +45,37 @@ export class TeamContextService {
 
   readonly team = computed(() => this.auth.teams().find((t) => t.id === this.teamId()) ?? null);
 
-  readonly isTeamAdmin = computed(() => this.team()?.myRole === 'TeamAdmin');
-
   /** The pages that can show every team at once. */
   readonly canShowAllTeams = computed(() => this.page() === 'capacity' || this.page() === 'dashboard');
 
   /**
-   * Org Admins can show every team on the schedule and dashboard ("All teams"), kept in the URL as `?teams=all`.
-   * Anyone else opening that URL sees their team, since the API refuses "all" to them.
+   * Users who see all the work can show every team on the schedule and dashboard ("All teams"), kept in the URL as
+   * `?teams=all`. Anyone else opening that URL sees their team, since the API refuses "all" to them.
    */
   readonly allTeams = computed(
     () =>
-      this.auth.isOrgAdmin() &&
+      this.auth.can('ViewAllJobs') &&
       this.canShowAllTeams() &&
       this.router.parseUrl(this.url()).queryParams['teams'] === ALL_TEAMS,
   );
+
+  /** Whether the role has what the team page needs; a page not in `TEAM_PAGES` is not a team page. */
+  canOpen(page: string): boolean {
+    const needs = TEAM_PAGES[page];
+    return needs !== undefined && needs.every((capability) => this.auth.can(capability));
+  }
 
   showAllTeams(): void {
     void this.router.navigate(['/t', this.teamId(), this.page()], { queryParams: { teams: ALL_TEAMS } });
   }
 
-  /** Opens the same page in another team, falling back to the role's landing page (dashboard or board). */
+  /** Opens the same page in another team when the role can open it there, otherwise the role's landing page. */
   switchTo(teamId: string): void {
-    const isAdmin = this.auth.roleIn(teamId) === 'TeamAdmin';
     const current = this.page();
-    const allowed = current !== null && (isAdmin || current === 'board' || current === 'capacity');
-    const page = allowed ? current : isAdmin ? 'dashboard' : 'board';
-    void this.router.navigate(['/t', teamId, page]);
+    if (current !== null && this.canOpen(current)) {
+      void this.router.navigate(['/t', teamId, current]);
+      return;
+    }
+    void this.router.navigate(['/t', teamId, this.canOpen('dashboard') ? 'dashboard' : 'board']);
   }
 }

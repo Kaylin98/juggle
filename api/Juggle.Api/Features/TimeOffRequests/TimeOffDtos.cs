@@ -39,7 +39,7 @@ public sealed record MyTimeOffDto(
         t.DeclineReason);
 }
 
-/// <summary>A pending request, for an approver: one of the person's team admins, or an Org Admin.</summary>
+/// <summary>A pending request, for an approver: a user who approves time off (ApproveTimeOff) for the person's team.</summary>
 /// <param name="Teams">The person's teams, by name.</param>
 public sealed record TimeOffApprovalDto(
     Guid Id,

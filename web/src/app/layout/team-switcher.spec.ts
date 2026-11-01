@@ -5,14 +5,14 @@ import { Team } from '../core/models';
 import { TeamContextService } from '../core/team-context.service';
 import { TeamSwitcher } from './team-switcher';
 
-const design: Team = { id: 'design', name: 'Design', colour: '#8a78d6', myRole: 'Member' };
-const marketing: Team = { id: 'marketing', name: 'Marketing', colour: '#5b8def', myRole: 'Member' };
+const design: Team = { id: 'design', name: 'Design', colour: '#8a78d6' };
+const marketing: Team = { id: 'marketing', name: 'Marketing', colour: '#5b8def' };
 
 async function render(teams: Team[]): Promise<HTMLElement> {
   TestBed.configureTestingModule({
     imports: [TeamSwitcher],
     providers: [
-      { provide: AuthService, useValue: { teams: signal(teams), isOrgAdmin: signal(false) } },
+      { provide: AuthService, useValue: { teams: signal(teams), can: () => false } },
       {
         provide: TeamContextService,
         useValue: { canShowAllTeams: signal(false), allTeams: signal(false), teamId: signal('design') },

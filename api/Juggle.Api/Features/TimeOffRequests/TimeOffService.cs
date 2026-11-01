@@ -8,9 +8,9 @@ namespace Juggle.Api.Features.TimeOffRequests;
 
 /// <summary>
 /// Time off requests (D47). Anyone with a Person record asks for their own time off and can cancel it while it is
-/// pending. Team Admins of any team the person is in, and Org Admins, approve or decline it.
+/// pending. Users who approve time off (ApproveTimeOff) for a team the person is in approve or decline it.
 /// </summary>
-public sealed class TimeOffService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess)
+public sealed class TimeOffService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess, Permissions permissions)
 {
     private const int MaxDays = 366;
 
@@ -78,7 +78,8 @@ public sealed class TimeOffService(JuggleDbContext db, CurrentUser currentUser, 
     /// <summary>The pending requests the viewer can decide, earliest first. Approvers see sick leave as it is.</summary>
     public async Task<IReadOnlyList<TimeOffApprovalDto>> GetApprovalsAsync(CancellationToken ct)
     {
-        var managed = teamAccess.ManagedPeople().Select(p => p.Id);
+        await permissions.EnsureAsync(Capability.ApproveTimeOff, ct);
+        var managed = (await teamAccess.ManagedPeopleAsync(ct)).Select(p => p.Id);
         var pending = await db.TimeOff
             .Where(t => t.Status == TimeOffStatus.Pending && managed.Contains(t.PersonId!.Value))
             .OrderBy(t => t.StartDate)
@@ -136,9 +137,9 @@ public sealed class TimeOffService(JuggleDbContext db, CurrentUser currentUser, 
     private async Task<TimeOff> FindDecidableAsync(Guid id, CancellationToken ct)
     {
         var timeOff = await FindLeaveAsync(id, ct);
-        if (!await teamAccess.ManagedPeople().AnyAsync(p => p.Id == timeOff.PersonId, ct))
+        if (!await (await teamAccess.ManagedPeopleAsync(ct)).AnyAsync(p => p.Id == timeOff.PersonId, ct))
         {
-            throw new ForbiddenException("Only an admin of this person's team can approve or decline their time off.");
+            throw new ForbiddenException("Your role does not allow deciding this person's time off.");
         }
         if (timeOff.Status != TimeOffStatus.Pending)
         {

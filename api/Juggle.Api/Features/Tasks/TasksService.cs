@@ -6,19 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Juggle.Api.Features.Tasks;
 
-public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, CurrentUser currentUser, OrgClock clock)
+public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Permissions permissions, CurrentUser currentUser, OrgClock clock)
 {
-    /// <summary>The team's cards; a brand's marketing manager gets only the cards of the brands they manage (D58).</summary>
+    /// <summary>The team's cards, for users who see the board (ViewBoard).</summary>
     public async Task<IReadOnlyList<TaskDto>> GetTeamTasksAsync(Guid teamId, CancellationToken ct)
     {
-        var departments = await teamAccess.VisibleDepartmentsAsync(teamId, ct);
-        var query = db.Tasks.Include(t => t.Status).Where(t => t.TeamId == teamId);
-        if (departments is not null)
-        {
-            query = query.Where(t => departments.Contains(t.Project.DepartmentId));
-        }
-
-        var tasks = await query
+        await teamAccess.EnsureAsync(teamId, Capability.ViewBoard, ct);
+        var tasks = await db.Tasks
+            .Include(t => t.Status)
+            .Where(t => t.TeamId == teamId)
             .OrderBy(t => t.SortOrder)
             .AsNoTracking()
             .ToListAsync(ct);
@@ -28,12 +24,12 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
 
     /// <summary>
     /// Adds a task to a board column (the first after Triage when none is given), at the end of it.
-    /// Team Admins assign anyone in the team or no one; Members only themselves, so they can edit it afterwards (D24).
+    /// Users who book work (Allocate) assign anyone in the team or no one; users who work on jobs (WorkOnJobs) only
+    /// themselves, so they can edit it afterwards (D24, D77).
     /// </summary>
     public async Task<TaskDto> CreateAsync(Guid teamId, CreateTaskRequest request, CancellationToken ct)
     {
-        var role = await teamAccess.GetRoleAsync(teamId, ct)
-            ?? throw new ForbiddenException("You are not a member of this team.");
+        await teamAccess.EnsureAsync(teamId, Capability.ViewBoard, ct);
         var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == request.ProjectId && p.TeamId == teamId, ct)
             ?? throw new BadRequestException("Choose a project in this team.");
 
@@ -43,14 +39,15 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
             ? columns.FirstOrDefault(s => s.Id == statusId) ?? throw new BadRequestException("Choose a board column in this team.")
             : columns[0];
 
-        if (role == TeamRole.TeamAdmin)
+        if (await permissions.HasAsync(Capability.Allocate, ct))
         {
             await EnsureAssigneeInTeamAsync(request.AssigneePersonId, teamId, ct);
         }
-        else if (request.AssigneePersonId is not { } personId
+        else if (!await permissions.HasAsync(Capability.WorkOnJobs, ct)
+            || request.AssigneePersonId is not { } personId
             || !await db.People.AnyAsync(p => p.Id == personId && p.UserId == currentUser.UserId, ct))
         {
-            throw new ForbiddenException("Members can only add tasks assigned to themselves.");
+            throw new ForbiddenException("You can only add tasks assigned to yourself.");
         }
 
         var lastInColumn = await db.Tasks.Where(t => t.StatusId == status.Id).MaxAsync(t => (int?)t.SortOrder, ct);
@@ -75,11 +72,10 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
     public async Task<TaskDto> UpdateAsync(Guid id, UpdateTaskRequest request, CancellationToken ct)
     {
         var task = await FindEditableAsync(id, ct);
-        // D36: only Team Admins reassign. Planned to become a per-team setting after the MVP (plan.md, Later).
-        if (request.AssigneePersonId != task.AssigneePersonId
-            && await teamAccess.GetRoleAsync(task.TeamId, ct) != TeamRole.TeamAdmin)
+        // D36: only users who book work reassign. Planned to become a setting after the MVP (plan.md, Later).
+        if (request.AssigneePersonId != task.AssigneePersonId && !await permissions.HasAsync(Capability.Allocate, ct))
         {
-            throw new ForbiddenException("Only team admins can reassign tasks.");
+            throw new ForbiddenException("Your role does not allow reassigning tasks.");
         }
 
         await EnsureAssigneeInTeamAsync(request.AssigneePersonId, task.TeamId, ct);

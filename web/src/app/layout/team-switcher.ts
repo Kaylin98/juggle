@@ -30,7 +30,7 @@ export class TeamSwitcher {
 
   /** "All teams" is offered to Org Admins on the schedule and dashboard only. */
   protected readonly options = computed<SelectOption[]>(() => [
-    ...(this.auth.isOrgAdmin() && this.teamContext.canShowAllTeams() ? [{ value: ALL_TEAMS, label: 'All teams' }] : []),
+    ...(this.auth.can('ViewAllJobs') && this.teamContext.canShowAllTeams() ? [{ value: ALL_TEAMS, label: 'All teams' }] : []),
     ...this.auth.teams().map((team) => ({ value: team.id, label: team.name, colour: team.colour })),
   ]);
 

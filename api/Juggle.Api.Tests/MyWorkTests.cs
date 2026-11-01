@@ -20,23 +20,23 @@ public sealed class MyWorkTests(ApiFactory api)
     [Fact]
     public async Task Lists_my_open_tasks_from_every_team_overdue_first()
     {
-        var jason = await api.SignInAsAsync("Jason van Wyk");
-        var me = await jason.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct);
-        var teams = await jason.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct);
+        var priya = await api.SignInAsAsync("Priya Naidoo");
+        var me = await priya.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct);
+        var teams = await priya.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct);
 
         var expected = new List<Guid>();
         foreach (var team in teams!)
         {
-            var statuses = await jason.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{team.Id}/statuses", ApiFactory.Json, _ct);
+            var statuses = await priya.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{team.Id}/statuses", ApiFactory.Json, _ct);
             var board = statuses!.Where(s => s.Order > statuses!.Min(x => x.Order) && s.Category != StatusCategory.Done).Select(s => s.Id).ToHashSet();
-            var tasks = await jason.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{team.Id}/tasks", ApiFactory.Json, _ct);
+            var tasks = await priya.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{team.Id}/tasks", ApiFactory.Json, _ct);
             expected.AddRange(tasks!.Where(t => t.AssigneePersonId == me!.PersonId && board.Contains(t.StatusId)).Select(t => t.Id));
         }
 
-        var myWork = await GetMyWorkAsync(jason);
+        var myWork = await GetMyWorkAsync(priya);
 
         Assert.Equal(expected.Order(), myWork.Tasks.Select(t => t.Task.Id).Order());
-        Assert.Equal(["Marketing", "Studio"], myWork.Tasks.Select(t => t.TeamName).Distinct().Order());
+        Assert.Equal(["Design Studio"], myWork.Tasks.Select(t => t.TeamName).Distinct());
         Assert.DoesNotContain(myWork.Tasks, t => t.Category == StatusCategory.Done);
         Assert.True(myWork.Tasks[0].Task.IsOverdue);
         Assert.Equal(myWork.Tasks.OrderByDescending(t => t.Task.IsOverdue).ThenBy(t => t.Task.DueDate ?? DateOnly.MaxValue), myWork.Tasks);
@@ -63,7 +63,7 @@ public sealed class MyWorkTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Brand_managers_without_a_person_get_403()
+    public async Task Marketing_managers_without_a_person_get_403()
     {
         var zanele = await api.SignInAsAsync("Zanele Mthembu");
 

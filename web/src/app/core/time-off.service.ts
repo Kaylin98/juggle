@@ -15,7 +15,7 @@ export class TimeOffService {
    * so reloading it after a decision refreshes both.
    */
   readonly approvals = resource({
-    params: () => (this.auth.isApprover() ? this.auth.me()?.id : undefined),
+    params: () => (this.auth.can('ApproveTimeOff') ? this.auth.me()?.id : undefined),
     loader: () => firstValueFrom(this.http.get<TimeOffApproval[]>('/api/time-off/approvals')),
   });
 

@@ -6,10 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Juggle.Api.Features.Capacity;
 
-public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess)
+public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess, Permissions permissions)
 {
     /// <summary>
-    /// The schedule for a team, or for everyone when teamId is null (Org Admin only).
+    /// The schedule for a team (ViewSchedule), or for everyone when teamId is null (ViewSchedule and ViewAllJobs).
     /// Load counts every allocation a person has, including other teams' projects.
     /// </summary>
     public async Task<CapacityDto> GetAsync(Guid? teamId, DateOnly start, int weeks, CancellationToken ct)
@@ -21,12 +21,13 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
         var query = db.People.AsQueryable();
         if (teamId is { } id)
         {
-            await teamAccess.EnsureCanViewAsync(id, ct);
+            await teamAccess.EnsureAsync(id, Capability.ViewSchedule, ct);
             query = query.Where(p => p.User.Memberships.Any(m => m.TeamId == id));
         }
-        else if (!currentUser.IsOrgAdmin)
+        else
         {
-            throw new ForbiddenException("Only org admins can see every team.");
+            await permissions.EnsureAsync(Capability.ViewSchedule, ct);
+            await permissions.EnsureAsync(Capability.ViewAllJobs, ct);
         }
 
         var team = await query.Include(p => p.User).OrderBy(p => p.User.Name).AsNoTracking().ToListAsync(ct);
@@ -50,8 +51,8 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
             .AsNoTracking()
             .ToListAsync(ct);
 
-        // Sick leave shows only to the person and their admins (POPIA); everyone else sees "Unavailable".
-        var managed = await teamAccess.ManagedPeople().Where(p => personIds.Contains(p.Id)).Select(p => p.Id).ToListAsync(ct);
+        // Sick leave shows only to the person and their approvers (POPIA); everyone else sees "Unavailable".
+        var managed = await (await teamAccess.ManagedPeopleAsync(ct)).Where(p => personIds.Contains(p.Id)).Select(p => p.Id).ToListAsync(ct);
 
         var people = team.Select(person =>
         {

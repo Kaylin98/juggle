@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, resource } from '@angular/core';
 import { firstValueFrom, forkJoin } from 'rxjs';
+import { AuthService } from './auth.service';
 import { AcceptRequest, CreateRequest, NewBrief, Person, Project, RequestOptions, WorkRequest } from './models';
 import { TeamContextService } from './team-context.service';
 
@@ -8,14 +9,15 @@ import { TeamContextService } from './team-context.service';
 @Injectable({ providedIn: 'root' })
 export class RequestsService {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   private readonly teamContext = inject(TeamContextService);
 
   /**
-   * New requests waiting in the current team's triage inbox, newest first, for Team Admins. The nav badge and
+   * New requests waiting in the current team's triage inbox, newest first, for users who triage. The nav badge and
    * the triage page share it, so reloading it after an accept or reject refreshes both.
    */
   readonly inbox = resource({
-    params: () => (this.teamContext.isTeamAdmin() ? this.teamContext.teamId() : undefined),
+    params: () => (this.auth.can('TriageBriefs') ? this.teamContext.teamId() : undefined),
     loader: ({ params }) =>
       firstValueFrom(this.http.get<WorkRequest[]>(`/api/teams/${params}/requests`, { params: { status: 'New' } })),
   });

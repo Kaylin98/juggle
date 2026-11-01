@@ -72,10 +72,10 @@ public sealed class CapacityTests(ApiFactory api)
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
 
-        var schedule = await GetAsync(client, await GetTeamIdAsync(client, "Studio"), _nextWeek, 1);
+        var schedule = await GetAsync(client, await GetTeamIdAsync(client, "Design Studio"), _nextWeek, 1);
 
         Assert.Equal(5, schedule.Days.Count);
-        Assert.Equal(8, schedule.People.Count);
+        Assert.Equal(6, schedule.People.Count);
         var lerato = schedule.People.Single(p => p.Name == "Lerato Mokoena");
         Assert.Contains(lerato.Days, d => d.Allocated > d.Capacity);
         var amahle = schedule.People.Single(p => p.Name == "Amahle Dlamini");
@@ -84,31 +84,20 @@ public sealed class CapacityTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Other_teams_work_is_flagged_and_counts_towards_load()
-    {
-        var client = await api.SignInAsAsync("Naledi Khumalo");
-
-        var schedule = await GetAsync(client, await GetTeamIdAsync(client, "Studio"), _nextWeek, 2);
-
-        var jason = schedule.People.Single(p => p.Name == "Jason van Wyk");
-        var jasonBars = schedule.Allocations.Where(a => a.PersonId == jason.Id).ToList();
-        Assert.Contains(jasonBars, a => a.OtherTeam && a.ProjectName.EndsWith("_Social Calendar", StringComparison.Ordinal) && a.TeamName == "Marketing" && a.ProjectDepartment == "GoPro");
-        Assert.Contains(jasonBars, a => !a.OtherTeam && a.ProjectName.EndsWith("_Summer Campaign", StringComparison.Ordinal));
-        Assert.Contains(jason.Days, d => d.TimeOff is null && d.Allocated == 6.5m);
-    }
-
-    [Fact]
-    public async Task Org_admin_can_see_all_teams_but_a_member_cannot()
+    public async Task Users_who_see_all_work_see_every_team_but_designers_see_no_schedule()
     {
         var naledi = await api.SignInAsAsync("Naledi Khumalo");
-        var jason = await api.SignInAsAsync("Jason van Wyk");
+        var priya = await api.SignInAsAsync("Priya Naidoo");
+        var teamId = await GetTeamIdAsync(naledi, "Design Studio");
 
         var all = await GetAsync(naledi, "all", _nextWeek, 1);
-        var response = await jason.GetAsync($"/api/capacity?teamId=all&start={_nextWeek:yyyy-MM-dd}&weeks=1", _ct);
+        var allForPriya = await priya.GetAsync($"/api/capacity?teamId=all&start={_nextWeek:yyyy-MM-dd}&weeks=1", _ct);
+        var teamForPriya = await priya.GetAsync($"/api/capacity?teamId={teamId}&start={_nextWeek:yyyy-MM-dd}&weeks=1", _ct);
 
-        Assert.Equal(11, all.People.Count);
+        Assert.Equal(6, all.People.Count);
         Assert.All(all.Allocations, a => Assert.False(a.OtherTeam));
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, allForPriya.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, teamForPriya.StatusCode);
     }
 
     [Fact]

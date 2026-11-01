@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
+import { Capability } from './models';
 
 export const authGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
@@ -20,29 +21,23 @@ export const teamMemberGuard: CanActivateFn = async (route) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   await auth.ensureLoaded();
-  return auth.roleIn(route.paramMap.get('teamId')!) !== null || router.parseUrl(auth.landingUrl());
+  return auth.inTeam(route.paramMap.get('teamId')!) || router.parseUrl(auth.landingUrl());
 };
 
-export const teamAdminGuard: CanActivateFn = async (route) => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  await auth.ensureLoaded();
-  const teamId = route.parent!.paramMap.get('teamId')!;
-  return auth.roleIn(teamId) === 'TeamAdmin' || router.parseUrl(`/t/${teamId}/board`);
-};
+/** Opens the page only for roles with every capability given (D77); anyone else goes to their landing page. */
+export function capabilityGuard(...capabilities: Capability[]): CanActivateFn {
+  return async () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+    await auth.ensureLoaded();
+    return capabilities.every((capability) => auth.can(capability)) || router.parseUrl(auth.landingUrl());
+  };
+}
 
-/** My work is for people on a team's schedule; the brands' marketing managers have no Person record (D10, D58). */
+/** My work is for people on a team's schedule; marketing managers have no Person record (D10, D70). */
 export const personGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   await auth.ensureLoaded();
   return auth.me()?.personId != null || router.parseUrl(auth.landingUrl());
-};
-
-/** Time off approvals are for Team Admins of any team, and Org Admins (D47). */
-export const approverGuard: CanActivateFn = async () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  await auth.ensureLoaded();
-  return auth.isApprover() || router.parseUrl(auth.landingUrl());
 };

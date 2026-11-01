@@ -24,7 +24,7 @@ public sealed class DashboardTests(ApiFactory api)
     public async Task Utilisation_matches_the_schedule_for_this_week_and_the_next_four()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
-        var studioId = await GetTeamIdAsync(client, "Studio");
+        var studioId = await GetTeamIdAsync(client, "Design Studio");
 
         var dashboard = await GetDashboardAsync(client, studioId.ToString());
         var schedule = await client.GetFromJsonAsync<CapacityDto>(
@@ -47,7 +47,7 @@ public sealed class DashboardTests(ApiFactory api)
     public async Task Seeded_story_has_the_demo_loads()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
-        var studioId = await GetTeamIdAsync(client, "Studio");
+        var studioId = await GetTeamIdAsync(client, "Design Studio");
 
         var dashboard = await GetDashboardAsync(client, studioId.ToString());
         var nextWeek = await client.GetFromJsonAsync<CapacityDto>(
@@ -70,8 +70,8 @@ public sealed class DashboardTests(ApiFactory api)
     [Fact]
     public async Task Counts_match_the_board_and_the_triage_inbox()
     {
-        var client = await api.SignInAsAsync("Naledi Khumalo");
-        var studioId = await GetTeamIdAsync(client, "Studio");
+        var client = await api.SignInAsAsync("Chloe Adams");
+        var studioId = await GetTeamIdAsync(client, "Design Studio");
         var tasks = (await client.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!;
         var statuses = await client.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{studioId}/statuses", ApiFactory.Json, _ct);
         var inbox = await client.GetFromJsonAsync<List<RequestDto>>($"/api/teams/{studioId}/requests?status=New", ApiFactory.Json, _ct);
@@ -80,9 +80,9 @@ public sealed class DashboardTests(ApiFactory api)
 
         var dashboard = await GetDashboardAsync(client, studioId.ToString());
 
-        Assert.Equal([new TeamCountDto(studioId, "Studio", tasks.Count(t => t.IsOverdue))], dashboard.OverdueTasks);
-        Assert.Equal([new TeamCountDto(studioId, "Studio", inbox!.Count)], dashboard.TriageRequests);
-        Assert.Equal([new TeamCountDto(studioId, "Studio", tasks.Count(t => review.Contains(t.StatusId)))], dashboard.AwaitingReview);
+        Assert.Equal([new TeamCountDto(studioId, "Design Studio", tasks.Count(t => t.IsOverdue))], dashboard.OverdueTasks);
+        Assert.Equal([new TeamCountDto(studioId, "Design Studio", inbox!.Count)], dashboard.TriageRequests);
+        Assert.Equal([new TeamCountDto(studioId, "Design Studio", tasks.Count(t => review.Contains(t.StatusId)))], dashboard.AwaitingReview);
         Assert.True(dashboard.AwaitingReview[0].Count > 0);
         Assert.True(dashboard.OverdueTasks[0].Count > 0);
         Assert.Equal(tasks.Count(t => !done.Contains(t.StatusId)), dashboard.WorkByDepartment.Sum(d => d.Count));
@@ -90,31 +90,31 @@ public sealed class DashboardTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Org_admin_sees_every_team_and_everyone()
+    public async Task Users_who_see_all_work_see_every_team_and_everyone()
     {
-        var client = await api.SignInAsAsync("Naledi Khumalo");
+        var client = await api.SignInAsAsync("Megan Botha");
         var schedule = await client.GetFromJsonAsync<CapacityDto>(
             $"/api/capacity?teamId=all&start={_monday:yyyy-MM-dd}&weeks=1", ApiFactory.Json, _ct);
 
         var dashboard = await GetDashboardAsync(client, "all");
 
-        Assert.Equal(["Marketing", "Studio"], dashboard.OverdueTasks.Select(t => t.TeamName));
-        Assert.Equal(["Marketing", "Studio"], dashboard.TriageRequests.Select(t => t.TeamName));
-        Assert.Equal(["Marketing", "Studio"], dashboard.AwaitingReview.Select(t => t.TeamName));
+        Assert.Equal(["Design Studio"], dashboard.OverdueTasks.Select(t => t.TeamName));
+        Assert.Equal(["Design Studio"], dashboard.TriageRequests.Select(t => t.TeamName));
+        Assert.Equal(["Design Studio"], dashboard.AwaitingReview.Select(t => t.TeamName));
         Assert.Equal(schedule!.People.Count, dashboard.People.Count);
     }
 
     [Fact]
-    public async Task Members_and_other_teams_admins_get_403()
+    public async Task Designers_and_marketing_managers_get_403()
     {
         var naledi = await api.SignInAsAsync("Naledi Khumalo");
-        var studioId = await GetTeamIdAsync(naledi, "Studio");
-        var jason = await api.SignInAsAsync("Jason van Wyk");
-        var megan = await api.SignInAsAsync("Megan Botha");
+        var studioId = await GetTeamIdAsync(naledi, "Design Studio");
+        var ethan = await api.SignInAsAsync("Ethan Pillay");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
 
-        Assert.Equal(HttpStatusCode.Forbidden, (await jason.GetAsync($"/api/dashboard?teamId={studioId}", _ct)).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await megan.GetAsync($"/api/dashboard?teamId={studioId}", _ct)).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await megan.GetAsync("/api/dashboard?teamId=all", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await ethan.GetAsync($"/api/dashboard?teamId={studioId}", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await ethan.GetAsync("/api/dashboard?teamId=all", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await zanele.GetAsync($"/api/dashboard?teamId={studioId}", _ct)).StatusCode);
     }
 
     private static LoadDto Total(IEnumerable<DayLoad> days) => new(days.Sum(d => d.Allocated), days.Sum(d => d.Capacity));

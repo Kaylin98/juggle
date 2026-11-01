@@ -1,15 +1,9 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { DemoUser, RoleLabel } from '../../core/models';
+import { DemoUser } from '../../core/models';
 import { Avatar } from '../../shared/avatar';
 import { BRANDING } from '../../branding';
-
-const GROUPS: { role: RoleLabel; heading: string }[] = [
-  { role: 'Org Admin', heading: 'Org Admin' },
-  { role: 'Team Admin', heading: 'Team Admins' },
-  { role: 'Member', heading: 'Members' },
-];
 
 @Component({
   selector: 'app-login-page',
@@ -25,16 +19,18 @@ export class LoginPage {
 
   protected readonly users = resource({ loader: () => this.auth.demoUsers() });
 
-  protected readonly groups = computed(() =>
-    GROUPS.map((group) => ({
-      heading: group.heading,
-      users: (this.users.value() ?? []).filter((u) => u.role === group.role),
-    })).filter((group) => group.users.length > 0),
-  );
+  /** One group per role of the organisation, in the order the API lists them (the roles' order, D77). */
+  protected readonly groups = computed(() => {
+    const byRole = new Map<string, DemoUser[]>();
+    for (const user of this.users.value() ?? []) {
+      byRole.set(user.role, [...(byRole.get(user.role) ?? []), user]);
+    }
+    return [...byRole].map(([heading, users]) => ({ heading, users }));
+  });
 
-  /** Job title, or the brands a marketing manager covers, then teams. */
+  /** Job title, or the brands the user manages, then teams. */
   protected subtitle(user: DemoUser): string {
-    const detail = user.jobTitle ?? (user.departments.length ? `Marketing manager, ${user.departments.join(' and ')}` : null);
+    const detail = user.jobTitle ?? (user.departments.length ? user.departments.join(' and ') : null);
     const teams = user.teams.join(', ');
     return [detail, teams].filter((part) => part).join(' · ');
   }

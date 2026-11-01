@@ -2,6 +2,7 @@ using Juggle.Api.Data.Entities;
 
 namespace Juggle.Api.Features.Auth;
 
+/// <param name="Role">The name of the user's role in their organisation (D77).</param>
 /// <param name="Departments">The brands the user manages, by name (D58).</param>
 public sealed record DemoUserDto(
     Guid Id,
@@ -14,14 +15,19 @@ public sealed record DemoUserDto(
 
 public sealed record SignInRequest(Guid UserId);
 
-/// <param name="DepartmentLabel">What the organisation calls departments, such as "Brand" (D48).</param>
+/// <summary>The organisation's words for its concepts (D48, D77).</summary>
+public sealed record TermsDto(string Department, string Brief, string Job);
+
+/// <param name="Role">The name of the user's role in their organisation.</param>
+/// <param name="Capabilities">What the role allows; the web shows pages and actions from these, never from the role's name (D77).</param>
 /// <param name="ManagedDepartmentIds">The brands the user manages, whose cards they approve (D58).</param>
 public sealed record MeDto(
     Guid Id,
     string Name,
     string Email,
     string AvatarColour,
-    OrgRole OrgRole,
+    string Role,
+    IReadOnlyList<Capability> Capabilities,
     Guid? PersonId,
-    string DepartmentLabel,
+    TermsDto Terms,
     IReadOnlyList<Guid> ManagedDepartmentIds);

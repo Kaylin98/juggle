@@ -10,8 +10,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | J - Roles and jobs |
 | Phase status | In progress |
-| Last completed task | Phase R approved (D62 to D73, plus D74 to D76) |
-| Next task | J.1 Roles as org data (D77) |
+| Last completed task | J.1 Roles as org data (D77) |
+| Next task | J.2 Jobs replace requests, projects and tasks |
 | Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; list them in the Phase J review summary for the client |
 | Last updated | 2026-11-01 |
 
@@ -875,7 +875,7 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 
 **Tasks**
 
-- [ ] J.1 Roles as org data (D70, D77): the `Capability` enum in code; `Role` per org with its capabilities, and `User.RoleId`, replacing `OrgRole` and `TeamMembership.Role`; access checked by capability on the server (`Permissions`); org settings for terms, default working hours and holiday country, sent with `/api/auth/me`; login grouped by the org's roles; nav and landing from capabilities; seed of The Core Group's five roles and 18 users in one studio (D73); migration `Roles`; tests, including that no code checks a role name
+- [x] J.1 Roles as org data (D70, D77): the `Capability` enum in code; `Role` per org with its capabilities, and `User.RoleId`, replacing `OrgRole` and `TeamMembership.Role`; access checked by capability on the server (`Permissions`); org settings for terms, default working hours and holiday country, sent with `/api/auth/me`; login grouped by the org's roles; nav and landing from capabilities; seed of The Core Group's five roles and 18 users in one studio (D73); migration `Roles`; tests, including that no code checks a role name
 - [ ] J.2 Jobs replace requests, projects and tasks (D68, D69, D72, D77): `Job`, `JobEvent`, `Allocation.JobId`; `BoardColumn`, `JobStatus` and `WorkflowTransition` as org data, with the `WorkflowAction` and `ApprovalStage` enums in code; `JobWorkflow` reading the org's workflow (Submit gives the first status); board columns and status chips from the data, with brand colours, the booked chip and filters, no drag between columns; job visibility by capability; seed of The Core Group's statuses, columns and workflow, and of its jobs, including the closed history; dashboard and briefs report moved onto jobs; migration `Jobs`; tests
 - [ ] J.3 Job ID from the org's format (`Organisation.JobCodeFormat`) and the per-brand `Department.LastJobNumber` at submission, code fixed (D71, D77); migration `JobNumbers`; tests for the counter, the format and the code
 - [ ] J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; the job page for the Marketing Manager; migration `BriefSections`; tests
@@ -888,6 +888,14 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - [ ] Marketing Managers have no board or schedule; designers see only their own jobs
 - [ ] A submitted brief gets the next number for its brand (DJI0143 in the seed) and its code never changes
 - [ ] The brief form has every field of section 3.1, with several deliverables and links
+
+**Notes and deviations**
+
+- J.1: The Core Group's capabilities by role are in `docs/gap-analysis.md` section 3 and in the seeder (`AddRole`). Capabilities are read from the database once per request (`Auth/Permissions.cs`), not stored in the cookie, so a changed role applies on the next request and old cookies need no handling. `TeamAccess` keeps the team checks and asks `Permissions`; `TEAM_PAGES` in the web's `TeamContextService` names what each team page needs, and the routes, the team switcher and the nav all read it. Nothing reads a role's name except the login screen and the header, which show it
+- J.1: until J.2 replaces tasks, the D58 board approval endpoints still exist (only a brand's manager can call them), but marketing managers can no longer open the board, so the buttons are unreachable; the endpoints go with the tasks in J.2
+- J.1: the Marketing team, Jason and the Marketing briefs are gone from the seed (D73); Jason's and Naledi's cards went to Amahle, Ruben, Priya and Sipho so Lerato stays the one with the most open work; Ruben now has the masked sick leave (Monday and Tuesday this week). Sick leave shows to the person and to users with ApproveTimeOff (the Traffic Manager), no longer to the heads. `GET /api/time-off/approvals` now returns 403 without ApproveTimeOff (it returned an empty list). Organisation settings added: `BriefLabel`, `JobLabel`, `WorkdayHours`, `HolidayCountry`; the nav, My requests and the form say "New brief" from the terms
+- J.1: the `Roles` migration gives every existing user an empty `RoleId`, so a database with data needs `--reset-demo` (there is no production data). The role foreign key is Restrict, so a role in use cannot be deleted
+- J.1 checked in Edge at 1440 against the API on 5268 with freshly reset data: the login screen lists the five roles with 1, 1, 1, 6 and 9 users; Megan and Naledi land on the dashboard with Dashboard, Briefs report, Schedule, Board; Chloe adds Triage (5) and Time off (1); Priya lands on My work with My work and Board; Zanele lands on My requests with My requests and New brief, and a board URL sends her back there. No console errors. Tests: 82 API (new: role list and order, me with capabilities and terms, renaming a role keeps its access, the access audit per role), 135 web
 
 **Review gate**
 
@@ -1062,3 +1070,4 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - 2026-10-31: Review fix: dropdowns near the right edge of the screen open lined up with the trigger's right edge instead of running off it. 126 web tests pass, lint clean.
 - 2026-11-01: Phase C review round, one commit each. C.14 requester model (D58, replaces D55): no "Requested by" or Requester role, `LoggedByUserId` and `User.DepartmentId` dropped, brand managers as Studio Members managing one or more brands, the board filtered to their brands, Approve and Request changes on Awaiting approval. C.15 drawer schedule actions (D59). C.16 schedule People filter (D60). C.17 brand colours with a brand key on Board and Schedule (D61). Build with no warnings, lint, 80 API tests and 137 web tests pass; each item checked in Chromium at 1440 against the API on 5268. Demo data reset. Awaiting review.
 - 2026-11-01: Phase R: the client's functional requirements (`docs/requirements.md`) became the source of truth. Wrote `docs/gap-analysis.md` (gaps per area, the job data model and status map, the permission matrix, the demo slice, pending items, phases, open questions). Recorded the client decisions (D62 to D67) and the proposed decisions (D68 to D73: a card is a job, standard statuses, five roles, job number counter, approval and revision records, the 18-user seed); planned Phases J, W and V; folded Phase C's C.18 into this review. No code changed. Awaiting review.
+- 2026-11-01: Phase R approved (D74 to D76 added); D77 recorded (Juggle configurable per organisation). J.1 built: roles as org data with capabilities, access by capability, organisation terms and settings, login by role, nav and landing from capabilities, seed of The Core Group's five roles and 18 users in one studio. Build with no warnings, lint, 82 API tests and 135 web tests pass; checked in Edge at 1440. Demo data reset.

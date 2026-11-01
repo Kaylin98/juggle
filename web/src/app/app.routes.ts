@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
-import { approverGuard, authGuard, landingGuard, personGuard, teamAdminGuard, teamMemberGuard } from './core/guards';
+import { authGuard, capabilityGuard, landingGuard, personGuard, teamMemberGuard } from './core/guards';
+import { TEAM_PAGES } from './core/team-context.service';
 import { LoginPage } from './features/login/login-page';
 import { Shell } from './layout/shell';
 
@@ -19,16 +20,18 @@ export const routes: Routes = [
       },
       {
         path: 'time-off',
-        canActivate: [approverGuard],
+        canActivate: [capabilityGuard('ApproveTimeOff')],
         loadComponent: () => import('./features/time-off/time-off-page').then((m) => m.TimeOffPage),
         title: 'Time off',
       },
       {
         path: 'request',
+        canActivate: [capabilityGuard('SubmitBrief')],
         loadComponent: () => import('./features/requests/request-form').then((m) => m.RequestFormPage),
         title: 'New request',
       },
       {
+        // The fallback landing page, so it has no guard; the API lists only the user's own requests.
         path: 'requests',
         loadComponent: () => import('./features/requests/my-requests').then((m) => m.MyRequestsPage),
         title: 'My requests',
@@ -44,11 +47,13 @@ export const routes: Routes = [
         children: [
           {
             path: 'capacity',
+            canActivate: [capabilityGuard(...TEAM_PAGES['capacity'])],
             loadComponent: () => import('./features/capacity/capacity-page').then((m) => m.CapacityPage),
             title: 'Schedule',
           },
           {
             path: 'board',
+            canActivate: [capabilityGuard(...TEAM_PAGES['board'])],
             loadComponent: () => import('./features/board/board-page').then((m) => m.BoardPage),
             title: 'Board',
           },
@@ -56,19 +61,19 @@ export const routes: Routes = [
             path: 'triage',
             loadComponent: () => import('./features/triage/triage-page').then((m) => m.TriagePage),
             title: 'Triage',
-            canActivate: [teamAdminGuard],
+            canActivate: [capabilityGuard(...TEAM_PAGES['triage'])],
           },
           {
             path: 'dashboard',
             loadComponent: () => import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
             title: 'Dashboard',
-            canActivate: [teamAdminGuard],
+            canActivate: [capabilityGuard(...TEAM_PAGES['dashboard'])],
           },
           {
             path: 'briefs',
             loadComponent: () => import('./features/reports/briefs-report-page').then((m) => m.BriefsReportPage),
             title: 'Briefs report',
-            canActivate: [teamAdminGuard],
+            canActivate: [capabilityGuard(...TEAM_PAGES['briefs'])],
           },
           { path: '', pathMatch: 'full', redirectTo: 'board' },
         ],

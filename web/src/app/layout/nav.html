@@ -28,6 +28,7 @@
       </li>
     }
 
+    @if (requestLinks().length) {
     <li>
       @if (collapsed()) {
         <button
@@ -99,6 +100,7 @@
         }
       }
     </li>
+    }
   </ul>
 
   <button

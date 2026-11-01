@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Juggle.Api.Features.MyWork;
 
 /// <summary>My work: the signed-in person's tasks, schedule and leave across every team they are in, ignoring the team switcher.</summary>
-public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, OrgClock clock)
+public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, Permissions permissions, OrgClock clock)
 {
     /// <summary>This week and next week.</summary>
     private const int Weeks = 2;
@@ -25,6 +25,7 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, O
         var from = today.StartOfWeek();
         var to = from.AddDays((Weeks * 7) - 1);
         var teamNames = await db.Teams.ToDictionaryAsync(t => t.Id, t => t.Name, ct);
+        var seesAll = await permissions.HasAsync(Capability.ViewAllJobs, ct);
 
         var tasks = await db.Tasks
             .Include(t => t.Status)
@@ -33,7 +34,7 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, O
                 && t.Status.Category != StatusCategory.Done
                 // The first status, Triage, is not a board column (D18).
                 && db.WorkflowStatuses.Any(s => s.TeamId == t.TeamId && s.Order < t.Status.Order)
-                && (currentUser.IsOrgAdmin || db.TeamMemberships.Any(m => m.TeamId == t.TeamId && m.UserId == currentUser.UserId)))
+                && (seesAll || db.TeamMemberships.Any(m => m.TeamId == t.TeamId && m.UserId == currentUser.UserId)))
             .AsNoTracking()
             .ToListAsync(ct);
         var taskBookings = await TaskBookings.LoadAsync(db, tasks.Select(t => t.Id).ToList(), ct);

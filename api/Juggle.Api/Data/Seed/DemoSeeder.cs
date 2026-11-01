@@ -6,16 +6,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Juggle.Api.Data.Seed;
 
 /// <summary>
-/// Seeds the demo story for The Core Group's creative studio (D54): the Studio and Marketing teams serving the group's
-/// brands, briefs with job codes and their deliverables, six weeks of bookings, leave, public holidays and briefs
-/// waiting in triage. Dates are relative to the week the seed runs. People are fictional.
+/// Seeds The Core Group, the first organisation's configuration and demo story (D73, D77): its roles and their
+/// capabilities, terms, the design studio serving the group's brands, briefs with job codes and their deliverables,
+/// six weeks of bookings, leave, public holidays and briefs waiting in triage. Dates are relative to the week the seed
+/// runs. People are fictional.
 /// </summary>
 public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogger<DemoSeeder> logger)
 {
     /// <summary>
-    /// The group's brands, their job code prefixes (D52) and colours (D61). 14 brands share 8 hues, so each board's
-    /// brands differ: the Studio's nine repeat only amber, on Mobile in Africa and Reloved (whose work is all done),
-    /// and the Marketing four (CORE, GoPro, CGA, Pure Electric) are all different.
+    /// The group's brands, their job code prefixes (D52) and colours (D61). 14 brands share 8 hues; on the board only
+    /// Reloved (whose work is all done) and Mobile in Africa share amber.
     /// </summary>
     private static readonly (string Name, string Prefix, string Colour)[] Brands =
     [
@@ -26,12 +26,12 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
     ];
 
     /// <summary>
-    /// A brief from an earlier month: sent on day Day of the month MonthsAgo months back, for the Studio unless Marketing.
-    /// A rejected brief has no project, so no job number (0).
+    /// A brief from an earlier month: sent on day Day of the month MonthsAgo months back. A rejected brief has no
+    /// project, so no job number (0).
     /// </summary>
     private sealed record PastBrief(
         string Brand, int Number, string JobName, int MonthsAgo, int Day, string MainGoal, string[] Deliverables,
-        bool Marketing = false, string? RejectionReason = null);
+        string? RejectionReason = null);
 
     /// <summary>Briefs delivered in the eight months before this one, by the brands with a marketing manager (D56).</summary>
     private static readonly PastBrief[] PastBriefs =
@@ -92,13 +92,6 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         new("MS Surface", 92, "Surface Laptop 7 Promo", 1, 18, "Surface Laptop 7 deals for professionals.", ["Surface Laptop 7 banners"]),
         new("Ultra Human", 18, "Spring Reset", 1, 22, "A spring reset for sleep and energy.", ["Spring Reset social carousel"]),
         new("MS Surface", 93, "Partner Day", 1, 25, "Surface's day with reseller partners.", ["Partner Day presentation", "Partner Day pull-up banner"]),
-        new("GoPro", 205, "Adventure Blog Series", 6, 12, "Monthly adventure stories from GoPro users.", ["Adventure blog posts"], Marketing: true),
-        new("Pure Electric", 28, "Rider Survey", 5, 12, "Ask riders what they want next.", ["Rider survey email"], Marketing: true),
-        new("MS Surface", 94, "Customer Stories", 4, 10, "How businesses work on Surface.", ["Customer story write-up"], Marketing: true),
-        new("DJI", 135, "Drone Laws Explainer", 3, 12, "Explain South Africa's drone rules simply.",
-            ["Drone laws blog post", "Drone laws LinkedIn post"], Marketing: true),
-        new("Bambu Lab", 52, "Maker Spotlights", 2, 9, "Spotlight local makers each week.", ["Maker spotlight posts"], Marketing: true),
-        new("Ultra Human", 19, "Sleep Tips Newsletter", 1, 19, "Monthly sleep tips for ring owners.", ["Sleep tips newsletter copy"], Marketing: true),
     ];
 
     /// <summary>October, so October 2026 is Q1'27, as in the studio's job codes.</summary>
@@ -133,62 +126,89 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             Name = "The Core Group",
             TimeZone = OrgClock.TimeZoneId,
             DepartmentLabel = "Brand",
+            BriefLabel = "Brief",
+            JobLabel = "Job",
             FinancialYearStartMonth = FinancialYearStartMonth,
+            WorkdayHours = 8,
+            HolidayCountry = "ZA",
         };
         db.Organisations.Add(org);
 
-        // Brands and teams
+        // Roles: The Core Group's five, and what each may do (D70, D77). Code checks the capabilities, never the names.
+
+        var roleOrder = 0;
+        Role AddRole(string name, params Capability[] capabilities)
+        {
+            var role = new Role { OrgId = org.Id, Name = name, Order = roleOrder++, Capabilities = [.. capabilities] };
+            db.Roles.Add(role);
+            return role;
+        }
+
+        var headOfMarketing = AddRole("Head of Marketing",
+            Capability.ViewAllJobs, Capability.ViewBoard, Capability.ViewSchedule, Capability.ViewReports, Capability.ManageUsers);
+        var headOfDesign = AddRole("Head of Design",
+            Capability.ViewAllJobs, Capability.ViewBoard, Capability.ViewSchedule, Capability.ViewReports, Capability.ApproveDesign);
+        var trafficManager = AddRole("Traffic Manager",
+            Capability.ViewAllJobs, Capability.ViewBoard, Capability.ViewSchedule, Capability.ViewReports,
+            Capability.TriageBriefs, Capability.Allocate, Capability.ApproveTimeOff);
+        var designer = AddRole("Designer", Capability.ViewBoard, Capability.ViewReports, Capability.WorkOnJobs);
+        var marketingManager = AddRole("Marketing Manager",
+            Capability.SubmitBrief, Capability.ViewReports, Capability.ApproveMarketing, Capability.CloseJob);
+
+        // Brands and the studio
 
         var brands = Brands.ToDictionary(
             b => b.Name,
             b => new Department { OrgId = org.Id, Name = b.Name, JobCodePrefix = b.Prefix, Colour = b.Colour });
         db.Departments.AddRange(brands.Values);
 
-        // Colours are hues from the project palette under "Design" in CLAUDE.md.
-        var studio = new Team { OrgId = org.Id, Name = "Studio", Colour = "#8a78d6" };
-        var marketing = new Team { OrgId = org.Id, Name = "Marketing", Colour = "#3fa7a0" };
-        db.Teams.AddRange(studio, marketing);
+        // The colour is a hue from the palette under "Design" in CLAUDE.md.
+        var studio = new Team { OrgId = org.Id, Name = "Design Studio", Colour = "#8a78d6" };
+        db.Teams.Add(studio);
 
         // Users and people
 
         var avatarColours = new Queue<string>(
         [
             "#8a78d6", "#5b8def", "#d16b8f", "#6aa36f", "#d9a441", "#3fa7a0", "#e07a5f", "#7b8ea8", "#5b8def",
-            "#d16b8f", "#6aa36f", "#d9a441", "#3fa7a0", "#e07a5f", "#8a78d6", "#7b8ea8", "#5b8def",
+            "#d16b8f", "#6aa36f", "#d9a441", "#3fa7a0", "#e07a5f", "#8a78d6", "#7b8ea8", "#5b8def", "#d16b8f",
         ]);
 
-        User AddUser(string name, OrgRole orgRole = OrgRole.User)
+        User AddUser(string name, Role role)
         {
             var user = new User
             {
                 OrgId = org.Id,
                 Name = name,
                 Email = $"{name.ToLowerInvariant().Replace(' ', '.')}@thecoregroup.example",
-                OrgRole = orgRole,
+                RoleId = role.Id,
                 AvatarColour = avatarColours.Dequeue(),
             };
             db.Users.Add(user);
             return user;
         }
 
-        Person AddPerson(User user, string jobTitle, decimal hoursPerDay, string[] skills, params (Team Team, TeamRole Role)[] teams)
+        // Only the designers are on the studio's schedule (D70).
+        Person AddDesigner(string name, string jobTitle, string[] skills, decimal? hoursPerDay = null)
         {
-            var person = new Person { OrgId = org.Id, UserId = user.Id, JobTitle = jobTitle, HoursPerDay = hoursPerDay, Skills = [.. skills] };
-            db.People.Add(person);
-            foreach (var (team, role) in teams)
+            var user = AddUser(name, designer);
+            var person = new Person
             {
-                db.TeamMemberships.Add(new TeamMembership { OrgId = org.Id, UserId = user.Id, TeamId = team.Id, Role = role });
-            }
-
+                OrgId = org.Id,
+                UserId = user.Id,
+                JobTitle = jobTitle,
+                HoursPerDay = hoursPerDay ?? org.WorkdayHours,
+                Skills = [.. skills],
+            };
+            db.People.Add(person);
+            db.TeamMemberships.Add(new TeamMembership { OrgId = org.Id, UserId = user.Id, TeamId = studio.Id });
             return person;
         }
 
-        // A brand's marketing manager is a Studio Member without a Person: they brief the studio and approve its work for
-        // their brands, and see only those brands' cards on the board (D58).
+        // A brand's marketing manager briefs the studio for their brands; one manager can cover several (D58).
         User AddManager(string name, params string[] managed)
         {
-            var user = AddUser(name);
-            db.TeamMemberships.Add(new TeamMembership { OrgId = org.Id, UserId = user.Id, TeamId = studio.Id, Role = TeamRole.Member });
+            var user = AddUser(name, marketingManager);
             foreach (var brand in managed)
             {
                 db.DepartmentManagers.Add(new DepartmentManager { OrgId = org.Id, UserId = user.Id, DepartmentId = brands[brand].Id });
@@ -197,24 +217,26 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             return user;
         }
 
-        var naledi = AddPerson(AddUser("Naledi Khumalo", OrgRole.OrgAdmin), "Head of Studio", 8, ["Art direction", "Retail"], (studio, TeamRole.TeamAdmin));
-        var ethan = AddPerson(AddUser("Ethan Pillay"), "Senior Designer", 8, ["Digital", "E-commerce"], (studio, TeamRole.Member));
-        var lerato = AddPerson(AddUser("Lerato Mokoena"), "Senior Designer", 8, ["Retail", "Campaigns", "Print"], (studio, TeamRole.Member));
-        var jason = AddPerson(AddUser("Jason van Wyk"), "Brand Designer", 8, ["Campaigns", "Social"], (studio, TeamRole.Member), (marketing, TeamRole.Member));
-        var amahle = AddPerson(AddUser("Amahle Dlamini"), "Motion Designer", 8, ["Motion", "Video"], (studio, TeamRole.Member));
-        var ruben = AddPerson(AddUser("Ruben Fourie"), "Artworker", 5, ["Print", "Artwork"], (studio, TeamRole.Member));
-        var priya = AddPerson(AddUser("Priya Naidoo"), "Junior Designer", 8, ["Digital", "Social"], (studio, TeamRole.Member));
-        var sipho = AddPerson(AddUser("Sipho Ndlovu"), "Digital Designer", 8, ["E-commerce", "Banners"], (studio, TeamRole.Member));
-        var megan = AddPerson(AddUser("Megan Botha"), "Marketing Lead", 8, ["Strategy", "Copywriting"], (marketing, TeamRole.TeamAdmin));
-        var thabo = AddPerson(AddUser("Thabo Mahlangu"), "Content Marketer", 8, ["Copywriting", "Email"], (marketing, TeamRole.Member));
-        var chloe = AddPerson(AddUser("Chloe Adams"), "Social Media Manager", 8, ["Social", "Community"], (marketing, TeamRole.Member));
+        AddUser("Megan Botha", headOfMarketing);
+        AddUser("Naledi Khumalo", headOfDesign);
+        AddUser("Chloe Adams", trafficManager);
 
-        // Zanele covers two brands, as one manager can.
+        var ethan = AddDesigner("Ethan Pillay", "Senior Designer", ["Digital", "E-commerce"]);
+        var lerato = AddDesigner("Lerato Mokoena", "Senior Designer", ["Retail", "Campaigns", "Print"]);
+        var amahle = AddDesigner("Amahle Dlamini", "Motion Designer", ["Motion", "Video"]);
+        var ruben = AddDesigner("Ruben Fourie", "Artworker", ["Print", "Artwork"], hoursPerDay: 5);
+        var priya = AddDesigner("Priya Naidoo", "Junior Designer", ["Digital", "Social"]);
+        var sipho = AddDesigner("Sipho Ndlovu", "Digital Designer", ["E-commerce", "Banners"]);
+
         var zanele = AddManager("Zanele Mthembu", "DJI", "Pure Electric");
         var pieter = AddManager("Pieter Smit", "GoPro");
         var ayesha = AddManager("Ayesha Moosa", "Bambu Lab");
         var nicole = AddManager("Nicole Jacobs", "MS Surface");
         var bongani = AddManager("Bongani Zulu", "Ultra Human");
+        AddManager("Thabo Mahlangu", "CORE", "CGA");
+        AddManager("Lindiwe Khoza", "InRetail", "Reloved");
+        AddManager("Werner Steyn", "ARP", "CVM");
+        AddManager("Fatima Patel", "Mobile in Africa", "CCB");
         var managerOf = new Dictionary<string, User>
         {
             ["DJI"] = zanele, ["Pure Electric"] = zanele, ["GoPro"] = pieter, ["Bambu Lab"] = ayesha,
@@ -240,14 +262,6 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             ("Feedback needed", StatusCategory.Review),
             ("Awaiting approval", StatusCategory.Review),
             ("Done", StatusCategory.Done));
-
-        var ms = AddStatuses(marketing,
-            ("Triage", StatusCategory.Todo),
-            ("Planned", StatusCategory.Todo),
-            ("Writing", StatusCategory.InProgress),
-            ("Review", StatusCategory.Review),
-            ("Scheduled", StatusCategory.Done),
-            ("Published", StatusCategory.Done));
 
         // Projects: one per brief, named with its job code
 
@@ -288,10 +302,6 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         var storeRefresh = AddBrief(studio, "InRetail", 102, "Store Refresh", 40);
         var popUp = AddBrief(studio, "Reloved", 15, "Festive Pop-up", -5);
         var summit = AddBrief(studio, "Mobile in Africa", 29, "Summit Presentation", 25);
-        var newsletter = AddBrief(marketing, "CORE", 12, "Group Newsletter", 25);
-        var socialCalendar = AddBrief(marketing, "GoPro", 214, "Social Calendar", 30);
-        var caseStudies = AddBrief(marketing, "CGA", 61, "Dealer Case Studies", 35);
-        var riderStories = AddBrief(marketing, "Pure Electric", 35, "Rider Stories", 40);
 
         // Tasks: the briefs' deliverables
 
@@ -346,37 +356,24 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             feedback: "Closer, but the printer still looks grey. Warm up the lighting and show a finished print beside it.");
         AddTask(giftGuide, "Email header set", ss["Done"], priya, 3, -4);
         AddTask(giftGuide, "Social carousel", ss["Briefed in"], priya, 6, 13);
-        var keyVisual = AddTask(summer, "Campaign key visual", ss["Working on it"], jason, 16, 8);
-        AddTask(summer, "Billboard adaptation", ss["Briefed in"], jason, 8, 15);
-        AddTask(summer, "Social launch tiles", ss["Feedback needed"], jason, 6, -1, reviewCycle: 2,
+        var keyVisual = AddTask(summer, "Campaign key visual", ss["Working on it"], amahle, 16, 8);
+        AddTask(summer, "Billboard adaptation", ss["Briefed in"], ruben, 8, 15);
+        AddTask(summer, "Social launch tiles", ss["Feedback needed"], priya, 6, -1, reviewCycle: 2,
             feedback: "Swap the stock rider for one of our own shoot photos, and add the price from R12 999.");
         AddTask(summer, "Scooter spec sheets", ss["Awaiting approval"], priya, 4, 2);
         AddTask(summer, "Rider safety leaflet", ss["Done"], ruben, 4, -9);
         var retailerToolkit = AddTask(backToSchool, "Retailer toolkit", ss["Briefed in"], ethan, 14, 30);
         AddTask(backToSchool, "Campus poster series", ss["Briefed in"], sipho, 8, 35);
-        var conceptBoards = AddTask(retailLaunch, "Launch concept boards", ss["Awaiting approval"], naledi, 8, 1, reviewCycle: 2);
+        var conceptBoards = AddTask(retailLaunch, "Launch concept boards", ss["Awaiting approval"], sipho, 8, 1, reviewCycle: 2);
         AddTask(retailLaunch, "Retail launch video", ss["Working on it"], amahle, 14, 12);
         AddTask(retailLaunch, "Shelf strips", ss["Briefed in"], ruben, 3, 18);
-        AddTask(storeRefresh, "Window graphics", ss["Working on it"], naledi, 10, 10);
+        AddTask(storeRefresh, "Window graphics", ss["Working on it"], sipho, 10, 10);
         AddTask(storeRefresh, "Store signage pack", ss["Feedback needed"], lerato, 8, -3, reviewCycle: 2,
             feedback: "The aisle signs need to be readable from 5 metres; double the category names.");
         AddTask(popUp, "Pop-up stand graphics", ss["Done"], sipho, 10, -12);
         AddTask(popUp, "Price tags and swing tickets", ss["Done"], priya, 3, -7);
         AddTask(summit, "Summit presentation template", ss["Working on it"], ethan, 8, 5);
         AddTask(summit, "Speaker social tiles", ss["Briefed in"], null, 4, 20);
-
-        AddTask(newsletter, "November newsletter copy", ms["Writing"], thabo, 6, 6);
-        AddTask(newsletter, "Subscriber survey", ms["Planned"], thabo, 4, 15);
-        AddTask(newsletter, "October newsletter", ms["Published"], thabo, 6, -6);
-        var novemberCalendar = AddTask(socialCalendar, "November social calendar", ms["Review"], chloe, 5, 3, reviewCycle: 2);
-        AddTask(socialCalendar, "Instagram reels plan", ms["Writing"], chloe, 6, 8);
-        AddTask(socialCalendar, "LinkedIn carousel graphics", ms["Planned"], jason, 6, 10);
-        AddTask(socialCalendar, "Weekly social posts", ms["Scheduled"], chloe, 4, 1);
-        AddTask(caseStudies, "Case study: Karoo Motors", ms["Writing"], megan, 10, 12);
-        AddTask(caseStudies, "Case study: Highveld Dealers", ms["Planned"], thabo, 10, 20);
-        var videoScript = AddTask(riderStories, "Rider story video script", ms["Planned"], chloe, 6, 18);
-        AddTask(riderStories, "Rider of the month post", ms["Review"], megan, 4, 4);
-        AddTask(riderStories, "Launch recap blog", ms["Published"], jason, 3, -9);
 
         // Allocations: weeks -1 to 5 relative to this week; weekdays 0 (Mon) to 4 (Fri).
         // Lengths vary from two days to three weeks, with gaps, and the far weeks are lighter.
@@ -391,11 +388,6 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 EndDate = weekStart.AddDays((toWeek * 7) + toDay),
                 HoursPerDay = hoursPerDay,
             });
-
-        Allocate(naledi, retailLaunch, -1, 0, 1, 4, 3);
-        Allocate(naledi, storeRefresh, 0, 0, 0, 4, 2);
-        Allocate(naledi, summer, 2, 0, 3, 4, 2);
-        Allocate(naledi, retailLaunch, 3, 0, 4, 2, 2);
 
         // Ethan is booked exactly 8h Tuesday to Friday next week, a full day for the demo's clash.
         Allocate(ethan, brandStore, -1, 0, 1, 4, 5);
@@ -412,12 +404,6 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         Allocate(lerato, brandStore, 1, 0, 2, 2, 3);
         Allocate(lerato, giftGuide, 2, 0, 3, 4, 3);
         Allocate(lerato, storeRefresh, 3, 0, 4, 4, 5);
-
-        // Jason's load is split across Studio and Marketing.
-        Allocate(jason, summer, 0, 0, 2, 1, 4);
-        Allocate(jason, socialCalendar, 0, 2, 2, 4, 2.5m);
-        Allocate(jason, riderStories, 3, 0, 3, 4, 3);
-        Allocate(jason, backToSchool, 4, 1, 5, 4, 4);
 
         Allocate(amahle, blackFriday, 0, 0, 2, 4, 6);
         Allocate(amahle, festiveBundles, 0, 3, 0, 4, 2);
@@ -441,20 +427,6 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         Allocate(sipho, festiveBundles, 0, 3, 1, 1, 2);
         Allocate(sipho, backToSchool, 3, 2, 5, 1, 4);
 
-        Allocate(megan, caseStudies, -1, 0, 1, 4, 3);
-        Allocate(megan, riderStories, 0, 0, 2, 4, 2);
-        Allocate(megan, newsletter, 2, 0, 2, 3, 2);
-        Allocate(megan, caseStudies, 3, 0, 5, 4, 3);
-
-        Allocate(thabo, newsletter, 0, 0, 1, 2, 4);
-        Allocate(thabo, caseStudies, 0, 1, 2, 4, 2.5m);
-        Allocate(thabo, newsletter, 3, 0, 4, 4, 4);
-
-        Allocate(chloe, socialCalendar, -1, 0, 1, 4, 4);
-        Allocate(chloe, riderStories, 0, 2, 1, 1, 2);
-        Allocate(chloe, socialCalendar, 2, 0, 4, 4, 4);
-        Allocate(chloe, riderStories, 5, 0, 5, 4, 3);
-
         // Leave and public holidays
 
         void AddLeave(Person person, int fromWeek, int fromDay, int toWeek, int toDay,
@@ -470,13 +442,14 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 Note = note,
             });
 
-        // Two Studio people are on leave in the next weeks; Sipho's runs over a weekend. Thabo's sick leave reads
-        // "Unavailable" to everyone but him and the admins (POPIA). Ethan's request waits for the Head of Studio.
+        // Two designers are on leave in the next weeks; Sipho's runs over a weekend. Ruben's sick leave reads
+        // "Unavailable" to everyone but him and his approvers (POPIA). Ethan's request waits for the Traffic Manager.
         AddLeave(amahle, 1, 0, 1, 2);
         AddLeave(sipho, 2, 3, 3, 1);
-        AddLeave(thabo, 0, 0, 0, 1, TimeOffType.SickLeave);
+        AddLeave(ruben, 0, 0, 0, 1, TimeOffType.SickLeave);
         AddLeave(ethan, 2, 3, 2, 4, status: TimeOffStatus.Pending, note: "Family wedding in Durban");
 
+        // The organisation's holiday country is South Africa, the only calendar Juggle has so far.
         foreach (var (date, name) in SouthAfricanHolidays.For(today.Year).Concat(SouthAfricanHolidays.For(today.Year + 1)))
         {
             db.TimeOff.Add(new TimeOff
@@ -530,12 +503,6 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         AddBriefRequest(studio, "Ultra Human", "Festive Gifting",
             "Make the ring the festive gift for health-conscious shoppers.",
             "Social tiles x8\nInstagram stories x4\nInfluencer brief one-pager", Priority.Medium, 12, 70);
-        AddBriefRequest(marketing, "DJI", "Brand Store Launch Post",
-            "Tell South African shoppers the brand store is open on Amazon.",
-            "Blog post\nNewsletter feature\nLinkedIn post", Priority.Medium, 10, 6);
-        AddBriefRequest(marketing, "Pure Electric", "Rider Community Newsletter",
-            "Grow the rider community with a monthly newsletter of routes, tips and rider stories.",
-            "Newsletter template\nFirst issue copy", Priority.High, 14, 30);
         AddBriefRequest(studio, "DJI", "Black Friday",
             "Win Black Friday at the main retailers with one look across online and in store.",
             "Takealot banners\niStore banners\nBellyband\nCameraland video\nGeneric assets\nA4 inserts for retailers",
@@ -559,19 +526,11 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         AddBriefRequest(studio, "Ultra Human", "Retail Launch",
             "Launch the ring in its first retail stores with a look that explains it at a glance.",
             "Launch concept boards\nRetail launch video\nShelf strips", Priority.High, 30, 45 * 24, conceptBoards);
-        AddBriefRequest(marketing, "GoPro", "Social Calendar",
-            "Plan GoPro's November social so every channel has a post each weekday.",
-            "November social calendar\nInstagram reels plan\nLinkedIn carousel graphics\nWeekly social posts",
-            Priority.Medium, 30, 20 * 24, novemberCalendar);
-        AddBriefRequest(marketing, "Pure Electric", "Rider Stories",
-            "Share real riders' stories to show who Pure Electric is for.",
-            "Rider story video script\nRider of the month post\nLaunch recap blog", Priority.Medium, 40, 35 * 24, videoScript);
 
         // Briefs from the eight months before this one, delivered, so the briefs report shows nine months of work (D56).
         // Each is a project with its job code, one Done card per deliverable and the request it came from. Job numbers
         // stay below the open briefs', so the next job code is unchanged.
-        Person[] designers = [lerato, ethan, sipho, priya, amahle, lerato, ruben, jason, ethan, naledi, sipho, lerato];
-        Person[] marketers = [thabo, chloe, megan];
+        Person[] designers = [lerato, ethan, sipho, priya, amahle, lerato, ruben, amahle, ethan, priya, sipho, lerato];
         var assigned = 0;
         var thisMonth = new DateOnly(today.Year, today.Month, 1);
         foreach (var past in PastBriefs.OrderBy(b => b.MonthsAgo).ThenByDescending(b => b.Day))
@@ -579,20 +538,18 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             var sent = thisMonth.AddMonths(-past.MonthsAgo).AddDays(past.Day - 1);
             var ageHours = (now - new DateTimeOffset(sent.ToDateTime(new TimeOnly(9, 0)), TimeSpan.FromHours(2))).TotalHours;
             var dueDays = sent.DayNumber - today.DayNumber + 14;
-            var team = past.Marketing ? marketing : studio;
             TaskItem? first = null;
             if (past.RejectionReason is null)
             {
-                var project = AddBrief(team, past.Brand, past.Number, past.JobName, dueDays);
+                var project = AddBrief(studio, past.Brand, past.Number, past.JobName, dueDays);
                 foreach (var deliverable in past.Deliverables)
                 {
-                    var assignee = past.Marketing ? marketers[assigned++ % marketers.Length] : designers[assigned++ % designers.Length];
-                    var task = AddTask(project, deliverable, past.Marketing ? ms["Published"] : ss["Done"], assignee, 6, dueDays);
+                    var task = AddTask(project, deliverable, ss["Done"], designers[assigned++ % designers.Length], 6, dueDays);
                     first ??= task;
                 }
             }
 
-            AddBriefRequest(team, past.Brand, past.JobName, past.MainGoal, string.Join('\n', past.Deliverables),
+            AddBriefRequest(studio, past.Brand, past.JobName, past.MainGoal, string.Join('\n', past.Deliverables),
                 Priority.Medium, dueDays, ageHours, first, past.RejectionReason);
         }
 

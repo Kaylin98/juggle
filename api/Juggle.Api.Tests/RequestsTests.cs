@@ -26,17 +26,17 @@ public sealed class RequestsTests(ApiFactory api)
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         // DJI, the first of the brands she manages, is her default brand.
-        Assert.Equal((RequestStatus.New, "Studio", "DJI", "Zanele Mthembu"), (fetched!.Status, fetched.TeamName, fetched.Department, fetched.RequesterName));
+        Assert.Equal((RequestStatus.New, "Design Studio", "DJI", "Zanele Mthembu"), (fetched!.Status, fetched.TeamName, fetched.Department, fetched.RequesterName));
         Assert.Equal("For the demo.", fetched.MainGoal);
         Assert.Equal(["Key visual", "Social tiles x6"], fetched.Deliverables);
     }
 
     [Fact]
-    public async Task Team_admin_sees_new_requests_newest_first()
+    public async Task Traffic_manager_sees_new_requests_newest_first()
     {
-        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var chloe = await api.SignInAsAsync("Chloe Adams");
 
-        var inbox = await GetInboxAsync(naledi);
+        var inbox = await GetInboxAsync(chloe);
 
         Assert.True(inbox.Count >= 5);
         Assert.All(inbox, r => Assert.Equal(RequestStatus.New, r.Status));
@@ -46,26 +46,26 @@ public sealed class RequestsTests(ApiFactory api)
     [Fact]
     public async Task Accept_creates_a_task_in_the_first_column_after_triage()
     {
-        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var chloe = await api.SignInAsAsync("Chloe Adams");
         var request = await SubmitAsync("Ayesha Moosa", "Onboarding video storyboard");
-        var studioId = await GetTeamIdAsync(naledi, "Studio");
-        var project = (await naledi.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))!.First();
-        var priya = (await naledi.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct))!
+        var studioId = await GetTeamIdAsync(chloe, "Design Studio");
+        var project = (await chloe.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))!.First();
+        var priya = (await chloe.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct))!
             .Single(p => p.Name == "Priya Naidoo");
 
         var accept = new AcceptRequestRequest(project.Id, null, priya.Id, 16, _today.AddDays(10));
-        var response = await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/accept", accept, ApiFactory.Json, _ct);
+        var response = await chloe.PostAsJsonAsync($"/api/requests/{request.Id}/accept", accept, ApiFactory.Json, _ct);
         var accepted = await response.Content.ReadFromJsonAsync<RequestDto>(ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(RequestStatus.Accepted, accepted!.Status);
-        var statuses = await naledi.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{studioId}/statuses", ApiFactory.Json, _ct);
-        var task = (await naledi.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!
+        var statuses = await chloe.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{studioId}/statuses", ApiFactory.Json, _ct);
+        var task = (await chloe.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!
             .Single(t => t.Id == accepted.TaskId);
         Assert.Equal("Briefed in", statuses!.Single(s => s.Id == task.StatusId).Name);
         Assert.Equal(("Onboarding video storyboard", priya.Id, 16m, _today.AddDays(10)), (task.Title, task.AssigneePersonId, task.EstimateHours, task.DueDate));
         Assert.Equal("Main goal\nFor the demo.\n\nDeliverables\n- Key visual\n- Social tiles x6", task.Description);
-        Assert.DoesNotContain(await GetInboxAsync(naledi), r => r.Id == request.Id);
+        Assert.DoesNotContain(await GetInboxAsync(chloe), r => r.Id == request.Id);
 
         // The requester sees who took it on and the date the team committed to.
         var ayesha = await api.SignInAsAsync("Ayesha Moosa");
@@ -76,12 +76,12 @@ public sealed class RequestsTests(ApiFactory api)
     [Fact]
     public async Task Accept_as_a_new_brief_creates_the_project_with_a_task_per_deliverable()
     {
-        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var chloe = await api.SignInAsAsync("Chloe Adams");
         var request = await SubmitAsync("Ayesha Moosa", "Launch kit");
-        var studioId = await GetTeamIdAsync(naledi, "Studio");
-        var priya = (await naledi.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct))!
+        var studioId = await GetTeamIdAsync(chloe, "Design Studio");
+        var priya = (await chloe.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct))!
             .Single(p => p.Name == "Priya Naidoo");
-        var brief = await naledi.GetFromJsonAsync<NewBriefDto>($"/api/requests/{request.Id}/new-brief", ApiFactory.Json, _ct);
+        var brief = await chloe.GetFromJsonAsync<NewBriefDto>($"/api/requests/{request.Id}/new-brief", ApiFactory.Json, _ct);
 
         // Bambu Lab's last job is BAMBU0057, so the next is 0058, in Bambu Lab's sage (D61); the demo org's financial
         // year starts in October.
@@ -89,16 +89,16 @@ public sealed class RequestsTests(ApiFactory api)
         Assert.Equal((code, "#6aa36f"), (brief!.ProjectName, brief.Colour));
 
         var neither = new AcceptRequestRequest(null, null, priya.Id, 16, _today.AddDays(10));
-        Assert.Equal(HttpStatusCode.BadRequest, (await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/accept", neither, ApiFactory.Json, _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await chloe.PostAsJsonAsync($"/api/requests/{request.Id}/accept", neither, ApiFactory.Json, _ct)).StatusCode);
         var accept = neither with { NewProjectName = $" {code} " };
-        var response = await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/accept", accept, ApiFactory.Json, _ct);
+        var response = await chloe.PostAsJsonAsync($"/api/requests/{request.Id}/accept", accept, ApiFactory.Json, _ct);
         var accepted = await response.Content.ReadFromJsonAsync<RequestDto>(ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var project = (await naledi.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))!
+        var project = (await chloe.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))!
             .Single(p => p.Name == code);
         Assert.Equal((brief.Colour, "Bambu Lab"), (project.Colour, project.Department));
-        var tasks = (await naledi.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!
+        var tasks = (await chloe.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!
             .Where(t => t.ProjectId == project.Id)
             .OrderBy(t => t.SortOrder)
             .ToList();
@@ -127,12 +127,12 @@ public sealed class RequestsTests(ApiFactory api)
     [Fact]
     public async Task Reject_keeps_the_reason_and_a_request_is_triaged_only_once()
     {
-        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var chloe = await api.SignInAsAsync("Chloe Adams");
         var request = await SubmitAsync("Pieter Smit", "Office signage refresh");
 
-        var response = await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/reject", new RejectRequestRequest("  Facilities owns signage.  "), ApiFactory.Json, _ct);
+        var response = await chloe.PostAsJsonAsync($"/api/requests/{request.Id}/reject", new RejectRequestRequest("  Facilities owns signage.  "), ApiFactory.Json, _ct);
         var rejected = await response.Content.ReadFromJsonAsync<RequestDto>(ApiFactory.Json, _ct);
-        var again = await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/reject", new RejectRequestRequest("Twice"), ApiFactory.Json, _ct);
+        var again = await chloe.PostAsJsonAsync($"/api/requests/{request.Id}/reject", new RejectRequestRequest("Twice"), ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal((RequestStatus.Rejected, "Facilities owns signage."), (rejected!.Status, rejected.RejectionReason));
@@ -140,15 +140,15 @@ public sealed class RequestsTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Members_and_brand_managers_cannot_triage_or_see_others_requests()
+    public async Task Designers_and_other_managers_cannot_triage_or_see_others_requests()
     {
         var request = await SubmitAsync("Zanele Mthembu", "Partner one-pager");
-        var jason = await api.SignInAsAsync("Jason van Wyk");
+        var ethan = await api.SignInAsAsync("Ethan Pillay");
         var ayesha = await api.SignInAsAsync("Ayesha Moosa");
-        var studioId = await GetTeamIdAsync(jason, "Studio");
+        var studioId = await GetTeamIdAsync(ethan, "Design Studio");
 
-        var memberInbox = await jason.GetAsync($"/api/teams/{studioId}/requests?status=New", _ct);
-        var memberReject = await jason.PostAsJsonAsync($"/api/requests/{request.Id}/reject", new RejectRequestRequest("No"), ApiFactory.Json, _ct);
+        var memberInbox = await ethan.GetAsync($"/api/teams/{studioId}/requests?status=New", _ct);
+        var memberReject = await ethan.PostAsJsonAsync($"/api/requests/{request.Id}/reject", new RejectRequestRequest("No"), ApiFactory.Json, _ct);
         var otherRequester = await ayesha.GetAsync($"/api/requests/{request.Id}", _ct);
 
         Assert.Equal(HttpStatusCode.Forbidden, memberInbox.StatusCode);
@@ -156,22 +156,19 @@ public sealed class RequestsTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.Forbidden, otherRequester.StatusCode);
     }
 
-    [Fact]
-    public async Task Everyone_sends_briefs_as_themselves()
+    [Theory]
+    [InlineData("Ethan Pillay")]
+    [InlineData("Chloe Adams")]
+    public async Task Only_users_who_brief_work_send_briefs(string name)
     {
-        // A member of the team asked has no "Requested by" either: the signed-in user is always the requester (D58).
-        var ethan = await api.SignInAsAsync("Ethan Pillay");
-        var options = await ethan.GetFromJsonAsync<RequestOptionsDto>("/api/requests/options", ApiFactory.Json, _ct);
+        // The signed-in user is always the requester (D58, D67), so only roles with SubmitBrief send briefs.
+        var client = await api.SignInAsAsync(name);
+        var options = await client.GetFromJsonAsync<RequestOptionsDto>("/api/requests/options", ApiFactory.Json, _ct);
 
-        var response = await ethan.PostAsJsonAsync("/api/requests", await NewRequestAsync(ethan, "Studio's own brief"), ApiFactory.Json, _ct);
-        var created = await response.Content.ReadFromJsonAsync<RequestDto>(ApiFactory.Json, _ct);
+        var response = await client.PostAsJsonAsync("/api/requests", await NewRequestAsync(client, "Studio's own brief"), ApiFactory.Json, _ct);
 
         Assert.Null(options!.MyDepartmentId);
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.Equal("Ethan Pillay", created!.RequesterName);
-        Assert.Contains((await ethan.GetFromJsonAsync<List<RequestDto>>("/api/requests/mine", ApiFactory.Json, _ct))!, r => r.Id == created.Id);
-        var zanele = await api.SignInAsAsync("Zanele Mthembu");
-        Assert.DoesNotContain((await zanele.GetFromJsonAsync<List<RequestDto>>("/api/requests/mine", ApiFactory.Json, _ct))!, r => r.Id == created.Id);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -207,7 +204,7 @@ public sealed class RequestsTests(ApiFactory api)
     private async Task<CreateRequestRequest> NewRequestAsync(HttpClient client, string title)
     {
         var options = await client.GetFromJsonAsync<RequestOptionsDto>("/api/requests/options", ApiFactory.Json, _ct);
-        var studio = options!.Teams.Single(t => t.Name == "Studio").Id;
+        var studio = options!.Teams.Single(t => t.Name == "Design Studio").Id;
         // The first brand the user manages; DJI for everyone else.
         var brand = options.MyDepartmentId ?? options.Departments.Single(d => d.Name == "DJI").Id;
         return new CreateRequestRequest(
@@ -224,7 +221,7 @@ public sealed class RequestsTests(ApiFactory api)
 
     private async Task<List<RequestDto>> GetInboxAsync(HttpClient client) =>
         (await client.GetFromJsonAsync<List<RequestDto>>(
-            $"/api/teams/{await GetTeamIdAsync(client, "Studio")}/requests?status=New", ApiFactory.Json, _ct))!;
+            $"/api/teams/{await GetTeamIdAsync(client, "Design Studio")}/requests?status=New", ApiFactory.Json, _ct))!;
 
     private async Task<Guid> GetTeamIdAsync(HttpClient client, string name)
     {

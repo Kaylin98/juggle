@@ -3,7 +3,7 @@ using Juggle.Api.Data.Entities;
 
 namespace Juggle.Api.Features.Capacity;
 
-/// <param name="TeamId">A team id, or "all" for every person in the organisation (Org Admin only).</param>
+/// <param name="TeamId">A team id, or "all" for every person in the organisation (ViewAllJobs only).</param>
 /// <param name="Start">Any date; the schedule starts on the Monday of its week.</param>
 public sealed record CapacityQuery([Required] string TeamId, [Required] DateOnly? Start, [AllowedValues(1, 2, 4, 8)] int Weeks = 1);
 

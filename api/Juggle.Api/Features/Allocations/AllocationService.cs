@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Juggle.Api.Features.Allocations;
 
 /// <summary>
-/// Books people onto projects. An allocation belongs to its project's team, so only that team's admins
-/// (and Org Admins) change it. Saving never fails on a clash; the response lists the days now over capacity.
+/// Books people onto projects. An allocation belongs to its project's team, so only users who may book work (Allocate)
+/// in that team change it. Saving never fails on a clash; the response lists the days now over capacity.
 /// </summary>
 public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess)
 {
@@ -42,7 +42,7 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
     {
         var allocation = await db.Allocations.Include(a => a.Project).FirstOrDefaultAsync(a => a.Id == id, ct)
             ?? throw new NotFoundException("Booking not found.");
-        await teamAccess.EnsureCanManageAsync(allocation.Project.TeamId, ct);
+        await teamAccess.EnsureAsync(allocation.Project.TeamId, Capability.Allocate, ct);
         return allocation;
     }
 
@@ -60,7 +60,7 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
 
         var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == request.ProjectId, ct)
             ?? throw new BadRequestException("The project does not exist.");
-        await teamAccess.EnsureCanManageAsync(project.TeamId, ct);
+        await teamAccess.EnsureAsync(project.TeamId, Capability.Allocate, ct);
 
         if (!await db.People.AnyAsync(p => p.Id == request.PersonId && p.User.Memberships.Any(m => m.TeamId == project.TeamId), ct))
         {

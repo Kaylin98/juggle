@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Juggle.Api.Features.Dashboard;
 
-/// <summary>The team dashboard (D27), for Team Admins, or for every team (Org Admin only).</summary>
+/// <summary>The team dashboard (D27), or every team's, for users who see all the work (ViewAllJobs).</summary>
 public sealed class DashboardService(
     JuggleDbContext db,
-    CurrentUser currentUser,
+    Permissions permissions,
     TeamAccess teamAccess,
     CapacityService capacity,
     OrgClock clock)
@@ -22,11 +22,11 @@ public sealed class DashboardService(
     {
         if (teamId is { } id)
         {
-            await teamAccess.EnsureCanManageAsync(id, ct);
+            await teamAccess.EnsureAsync(id, Capability.ViewAllJobs, ct);
         }
-        else if (!currentUser.IsOrgAdmin)
+        else
         {
-            throw new ForbiddenException("Only org admins can see every team.");
+            await permissions.EnsureAsync(Capability.ViewAllJobs, ct);
         }
 
         var today = clock.Today;

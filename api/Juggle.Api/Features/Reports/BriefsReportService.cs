@@ -7,17 +7,19 @@ using Microsoft.EntityFrameworkCore;
 namespace Juggle.Api.Features.Reports;
 
 /// <summary>
-/// The briefs report for a team's admins (D56), like the studio's Monday report: the board's cards by status and by
-/// assignee, and the briefs received each month, for every brand or one.
+/// The briefs report (D56), like the studio's Monday report: the board's cards by status and by assignee, and the
+/// briefs received each month, for every brand or one. It covers the whole team, so it needs ViewAllJobs too until
+/// reports are scoped to the viewer (V.6).
 /// </summary>
-public sealed class BriefsReportService(JuggleDbContext db, TeamAccess teamAccess, OrgClock clock)
+public sealed class BriefsReportService(JuggleDbContext db, TeamAccess teamAccess, Permissions permissions, OrgClock clock)
 {
     /// <summary>This month and the eight before it.</summary>
     public const int Months = 9;
 
     public async Task<BriefsReportDto> GetAsync(Guid teamId, Guid? departmentId, CancellationToken ct)
     {
-        await teamAccess.EnsureCanManageAsync(teamId, ct);
+        await teamAccess.EnsureAsync(teamId, Capability.ViewReports, ct);
+        await permissions.EnsureAsync(Capability.ViewAllJobs, ct);
 
         var brands = await db.Departments
             .Where(d => db.Projects.Any(p => p.TeamId == teamId && p.DepartmentId == d.Id)

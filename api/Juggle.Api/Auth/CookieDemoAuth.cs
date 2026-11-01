@@ -16,7 +16,6 @@ public sealed class CookieDemoAuth(IHttpContextAccessor accessor) : IDemoAuth
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Name),
             new(CurrentUser.OrgIdClaim, user.OrgId.ToString()),
-            new(CurrentUser.OrgRoleClaim, user.OrgRole.ToString()),
         ];
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         return Http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));

@@ -5,75 +5,59 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Juggle.Api.Auth;
 
-/// <summary>Server-side team access checks. Org Admins act as Team Admin in every team.</summary>
-public sealed class TeamAccess(JuggleDbContext db, CurrentUser currentUser)
+/// <summary>
+/// Server-side team access checks, by the user's capabilities (D77), never by role name. With ViewAllJobs a user can
+/// open every team; otherwise only the teams they are in.
+/// </summary>
+public sealed class TeamAccess(JuggleDbContext db, CurrentUser currentUser, Permissions permissions)
 {
-    public async Task<TeamRole?> GetRoleAsync(Guid teamId, CancellationToken ct)
-    {
-        if (currentUser.IsOrgAdmin)
-        {
-            return await db.Teams.AnyAsync(t => t.Id == teamId, ct) ? TeamRole.TeamAdmin : null;
-        }
+    /// <summary>The team exists and the user may open it: every team with ViewAllJobs, otherwise their own.</summary>
+    public async Task<bool> CanOpenAsync(Guid teamId, CancellationToken ct) => await permissions.HasAsync(Capability.ViewAllJobs, ct)
+        ? await db.Teams.AnyAsync(t => t.Id == teamId, ct)
+        : await db.TeamMemberships.AnyAsync(m => m.TeamId == teamId && m.UserId == currentUser.UserId, ct);
 
-        return await db.TeamMemberships
-            .Where(m => m.TeamId == teamId && m.UserId == currentUser.UserId)
-            .Select(m => (TeamRole?)m.Role)
-            .FirstOrDefaultAsync(ct);
-    }
-
-    public async Task EnsureCanViewAsync(Guid teamId, CancellationToken ct)
+    public async Task EnsureCanOpenAsync(Guid teamId, CancellationToken ct)
     {
-        if (await GetRoleAsync(teamId, ct) is null)
+        if (!await CanOpenAsync(teamId, ct))
         {
             throw new ForbiddenException("You are not a member of this team.");
         }
     }
 
-    public async Task EnsureCanManageAsync(Guid teamId, CancellationToken ct)
+    /// <summary>The user has the capability and may open the team.</summary>
+    public async Task EnsureAsync(Guid teamId, Capability capability, CancellationToken ct)
     {
-        if (await GetRoleAsync(teamId, ct) != TeamRole.TeamAdmin)
-        {
-            throw new ForbiddenException("Only team admins can do this.");
-        }
+        await permissions.EnsureAsync(capability, ct);
+        await EnsureCanOpenAsync(teamId, ct);
     }
 
     /// <summary>
-    /// The people whose time off the viewer approves, and whose sick leave they may see: everyone for Org Admins,
-    /// otherwise the people in the teams they admin.
+    /// The people whose time off the viewer approves, and whose sick leave they may see: with ApproveTimeOff, everyone
+    /// in the teams they can open; otherwise no one.
     /// </summary>
-    public IQueryable<Person> ManagedPeople() => currentUser.IsOrgAdmin
-        ? db.People
-        : db.People.Where(p => p.User.Memberships.Any(m => db.TeamMemberships.Any(a =>
-            a.TeamId == m.TeamId && a.UserId == currentUser.UserId && a.Role == TeamRole.TeamAdmin)));
-
-    /// <summary>
-    /// The brands whose cards the viewer sees on a team's board, or null for every card (D58). Team Admins and the
-    /// team's people see them all; other Members, the brands' marketing managers, only the brands they manage.
-    /// </summary>
-    public async Task<List<Guid>?> VisibleDepartmentsAsync(Guid teamId, CancellationToken ct)
+    public async Task<IQueryable<Person>> ManagedPeopleAsync(CancellationToken ct)
     {
-        var role = await GetRoleAsync(teamId, ct) ?? throw new ForbiddenException("You are not a member of this team.");
-        if (role == TeamRole.TeamAdmin || await db.People.AnyAsync(p => p.UserId == currentUser.UserId, ct))
+        if (!await permissions.HasAsync(Capability.ApproveTimeOff, ct))
         {
-            return null;
+            return db.People.Where(_ => false);
         }
 
-        return await db.DepartmentManagers.Where(m => m.UserId == currentUser.UserId).Select(m => m.DepartmentId).ToListAsync(ct);
+        return await permissions.HasAsync(Capability.ViewAllJobs, ct)
+            ? db.People
+            : db.People.Where(p => p.User.Memberships.Any(m => db.TeamMemberships.Any(a => a.TeamId == m.TeamId && a.UserId == currentUser.UserId)));
     }
 
-    /// <summary>Team Admins edit any task in their team; Members only the tasks assigned to them.</summary>
+    /// <summary>With Allocate a user edits any task in a team they can open; with WorkOnJobs only the tasks assigned to them.</summary>
     public async Task EnsureCanEditTaskAsync(TaskItem task, CancellationToken ct)
     {
-        var role = await GetRoleAsync(task.TeamId, ct)
-            ?? throw new ForbiddenException("You are not a member of this team.");
-        if (role == TeamRole.TeamAdmin)
+        if (await permissions.HasAsync(Capability.Allocate, ct) && await CanOpenAsync(task.TeamId, ct))
         {
             return;
         }
 
         var isAssignee = task.AssigneePersonId is { } assigneeId
             && await db.People.AnyAsync(p => p.Id == assigneeId && p.UserId == currentUser.UserId, ct);
-        if (!isAssignee)
+        if (!await permissions.HasAsync(Capability.WorkOnJobs, ct) || !isAssignee)
         {
             throw new ForbiddenException("You can only edit tasks assigned to you.");
         }

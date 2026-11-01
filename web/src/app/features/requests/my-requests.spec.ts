@@ -33,7 +33,7 @@ async function render(mine: WorkRequest[]): Promise<HTMLElement> {
     providers: [
       provideRouter([]),
       { provide: RequestsService, useValue: { mine: () => Promise.resolve(mine) } },
-      { provide: AuthService, useValue: { departmentLabel: signal('Brand') } },
+      { provide: AuthService, useValue: { departmentLabel: signal('Brand'), terms: signal({ department: 'Brand', brief: 'Brief', job: 'Job' }) } },
     ],
   });
   const fixture = TestBed.createComponent(MyRequestsPage);

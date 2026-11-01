@@ -1,18 +1,38 @@
 // Types matching the API DTOs.
 
-export type OrgRole = 'OrgAdmin' | 'User';
-export type TeamRole = 'TeamAdmin' | 'Member';
-export type RoleLabel = 'Org Admin' | 'Team Admin' | 'Member';
+/** What a role allows (D77). Pages and actions are shown from these, never from a role's name. */
+export type Capability =
+  | 'SubmitBrief'
+  | 'TriageBriefs'
+  | 'Allocate'
+  | 'ViewSchedule'
+  | 'WorkOnJobs'
+  | 'ApproveDesign'
+  | 'ApproveMarketing'
+  | 'CloseJob'
+  | 'ViewAllJobs'
+  | 'ViewBoard'
+  | 'ViewReports'
+  | 'ApproveTimeOff'
+  | 'ManageUsers';
 
 export interface DemoUser {
   id: string;
   name: string;
   avatarColour: string;
-  role: RoleLabel;
+  /** The name of the user's role in their organisation. */
+  role: string;
   jobTitle: string | null;
   /** The brands the user manages, by name (D58). */
   departments: string[];
   teams: string[];
+}
+
+/** The organisation's words for its concepts, such as "Brand", "Brief" and "Job" (D48, D77). */
+export interface Terms {
+  department: string;
+  brief: string;
+  job: string;
 }
 
 export interface Me {
@@ -20,10 +40,11 @@ export interface Me {
   name: string;
   email: string;
   avatarColour: string;
-  orgRole: OrgRole;
+  /** The name of the user's role in their organisation. */
+  role: string;
+  capabilities: Capability[];
   personId: string | null;
-  /** What the organisation calls departments, such as "Brand" (D48). */
-  departmentLabel: string;
+  terms: Terms;
   /** The brands the user manages, whose cards they approve (D58). */
   managedDepartmentIds: string[];
 }
@@ -32,7 +53,6 @@ export interface Team {
   id: string;
   name: string;
   colour: string;
-  myRole: TeamRole;
 }
 
 export type StatusCategory = 'Todo' | 'InProgress' | 'Review' | 'Done';

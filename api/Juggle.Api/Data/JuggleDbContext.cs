@@ -11,6 +11,7 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
 
     public DbSet<Organisation> Organisations => Set<Organisation>();
     public DbSet<Team> Teams => Set<Team>();
+    public DbSet<Role> Roles => Set<Role>();
     public DbSet<User> Users => Set<User>();
     public DbSet<TeamMembership> TeamMemberships => Set<TeamMembership>();
     public DbSet<Person> People => Set<Person>();
@@ -36,6 +37,15 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
         {
             e.HasQueryFilter(o => o.Id == OrgId);
             e.Property(o => o.DepartmentLabel).HasMaxLength(32);
+            e.Property(o => o.BriefLabel).HasMaxLength(32);
+            e.Property(o => o.JobLabel).HasMaxLength(32);
+            e.Property(o => o.HolidayCountry).HasMaxLength(2);
+        });
+        modelBuilder.Entity<Role>(e =>
+        {
+            e.HasQueryFilter(r => r.OrgId == OrgId);
+            e.Property(r => r.Name).HasMaxLength(64);
+            e.PrimitiveCollection(r => r.Capabilities).ElementType().HasConversion<string>();
         });
         modelBuilder.Entity<Team>().HasQueryFilter(t => t.OrgId == OrgId);
         modelBuilder.Entity<Person>().HasQueryFilter(p => p.OrgId == OrgId);
@@ -53,6 +63,8 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
         {
             e.HasQueryFilter(u => u.OrgId == OrgId);
             e.HasIndex(u => u.Email).IsUnique();
+            // A role in use cannot be deleted.
+            e.HasOne(u => u.Role).WithMany().HasForeignKey(u => u.RoleId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<TeamMembership>(e =>

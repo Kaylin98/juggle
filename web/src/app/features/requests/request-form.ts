@@ -37,7 +37,7 @@ interface RequestForm {
     <!-- The form and its guide, centred together; under 1100px the guide moves below the form. -->
     <div class="px-8 pt-2 pb-8">
       <div class="mx-auto max-w-268">
-        <h1 class="page-title">New request</h1>
+        <h1 class="page-title">New {{ auth.terms().brief.toLowerCase() }}</h1>
         <p class="mt-1 text-sm text-ink-muted">
           Brief a team on new work. They will triage it and let you know.
         </p>

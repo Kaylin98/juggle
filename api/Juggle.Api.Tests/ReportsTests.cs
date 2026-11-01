@@ -18,7 +18,7 @@ public sealed class ReportsTests(ApiFactory api)
     public async Task Status_and_designer_counts_match_the_board()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
-        var studioId = await GetTeamIdAsync(client, "Studio");
+        var studioId = await GetTeamIdAsync(client, "Design Studio");
         var tasks = (await client.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!;
         var people = (await client.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct))!;
 
@@ -45,7 +45,7 @@ public sealed class ReportsTests(ApiFactory api)
     public async Task Briefs_received_cover_nine_months_ending_this_month()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
-        var studioId = await GetTeamIdAsync(client, "Studio");
+        var studioId = await GetTeamIdAsync(client, "Design Studio");
         var today = new OrgClock(TimeProvider.System).Today;
         var thisMonth = new DateOnly(today.Year, today.Month, 1);
 
@@ -59,7 +59,7 @@ public sealed class ReportsTests(ApiFactory api)
     public async Task Brand_filter_applies_to_every_widget_and_keeps_the_brand_list()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
-        var studioId = await GetTeamIdAsync(client, "Studio");
+        var studioId = await GetTeamIdAsync(client, "Design Studio");
         var all = await GetReportAsync(client, studioId);
         var dji = all.Brands.Single(b => b.Name == "DJI");
         var projects = (await client.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))!;
@@ -75,16 +75,16 @@ public sealed class ReportsTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Only_the_teams_admins_see_the_report()
+    public async Task Only_users_who_see_all_the_work_see_the_team_report()
     {
-        var naledi = await api.SignInAsAsync("Naledi Khumalo");
-        var studioId = await GetTeamIdAsync(naledi, "Studio");
-        var lerato = await api.SignInAsAsync("Lerato Mokoena");
         var megan = await api.SignInAsAsync("Megan Botha");
+        var studioId = await GetTeamIdAsync(megan, "Design Studio");
+        var lerato = await api.SignInAsAsync("Lerato Mokoena");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
 
+        Assert.Equal(HttpStatusCode.OK, (await megan.GetAsync($"/api/teams/{studioId}/reports/briefs", _ct)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await lerato.GetAsync($"/api/teams/{studioId}/reports/briefs", _ct)).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await megan.GetAsync($"/api/teams/{studioId}/reports/briefs", _ct)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await megan.GetAsync($"/api/teams/{await GetTeamIdAsync(megan, "Marketing")}/reports/briefs", _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await zanele.GetAsync($"/api/teams/{studioId}/reports/briefs", _ct)).StatusCode);
     }
 
     private async Task<BriefsReportDto> GetReportAsync(HttpClient client, Guid teamId, Guid? departmentId = null) =>

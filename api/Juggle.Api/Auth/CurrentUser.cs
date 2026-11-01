@@ -1,13 +1,11 @@
 using System.Security.Claims;
-using Juggle.Api.Data.Entities;
 
 namespace Juggle.Api.Auth;
 
-/// <summary>The signed-in user, read from the auth cookie's claims.</summary>
+/// <summary>The signed-in user, read from the auth cookie's claims. What they may do is in <see cref="Permissions"/>.</summary>
 public sealed class CurrentUser(IHttpContextAccessor accessor)
 {
     public const string OrgIdClaim = "org_id";
-    public const string OrgRoleClaim = "org_role";
 
     private ClaimsPrincipal? Principal => accessor.HttpContext?.User;
 
@@ -16,8 +14,4 @@ public sealed class CurrentUser(IHttpContextAccessor accessor)
     public Guid UserId => Guid.Parse(Principal!.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     public Guid OrgId => Guid.TryParse(Principal?.FindFirstValue(OrgIdClaim), out var id) ? id : Guid.Empty;
-
-    public OrgRole OrgRole => Enum.Parse<OrgRole>(Principal!.FindFirstValue(OrgRoleClaim)!);
-
-    public bool IsOrgAdmin => IsAuthenticated && OrgRole == OrgRole.OrgAdmin;
 }

@@ -58,8 +58,8 @@
   <app-task-drawer
     [card]="card"
     [people]="data()?.people ?? []"
-    [canReassign]="teamContext.isTeamAdmin()"
-    [canBook]="teamContext.isTeamAdmin()"
+    [canReassign]="auth.can('Allocate')"
+    [canBook]="auth.can('Allocate')"
     (closed)="openTaskId.set(null)" (saved)="onSaved($event)" (booked)="board.reload()" />
 }
 
@@ -75,7 +75,7 @@
     [status]="status"
     [projects]="data()?.projects ?? []"
     [people]="data()?.people ?? []"
-    [ownPersonId]="teamContext.isTeamAdmin() ? null : (auth.me()?.personId ?? null)"
+    [ownPersonId]="auth.can('Allocate') ? null : (auth.me()?.personId ?? null)"
     (closed)="addingTo.set(null)"
     (created)="onCreated($event)"
   />

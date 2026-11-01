@@ -19,7 +19,7 @@ public static class TimeOffLabels
         _ => timeOff.Description!,
     };
 
-    /// <param name="showSickLeave">The viewer is the person or one of their admins (see <c>TeamAccess.ManagedPeople</c>).</param>
+    /// <param name="showSickLeave">The viewer is the person or one of their approvers (see <c>TeamAccess.ManagedPeopleAsync</c>).</param>
     public static string For(TimeOff timeOff, bool showSickLeave) =>
         timeOff.Type == TimeOffType.SickLeave && !showSickLeave ? Unavailable : For(timeOff);
 }

@@ -28,6 +28,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<OrgClock>();
 builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddScoped<Permissions>();
 builder.Services.AddScoped<TeamAccess>();
 builder.Services.AddScoped<IDemoAuth, CookieDemoAuth>();
 builder.Services.AddScoped<DemoSeeder>();

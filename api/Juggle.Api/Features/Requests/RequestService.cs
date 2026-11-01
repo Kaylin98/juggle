@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Juggle.Api.Features.Requests;
 
 /// <summary>
-/// Work intake. Anyone in the organisation can ask a team for work; the team's admins (and Org Admins) triage
+/// Work intake. Users who may brief work (SubmitBrief) ask a team for it; users who triage (TriageBriefs) decide
 /// it: accepting makes a task in the status after Triage (D18), rejecting records a reason (D9).
 /// </summary>
-public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess, OrgClock clock)
+public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess, Permissions permissions, OrgClock clock)
 {
     public async Task<RequestOptionsDto> GetOptionsAsync(CancellationToken ct)
     {
@@ -26,6 +26,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
 
     public async Task<RequestDto> CreateAsync(CreateRequestRequest request, CancellationToken ct)
     {
+        await permissions.EnsureAsync(Capability.SubmitBrief, ct);
         if (!await db.Teams.AnyAsync(t => t.Id == request.TeamId, ct))
         {
             throw new BadRequestException("Choose a team.");
@@ -64,7 +65,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
     }
 
     /// <summary>
-    /// The requester sees the request; the team's admins see every request to the team.
+    /// The requester sees the request; users who triage the team's requests see every request to the team.
     /// </summary>
     public async Task<RequestDto> GetAsync(Guid id, CancellationToken ct)
     {
@@ -72,7 +73,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
             ?? throw new NotFoundException("Request not found.");
         if (request.RequesterUserId != currentUser.UserId)
         {
-            await teamAccess.EnsureCanManageAsync(request.TeamId, ct);
+            await teamAccess.EnsureAsync(request.TeamId, Capability.TriageBriefs, ct);
         }
         return await ToDtoAsync(request, ct);
     }
@@ -90,7 +91,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
     /// <summary>A team's requests, newest first, for its triage inbox.</summary>
     public async Task<IReadOnlyList<RequestDto>> GetTeamRequestsAsync(Guid teamId, RequestStatus? status, CancellationToken ct)
     {
-        await teamAccess.EnsureCanManageAsync(teamId, ct);
+        await teamAccess.EnsureAsync(teamId, Capability.TriageBriefs, ct);
         var requests = await Requests()
             .Where(r => r.TeamId == teamId && (status == null || r.Status == status))
             .OrderByDescending(r => r.CreatedAt)
@@ -206,7 +207,7 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
     {
         var request = await Requests().AsTracking().FirstOrDefaultAsync(r => r.Id == id, ct)
             ?? throw new NotFoundException("Request not found.");
-        await teamAccess.EnsureCanManageAsync(request.TeamId, ct);
+        await teamAccess.EnsureAsync(request.TeamId, Capability.TriageBriefs, ct);
         if (request.Status != RequestStatus.New)
         {
             throw new BadRequestException("This request has already been triaged.");

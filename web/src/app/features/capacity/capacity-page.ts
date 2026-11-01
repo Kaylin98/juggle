@@ -96,8 +96,8 @@ export class CapacityPage {
     this.prefs.saveHiddenPeople(this.auth.me()!.id, hidden);
   }
 
-  /** Team Admins book and change their team's work; Members see the schedule read-only (D24). */
-  protected readonly editable = computed(() => this.teamContext.allTeams() || this.teamContext.isTeamAdmin());
+  /** Users who book work (Allocate) book and change the schedule; everyone else sees it read-only (D24, D77). */
+  protected readonly editable = computed(() => this.auth.can('Allocate'));
 
   /** The viewer's own row, where anyone with a Person record picks days to ask for time off (D47). */
   protected readonly ownPersonId = computed(() => this.auth.me()?.personId ?? null);

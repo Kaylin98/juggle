@@ -1,7 +1,9 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { DemoUser, Me, RoleLabel, Team, TeamRole } from './models';
+import { Capability, DemoUser, Me, Team, Terms } from './models';
+
+const DEFAULT_TERMS: Terms = { department: 'Department', brief: 'Request', job: 'Job' };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -11,22 +13,28 @@ export class AuthService {
   readonly me = signal<Me | null>(null);
   readonly teams = signal<Team[]>([]);
 
-  readonly isOrgAdmin = computed(() => this.me()?.orgRole === 'OrgAdmin');
+  private readonly capabilities = computed(() => new Set(this.me()?.capabilities ?? []));
 
-  /** The organisation's word for a department, such as "Brand" (D48), for every user-facing mention of one. */
-  readonly departmentLabel = computed(() => this.me()?.departmentLabel ?? 'Department');
+  /** The organisation's words for its concepts (D48, D77), for every user-facing mention of one. */
+  readonly terms = computed(() => this.me()?.terms ?? DEFAULT_TERMS);
 
-  /** Team Admins of any team, and Org Admins, approve the time off of the people in their teams (D47). */
-  readonly isApprover = computed(() => this.isOrgAdmin() || this.teams().some((t) => t.myRole === 'TeamAdmin'));
+  /** The organisation's word for a department, such as "Brand" (D48). */
+  readonly departmentLabel = computed(() => this.terms().department);
 
-  /** There is no separate requester role: the brands' marketing managers are Members (D58). */
-  readonly roleLabel = computed<RoleLabel>(() => {
-    if (this.isOrgAdmin()) return 'Org Admin';
-    return this.teams().some((t) => t.myRole === 'TeamAdmin') ? 'Team Admin' : 'Member';
-  });
+  /** The name of the user's role, for display only; what they may do comes from `can` (D77). */
+  readonly roleName = computed(() => this.me()?.role ?? '');
 
   /** The brands the user manages, whose cards awaiting approval they approve or send back (D58). */
   readonly managedDepartmentIds = computed(() => new Set(this.me()?.managedDepartmentIds ?? []));
+
+  /** Whether the user's role allows this (D77). Reads a signal, so templates and computeds follow sign-in changes. */
+  can(capability: Capability): boolean {
+    return this.capabilities().has(capability);
+  }
+
+  inTeam(teamId: string): boolean {
+    return this.teams().some((t) => t.id === teamId);
+  }
 
   demoUsers(): Promise<DemoUser[]> {
     return firstValueFrom(this.http.get<DemoUser[]>('/api/auth/demo-users'));
@@ -51,19 +59,16 @@ export class AuthService {
     this.loading = null;
   }
 
-  roleIn(teamId: string): TeamRole | null {
-    return this.teams().find((t) => t.id === teamId)?.myRole ?? null;
-  }
-
   /**
-   * Admins land on the dashboard, members on My work, and members without a Person (the brands' marketing managers)
-   * on the board (D26, D58). Someone in no team goes to their requests.
+   * Users who see all the work land on the dashboard, people on a schedule on My work, other board users on the
+   * board (D26, D77). Anyone else, such as a marketing manager, goes to their requests.
    */
   landingUrl(): string {
     const team = this.teams()[0];
-    if (!team) return '/requests';
-    if (team.myRole === 'TeamAdmin') return `/t/${team.id}/dashboard`;
-    return this.me()?.personId ? '/my-work' : `/t/${team.id}/board`;
+    if (team && this.can('ViewAllJobs')) return `/t/${team.id}/dashboard`;
+    if (this.me()?.personId) return '/my-work';
+    if (team && this.can('ViewBoard')) return `/t/${team.id}/board`;
+    return '/requests';
   }
 
   private async load(): Promise<boolean> {

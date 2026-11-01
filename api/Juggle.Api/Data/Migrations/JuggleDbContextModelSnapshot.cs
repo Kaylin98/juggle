@@ -124,6 +124,11 @@ namespace Juggle.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("BriefLabel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.Property<string>("DepartmentLabel")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -131,6 +136,16 @@ namespace Juggle.Api.Data.Migrations
 
                     b.Property<int>("FinancialYearStartMonth")
                         .HasColumnType("integer");
+
+                    b.Property<string>("HolidayCountry")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<string>("JobLabel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -141,6 +156,10 @@ namespace Juggle.Api.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("WorkdayHours")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
 
                     b.HasKey("Id");
 
@@ -285,6 +304,34 @@ namespace Juggle.Api.Data.Migrations
                     b.ToTable("Requests");
                 });
 
+            modelBuilder.Entity("Juggle.Api.Data.Entities.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<string[]>("Capabilities")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrgId");
+
+                    b.ToTable("Roles");
+                });
+
             modelBuilder.Entity("Juggle.Api.Data.Entities.TaskItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -388,11 +435,6 @@ namespace Juggle.Api.Data.Migrations
                     b.Property<Guid>("OrgId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
                     b.HasKey("UserId", "TeamId");
 
                     b.HasIndex("OrgId");
@@ -475,10 +517,8 @@ namespace Juggle.Api.Data.Migrations
                     b.Property<Guid>("OrgId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("OrgRole")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -486,6 +526,8 @@ namespace Juggle.Api.Data.Migrations
                         .IsUnique();
 
                     b.HasIndex("OrgId");
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
                 });
@@ -664,6 +706,15 @@ namespace Juggle.Api.Data.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("Juggle.Api.Data.Entities.Role", b =>
+                {
+                    b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Juggle.Api.Data.Entities.TaskItem", b =>
                 {
                     b.HasOne("Juggle.Api.Data.Entities.Person", "Assignee")
@@ -755,6 +806,14 @@ namespace Juggle.Api.Data.Migrations
                         .HasForeignKey("OrgId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.WorkflowStatus", b =>

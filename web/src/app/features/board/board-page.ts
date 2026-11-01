@@ -58,15 +58,15 @@ export class BoardPage {
   });
 
   /**
-   * The column a new task is being added to, or null. Everyone who can see a board is in its team (Org Admins act
-   * as Team Admins); Members add tasks only for themselves, so a brand's marketing manager, who has no Person, cannot.
+   * The column a new task is being added to, or null. Users who book work (Allocate) add tasks for anyone; users who
+   * work on jobs (WorkOnJobs) only for themselves (D24, D77).
    */
   protected readonly addingTo = linkedSignal<string, WorkflowStatus | null>({
     source: this.teamId,
     computation: () => null,
   });
 
-  protected readonly canAdd = computed(() => this.teamContext.isTeamAdmin() || this.auth.me()?.personId != null);
+  protected readonly canAdd = computed(() => this.auth.can('Allocate') || (this.auth.can('WorkOnJobs') && this.auth.me()?.personId != null));
 
   /** The card its brand's manager is sending back for changes, or null (D58). */
   protected readonly changesFor = linkedSignal<string, string | null>({
@@ -244,10 +244,10 @@ export class BoardPage {
     this.toast.show('Task added.');
   }
 
-  /** Team Admins edit every task; Members only their own (D24). The API enforces the same rule. */
+  /** Users who book work edit every task; users who work on jobs only their own (D24, D77). The API enforces the same rule. */
   private canEdit(task: Task): boolean {
     const personId = this.auth.me()?.personId;
-    return this.teamContext.isTeamAdmin() || (personId != null && task.assigneePersonId === personId);
+    return this.auth.can('Allocate') || (this.auth.can('WorkOnJobs') && personId != null && task.assigneePersonId === personId);
   }
 
   private matchesFilters(task: Task): boolean {

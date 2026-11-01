@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Juggle.Api.Features.Dashboard;
 
-/// <param name="TeamId">A team id, or "all" for every team (Org Admin only).</param>
+/// <param name="TeamId">A team id, or "all" for every team (ViewAllJobs only).</param>
 public sealed record DashboardQuery([Required] string TeamId);
 
 /// <param name="OverdueTasks">Per team in view, so "All teams" can link to each team's board.</param>

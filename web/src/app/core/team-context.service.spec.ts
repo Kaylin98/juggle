@@ -4,127 +4,97 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService } from './auth.service';
-import { Me, TeamRole } from './models';
+import { Capability, Me, Team } from './models';
 import { TeamContextService } from './team-context.service';
 
 @Component({ template: '' })
 class BlankPage {}
 
-const ORG_ADMIN: Me = { id: 'u1', name: 'Naledi', email: 'naledi@example.com', avatarColour: '#8a78d6', orgRole: 'OrgAdmin', personId: 'p1', departmentLabel: 'Department', managedDepartmentIds: [] };
+const TEAMS: Team[] = [
+  { id: 'design', name: 'Design', colour: '#8a78d6' },
+  { id: 'marketing', name: 'Marketing', colour: '#3fa7a0' },
+];
+
+const SEES_ALL: Capability[] = ['ViewAllJobs', 'ViewBoard', 'ViewSchedule', 'ViewReports', 'TriageBriefs', 'Allocate'];
+const DESIGNER: Capability[] = ['ViewBoard', 'WorkOnJobs', 'ViewReports'];
+
+function user(capabilities: Capability[]): Me {
+  return {
+    id: 'u1',
+    name: 'Chloe',
+    email: 'chloe@example.com',
+    avatarColour: '#8a78d6',
+    role: 'Any role name',
+    capabilities,
+    personId: null,
+    terms: { department: 'Brand', brief: 'Brief', job: 'Job' },
+    managedDepartmentIds: [],
+  };
+}
+
+function setUp(capabilities: Capability[]): { router: Router; teamContext: TeamContextService } {
+  TestBed.configureTestingModule({
+    providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
+  });
+  TestBed.inject(AuthService).me.set(user(capabilities));
+  TestBed.inject(AuthService).teams.set(TEAMS);
+  return { router: TestBed.inject(Router), teamContext: TestBed.inject(TeamContextService) };
+}
 
 describe('TeamContextService.switchTo', () => {
-  let router: Router;
-  let teamContext: TeamContextService;
-
-  function setUp(designRole: TeamRole, marketingRole: TeamRole): void {
-    TestBed.configureTestingModule({
-      providers: [
-        provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]),
-        provideHttpClient(),
-        provideHttpClientTesting(),
-      ],
-    });
-    TestBed.inject(AuthService).teams.set([
-      { id: 'design', name: 'Design', colour: '#7c3aed', myRole: designRole },
-      { id: 'marketing', name: 'Marketing', colour: '#0284c7', myRole: marketingRole },
-    ]);
-    router = TestBed.inject(Router);
-    teamContext = TestBed.inject(TeamContextService);
-  }
-
-  async function switchTeam(fromUrl: string, toTeamId: string): Promise<string> {
+  async function switchTeam(capabilities: Capability[], fromUrl: string): Promise<string> {
+    const { router, teamContext } = setUp(capabilities);
     await router.navigateByUrl(fromUrl);
-    teamContext.switchTo(toTeamId);
-    await vi.waitFor(() => expect(router.url).toContain(`/t/${toTeamId}/`));
+    teamContext.switchTo('marketing');
+    await vi.waitFor(() => expect(router.url).toContain('/t/marketing/'));
     return router.url;
   }
 
-  it('keeps a member on the capacity page and only changes the team', async () => {
-    setUp('Member', 'Member');
-    expect(await switchTeam('/t/design/capacity', 'marketing')).toBe('/t/marketing/capacity');
+  it('keeps a page the role can open and only changes the team', async () => {
+    expect(await switchTeam(DESIGNER, '/t/design/board')).toBe('/t/marketing/board');
+    TestBed.resetTestingModule();
+    expect(await switchTeam(SEES_ALL, '/t/design/dashboard')).toBe('/t/marketing/dashboard');
   });
 
-  it('keeps a member on the board', async () => {
-    setUp('Member', 'Member');
-    expect(await switchTeam('/t/design/board', 'marketing')).toBe('/t/marketing/board');
+  it("falls back to the board when the role cannot open the page, whatever the role's name", async () => {
+    expect(await switchTeam(DESIGNER, '/t/design/triage')).toBe('/t/marketing/board');
   });
 
-  it('keeps a team admin on an admin-only page', async () => {
-    setUp('TeamAdmin', 'TeamAdmin');
-    expect(await switchTeam('/t/design/dashboard', 'marketing')).toBe('/t/marketing/dashboard');
-  });
-
-  it('falls back to the board when the user cannot open the page in the new team', async () => {
-    setUp('TeamAdmin', 'Member');
-    expect(await switchTeam('/t/design/triage', 'marketing')).toBe('/t/marketing/board');
+  it('falls back to the dashboard for users who see all the work', async () => {
+    const { router, teamContext } = setUp(SEES_ALL);
+    await router.navigateByUrl('/t/design/unknown');
+    teamContext.switchTo('marketing');
+    await vi.waitFor(() => expect(router.url).toBe('/t/marketing/dashboard'));
   });
 });
 
 describe('TeamContextService.showAllTeams', () => {
-  it('shows every team on the schedule until a team is picked', async () => {
-    TestBed.configureTestingModule({
-      providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
-    });
-    TestBed.inject(AuthService).me.set(ORG_ADMIN);
-    TestBed.inject(AuthService).teams.set([
-      { id: 'design', name: 'Design', colour: '#7c3aed', myRole: 'TeamAdmin' },
-      { id: 'marketing', name: 'Marketing', colour: '#0284c7', myRole: 'TeamAdmin' },
-    ]);
-    const router = TestBed.inject(Router);
-    const teamContext = TestBed.inject(TeamContextService);
-    await router.navigateByUrl('/t/design/capacity');
+  it('shows every team on the schedule and the dashboard until a team is picked', async () => {
+    for (const page of ['capacity', 'dashboard']) {
+      TestBed.resetTestingModule();
+      const { router, teamContext } = setUp(SEES_ALL);
+      await router.navigateByUrl(`/t/design/${page}`);
 
-    teamContext.showAllTeams();
-    await vi.waitFor(() => expect(router.url).toBe('/t/design/capacity?teams=all'));
-    expect(teamContext.allTeams()).toBe(true);
+      teamContext.showAllTeams();
+      await vi.waitFor(() => expect(router.url).toBe(`/t/design/${page}?teams=all`));
+      expect(teamContext.allTeams()).toBe(true);
 
-    teamContext.switchTo('marketing');
-    await vi.waitFor(() => expect(router.url).toBe('/t/marketing/capacity'));
-    expect(teamContext.allTeams()).toBe(false);
-  });
-});
-
-describe('TeamContextService on the dashboard', () => {
-  it('shows every team on the dashboard, and keeps the dashboard when a team is picked', async () => {
-    TestBed.configureTestingModule({
-      providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
-    });
-    TestBed.inject(AuthService).me.set(ORG_ADMIN);
-    TestBed.inject(AuthService).teams.set([
-      { id: 'design', name: 'Design', colour: '#7c3aed', myRole: 'TeamAdmin' },
-      { id: 'marketing', name: 'Marketing', colour: '#0284c7', myRole: 'TeamAdmin' },
-    ]);
-    const router = TestBed.inject(Router);
-    const teamContext = TestBed.inject(TeamContextService);
-    await router.navigateByUrl('/t/design/dashboard');
-
-    teamContext.showAllTeams();
-    await vi.waitFor(() => expect(router.url).toBe('/t/design/dashboard?teams=all'));
-    expect(teamContext.allTeams()).toBe(true);
-
-    teamContext.switchTo('marketing');
-    await vi.waitFor(() => expect(router.url).toBe('/t/marketing/dashboard'));
-    expect(teamContext.allTeams()).toBe(false);
+      teamContext.switchTo('marketing');
+      await vi.waitFor(() => expect(router.url).toBe(`/t/marketing/${page}`));
+      expect(teamContext.allTeams()).toBe(false);
+    }
   });
 
   it('does not offer every team on the board', async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()] });
-    await TestBed.inject(Router).navigateByUrl('/t/design/board?teams=all');
-    const teamContext = TestBed.inject(TeamContextService);
+    const { router, teamContext } = setUp(SEES_ALL);
+    await router.navigateByUrl('/t/design/board?teams=all');
     expect(teamContext.canShowAllTeams()).toBe(false);
     expect(teamContext.allTeams()).toBe(false);
   });
-});
 
-describe('TeamContextService for a Member', () => {
-  it('ignores ?teams=all, since only Org Admins can see every team', async () => {
-    TestBed.configureTestingModule({
-      providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
-    });
-    TestBed.inject(AuthService).me.set({ ...ORG_ADMIN, orgRole: 'User' });
-    TestBed.inject(AuthService).teams.set([{ id: 'design', name: 'Design', colour: '#7c3aed', myRole: 'Member' }]);
-    await TestBed.inject(Router).navigateByUrl('/t/design/capacity?teams=all');
-
-    expect(TestBed.inject(TeamContextService).allTeams()).toBe(false);
+  it('ignores ?teams=all without ViewAllJobs', async () => {
+    const { router, teamContext } = setUp([...DESIGNER, 'ViewSchedule']);
+    await router.navigateByUrl('/t/design/capacity?teams=all');
+    expect(teamContext.allTeams()).toBe(false);
   });
 });

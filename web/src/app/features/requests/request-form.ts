@@ -25,10 +25,10 @@ interface RequestForm {
 
 /**
  * Sends a brief in the studio's template (D50), for users who brief work (SubmitBrief). It becomes a job with its job
- * ID at once (D63) and opens on its page. The form keeps to about 720px so it reads like a form, with a guide beside it, centred
- * together (an exception to the full-width page rule, asked for in the Phase 5 review). The team starts as the last
- * team the user viewed and the department as the first brand they manage. The signed-in user is always the requester
- * (D58).
+ * ID at once (D63) and opens on its page. The form keeps to about 720px so it reads like a form, with a guide beside
+ * it, centred together (an exception to the full-width page rule, asked for in the Phase 5 review). The team starts as
+ * the last team the user viewed, or the only team there is (marketing managers are in no team, D73), and the department
+ * as the first brand they manage. The signed-in user is always the requester (D58).
  */
 @Component({
   selector: 'app-request-form',
@@ -183,12 +183,18 @@ export class RequestFormPage {
     { value: '', label: `Choose a ${this.departmentLabel()}` },
     ...(this.options.value()?.departments ?? []).map((d) => ({ value: d.id, label: d.name })),
   ]);
+  /** The only team to brief, when there is just one. */
+  private onlyTeamId(): string {
+    const teams = this.options.value()?.teams ?? [];
+    return teams.length === 1 ? teams[0].id : '';
+  }
+
   protected readonly priorityOptions = computed<SelectOption[]>(() =>
     (this.options.value()?.priorities ?? []).map((p) => ({ value: p, label: p })),
   );
 
   protected readonly model = linkedSignal<RequestForm>(() => ({
-    teamId: this.teamContext.teamId() ?? '',
+    teamId: this.teamContext.teamId() ?? this.onlyTeamId(),
     departmentId: this.options.value()?.myDepartmentId ?? '',
     title: '',
     mainGoal: '',

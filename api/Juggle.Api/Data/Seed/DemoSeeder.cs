@@ -133,6 +133,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             DepartmentLabel = "Brand",
             BriefLabel = "Brief",
             JobLabel = "Job",
+            JobCodeFormat = "{prefix}{number:4}_Q{quarter}'{yy}_{name}",
             FinancialYearStartMonth = FinancialYearStartMonth,
             WorkdayHours = 8,
             HolidayCountry = "ZA",
@@ -320,8 +321,9 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         AddManager("Werner Steyn", "ARP", "CVM");
         AddManager("Fatima Patel", "Mobile in Africa", "CCB");
 
-        // Jobs: each brief sent by the brand's marketing manager, with its job ID from the brand's number and the
-        // quarter of its required date (D63). Every job starts with its Submit event.
+        // Jobs: each brief sent by the brand's marketing manager, with its job ID in the org's format from the brand's
+        // number and the quarter of its required date (D63). Every job starts with its Submit event. Each brand's counter
+        // ends at its highest number, so DJI's next job is 0143 (D71); brands with no jobs here start from 1.
 
         // A date `days` from today, moved off weekends (back for past dates, forward for future ones).
         DateOnly Due(int days)
@@ -352,7 +354,8 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 TeamId = studio.Id,
                 DepartmentId = brands[brand].Id,
                 RequesterUserId = managerOf[brand].Id,
-                Code = JobCodes.Name(brands[brand].JobCodePrefix!, number, required, FinancialYearStartMonth, title),
+                Number = number,
+                Code = JobCodes.Format(org.JobCodeFormat, brands[brand].JobCodePrefix!, number, required, FinancialYearStartMonth, title),
                 Title = title,
                 MainGoal = mainGoal,
                 Deliverables = deliverables,
@@ -365,6 +368,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             };
             db.Jobs.Add(job);
             AddEvent(job, managerOf[brand], job.CreatedAt, WorkflowAction.Submit, null, newRequest);
+            brands[brand].LastJobNumber = Math.Max(brands[brand].LastJobNumber, number);
             return job;
         }
 

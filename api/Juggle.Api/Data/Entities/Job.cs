@@ -14,6 +14,9 @@ public class Job
     /// <summary>Who sent the brief: always the user who was signed in (D67).</summary>
     public Guid RequesterUserId { get; set; }
 
+    /// <summary>The brand's number for the job, from its counter when the brief is sent (D71).</summary>
+    public int Number { get; set; }
+
     /// <summary>The job ID, set when the brief is sent and never changed (D63), such as DJI0143_Q1'27_Summer Holiday Sale.</summary>
     public required string Code { get; set; }
 

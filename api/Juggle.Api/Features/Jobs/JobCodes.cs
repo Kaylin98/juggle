@@ -4,16 +4,25 @@ using System.Text.RegularExpressions;
 namespace Juggle.Api.Features.Jobs;
 
 /// <summary>
-/// Job IDs: <c>&lt;PREFIX&gt;&lt;NNNN&gt;_Q&lt;n&gt;'&lt;YY&gt;_&lt;job name&gt;</c>, such as
-/// <c>DJI0141_Q1'27_Black Friday</c> (D52). The prefix is the department's, the number counts up per prefix, and the
-/// quarter is the financial quarter of the deadline.
+/// Job IDs in the organisation's format (D63, D77), such as The Core Group's
+/// <c>{prefix}{number:4}_Q{quarter}'{yy}_{name}</c>, which gives <c>DJI0143_Q1'27_Summer Holiday Sale</c>. The tokens are
+/// the brand's prefix, its job number (zero-padded to the width given), the financial quarter and two-digit financial
+/// year of the required date, and the job name. Anything else in the format is kept as it is.
 /// </summary>
-public static class JobCodes
+public static partial class JobCodes
 {
-    public static string Name(string prefix, int number, DateOnly deadline, int financialYearStartMonth, string jobName)
+    public static string Format(string format, string prefix, int number, DateOnly date, int financialYearStartMonth, string jobName)
     {
-        var (quarter, year) = FinancialQuarter(deadline, financialYearStartMonth);
-        return $"{prefix}{number:D4}_Q{quarter}'{year % 100:D2}_{jobName}";
+        var (quarter, year) = FinancialQuarter(date, financialYearStartMonth);
+        return Token().Replace(format, match => match.Groups["token"].Value switch
+        {
+            "prefix" => prefix,
+            "number" => number.ToString(CultureInfo.InvariantCulture)
+                .PadLeft(match.Groups["width"].Success ? int.Parse(match.Groups["width"].Value, CultureInfo.InvariantCulture) : 0, '0'),
+            "quarter" => quarter.ToString(CultureInfo.InvariantCulture),
+            "yy" => (year % 100).ToString("D2", CultureInfo.InvariantCulture),
+            _ => jobName,
+        });
     }
 
     /// <summary>
@@ -27,15 +36,6 @@ public static class JobCodes
         return ((monthsIn / 3) + 1, year);
     }
 
-    /// <summary>One more than the highest number after the prefix in the given job IDs; 1 when there is none.</summary>
-    public static int NextNumber(string prefix, IEnumerable<string> codes)
-    {
-        var pattern = new Regex($"^{Regex.Escape(prefix)}(\\d{{4}})", RegexOptions.IgnoreCase);
-        return codes
-            .Select(name => pattern.Match(name))
-            .Where(match => match.Success)
-            .Select(match => int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture))
-            .DefaultIfEmpty(0)
-            .Max() + 1;
-    }
+    [GeneratedRegex(@"\{(?<token>prefix|number|quarter|yy|name)(?::(?<width>\d+))?\}")]
+    private static partial Regex Token();
 }

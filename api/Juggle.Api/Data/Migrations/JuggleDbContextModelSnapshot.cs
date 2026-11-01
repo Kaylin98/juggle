@@ -102,6 +102,9 @@ namespace Juggle.Api.Data.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
+                    b.Property<int>("LastJobNumber")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -178,6 +181,9 @@ namespace Juggle.Api.Data.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("OrgId")
                         .HasColumnType("uuid");
 
@@ -210,8 +216,6 @@ namespace Juggle.Api.Data.Migrations
 
                     b.HasIndex("ClosedByUserId");
 
-                    b.HasIndex("DepartmentId");
-
                     b.HasIndex("DesignerPersonId");
 
                     b.HasIndex("RequesterUserId");
@@ -219,6 +223,9 @@ namespace Juggle.Api.Data.Migrations
                     b.HasIndex("StatusId");
 
                     b.HasIndex("TeamId");
+
+                    b.HasIndex("DepartmentId", "Number")
+                        .IsUnique();
 
                     b.HasIndex("OrgId", "Code")
                         .IsUnique();
@@ -336,6 +343,11 @@ namespace Juggle.Api.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(2)
                         .HasColumnType("character varying(2)");
+
+                    b.Property<string>("JobCodeFormat")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("JobLabel")
                         .IsRequired()

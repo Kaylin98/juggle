@@ -16,6 +16,12 @@ public class Organisation
     /// <summary>What users see for a piece of work, such as "Job".</summary>
     public string JobLabel { get; set; } = "Job";
 
+    /// <summary>
+    /// How job IDs are written (D63, D77), from the tokens {prefix}, {number} (or {number:4} for four digits), {quarter},
+    /// {yy} and {name}; see <see cref="Features.Jobs.JobCodes"/>.
+    /// </summary>
+    public string JobCodeFormat { get; set; } = "{prefix}{number:4}_{name}";
+
     /// <summary>The month (1 to 12) the financial year starts in, for job code quarters (D52).</summary>
     public int FinancialYearStartMonth { get; set; } = 3;
 

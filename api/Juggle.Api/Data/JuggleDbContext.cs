@@ -40,6 +40,7 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.Property(o => o.DepartmentLabel).HasMaxLength(32);
             e.Property(o => o.BriefLabel).HasMaxLength(32);
             e.Property(o => o.JobLabel).HasMaxLength(32);
+            e.Property(o => o.JobCodeFormat).HasMaxLength(100);
             e.Property(o => o.HolidayCountry).HasMaxLength(2);
         });
         modelBuilder.Entity<Role>(e =>
@@ -108,6 +109,8 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.HasQueryFilter(j => j.OrgId == OrgId);
             e.Property(j => j.Code).HasMaxLength(300);
             e.HasIndex(j => new { j.OrgId, j.Code }).IsUnique();
+            // Guards the counter: a brand never gives the same number twice (D71).
+            e.HasIndex(j => new { j.DepartmentId, j.Number }).IsUnique();
             e.Property(j => j.MainGoal).HasMaxLength(2000);
             e.Property(j => j.Deliverables).HasMaxLength(4000);
             e.HasOne(j => j.Requester).WithMany().HasForeignKey(j => j.RequesterUserId).OnDelete(DeleteBehavior.Restrict);

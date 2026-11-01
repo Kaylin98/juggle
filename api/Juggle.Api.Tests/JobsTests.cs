@@ -54,6 +54,32 @@ public sealed class JobsTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task Each_brief_takes_the_brands_next_number()
+    {
+        // Thabo's first brand is CGA, which has no seeded jobs and no other test sends briefs for.
+        var first = await SubmitAsync("Thabo Mahlangu", "Store opening");
+        var second = await SubmitAsync("Thabo Mahlangu", "Store opening");
+
+        var quarter = JobCodes.FinancialQuarter(_today.AddDays(14), 10);
+        Assert.Equal($"CGA0001_Q{quarter.Quarter}'{quarter.Year % 100}_Store opening", first.Code);
+        Assert.Equal($"CGA0002_Q{quarter.Quarter}'{quarter.Year % 100}_Store opening", second.Code);
+    }
+
+    [Fact]
+    public async Task Briefs_sent_at_once_never_share_a_number()
+    {
+        // Werner's first brand is ARP, which has no seeded jobs and no other test sends briefs for.
+        var werner = await api.SignInAsAsync("Werner Steyn");
+        var brief = await NewBriefAsync(werner, "Parallel brief");
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => werner.PostAsJsonAsync("/api/jobs", brief, ApiFactory.Json, _ct)));
+        var codes = await Task.WhenAll(responses.Select(async r => (await r.Content.ReadFromJsonAsync<JobDto>(ApiFactory.Json, _ct))!.Code));
+
+        Assert.All(responses, r => Assert.Equal(HttpStatusCode.Created, r.StatusCode));
+        Assert.Equal(["ARP0001", "ARP0002", "ARP0003", "ARP0004", "ARP0005", "ARP0006"], codes.Select(c => c[..7]).Order());
+    }
+
+    [Fact]
     public async Task Traffic_manager_sees_the_incoming_queue_newest_first()
     {
         var submitted = await SubmitAsync("Ayesha Moosa", "Onboarding video storyboard");

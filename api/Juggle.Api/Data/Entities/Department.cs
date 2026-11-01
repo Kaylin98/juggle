@@ -11,4 +11,10 @@ public class Department
 
     /// <summary>Starts the job IDs of this department's jobs, such as "DJI" (D52).</summary>
     public string? JobCodePrefix { get; set; }
+
+    /// <summary>
+    /// The number of the brand's latest job (D71): it counts up when a brief is sent and never resets, so it starts from
+    /// the brand's history.
+    /// </summary>
+    public int LastJobNumber { get; set; }
 }

@@ -24,17 +24,27 @@ public sealed class JobCodesTests
     }
 
     [Fact]
-    public void Name_joins_prefix_number_quarter_and_job_name()
+    public void Format_fills_in_the_core_groups_tokens()
     {
-        Assert.Equal("DJI0143_Q1'27_Festive gifting", JobCodes.Name("DJI", 143, new DateOnly(2026, 11, 13), 10, "Festive gifting"));
+        Assert.Equal(
+            "DJI0143_Q1'27_Festive gifting",
+            JobCodes.Format("{prefix}{number:4}_Q{quarter}'{yy}_{name}", "DJI", 143, new DateOnly(2026, 11, 13), 10, "Festive gifting"));
+    }
+
+    [Theory]
+    [InlineData("{prefix}-{number}", "DJI-7")]
+    [InlineData("{number:3}/{yy} {name}", "007/27 Gift guide")]
+    [InlineData("{name} ({prefix}{number:2})", "Gift guide (DJI07)")]
+    // An unknown token is kept as written, and a number wider than its width is not cut.
+    [InlineData("{prefix}{number:1}_{year}", "DJI7_{year}")]
+    public void Format_follows_the_organisations_format(string format, string expected)
+    {
+        Assert.Equal(expected, JobCodes.Format(format, "DJI", 7, new DateOnly(2026, 11, 13), 10, "Gift guide"));
     }
 
     [Fact]
-    public void Next_number_follows_the_highest_for_the_prefix()
+    public void A_name_that_looks_like_a_token_is_kept()
     {
-        string[] names = ["DJI0141_Q1'27_Black Friday", "DJI0142_Q1'27_Amazon Brand Store", "dji0009_Q4'26_Old", "Ad hoc", "GOPRO0300_Q1'27_Bundles"];
-
-        Assert.Equal(143, JobCodes.NextNumber("DJI", names));
-        Assert.Equal(1, JobCodes.NextNumber("PURE", names));
+        Assert.Equal("DJI0001_{number}", JobCodes.Format("{prefix}{number:4}_{name}", "DJI", 1, new DateOnly(2026, 11, 13), 10, "{number}"));
     }
 }

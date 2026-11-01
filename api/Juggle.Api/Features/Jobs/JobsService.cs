@@ -33,8 +33,9 @@ public sealed class JobsService(
     }
 
     /// <summary>
-    /// Sends a brief: the job gets its job ID at once (D63), from the brand's next number and the quarter of the
-    /// required date (today without one), and starts where the organisation's Submit step leads.
+    /// Sends a brief: the job gets its job ID at once (D63), in the organisation's format, from the brand's next number
+    /// and the quarter of the required date (today without one), and starts where the organisation's Submit step leads.
+    /// The ID never changes afterwards (D71).
     /// </summary>
     public async Task<JobDto> SubmitAsync(CreateJobRequest request, CancellationToken ct)
     {
@@ -55,8 +56,9 @@ public sealed class JobsService(
             throw new BadRequestException("The deadline can't be in the past.");
         }
 
-        var prefix = department.JobCodePrefix ?? "";
-        var codes = await db.Jobs.Where(j => j.DepartmentId == department.Id).Select(j => j.Code).ToListAsync(ct);
+        // The number is taken in the same transaction as the job, so a failed save does not use one up.
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var number = await NextNumberAsync(department.Id, ct);
         var title = request.Title.Trim();
         var job = new Job
         {
@@ -64,7 +66,10 @@ public sealed class JobsService(
             TeamId = request.TeamId,
             DepartmentId = department.Id,
             RequesterUserId = currentUser.UserId,
-            Code = JobCodes.Name(prefix, JobCodes.NextNumber(prefix, codes), request.RequiredDate ?? clock.Today, organisation.FinancialYearStartMonth, title),
+            Number = number,
+            Code = JobCodes.Format(
+                organisation.JobCodeFormat, department.JobCodePrefix ?? "", number, request.RequiredDate ?? clock.Today,
+                organisation.FinancialYearStartMonth, title),
             Title = title,
             MainGoal = string.IsNullOrWhiteSpace(request.MainGoal) ? null : request.MainGoal.Trim(),
             Deliverables = string.IsNullOrWhiteSpace(request.Deliverables) ? null : request.Deliverables.Trim(),
@@ -84,8 +89,23 @@ public sealed class JobsService(
             ToStatusId = job.StatusId,
         });
         await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
         return await GetAsync(job.Id, ct);
     }
+
+    /// <summary>
+    /// Counts the brand's number up by one in a single statement (D71), which locks its row until the transaction ends,
+    /// so two briefs sent at once never get the same number. Raw SQL skips the query filters, so it checks the org too.
+    /// </summary>
+    private async Task<int> NextNumberAsync(Guid departmentId, CancellationToken ct) =>
+        (await db.Database
+            .SqlQuery<int>($"""
+                UPDATE "Departments" SET "LastJobNumber" = "LastJobNumber" + 1
+                WHERE "Id" = {departmentId} AND "OrgId" = {currentUser.OrgId}
+                RETURNING "LastJobNumber" AS "Value"
+                """)
+            .ToListAsync(ct))
+        .Single();
 
     public async Task<JobDto> GetAsync(Guid id, CancellationToken ct)
     {

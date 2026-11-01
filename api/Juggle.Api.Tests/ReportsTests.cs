@@ -29,8 +29,9 @@ public sealed class ReportsTests(ApiFactory api)
         Assert.Equal(["Incoming", "In Design", "In Review", "With Marketing", "Done"], report.ByColumn.Select(c => c.Name));
         Assert.Equal([false, false, false, false, true], report.ByColumn.Select(c => c.Done));
         Assert.All(report.ByColumn, c => Assert.Equal(jobs.Count(j => j.ColumnId == c.ColumnId), c.Count));
-        // Most jobs are closed jobs from earlier months.
-        Assert.True(report.ByColumn[^1].Count > jobs.Count / 2);
+        // The Done column counts the closed jobs; the cancelled ones are left out.
+        Assert.Equal(jobs.Count(j => j.StatusKind == JobStatusKind.Done), report.ByColumn[^1].Count);
+        Assert.True(report.ByColumn[^1].Count > 40);
 
         // Everyone in the team, the most open work first: Lerato is the overloaded designer.
         Assert.Equal(people.Select(p => p.Id).Order(), report.ByDesigner.Where(d => d.PersonId != null).Select(d => d.PersonId!.Value).Order());

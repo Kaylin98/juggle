@@ -14,7 +14,7 @@ const options: JobOptions = {
   myDepartmentId: 'dji',
 };
 
-async function render() {
+async function render(teamId: string | null = 'studio') {
   const sent: CreateJob[] = [];
   TestBed.configureTestingModule({
     imports: [RequestFormPage],
@@ -37,7 +37,7 @@ async function render() {
           terms: signal({ department: 'Brand', brief: 'Brief', job: 'Job' }),
         },
       },
-      { provide: TeamContextService, useValue: { teamId: signal('studio') } },
+      { provide: TeamContextService, useValue: { teamId: signal(teamId) } },
     ],
   });
   vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
@@ -92,6 +92,14 @@ describe('RequestFormPage', () => {
         priority: 'Medium',
       },
     ]);
+  });
+
+  it('starts on the only team for a user who is in no team, such as a marketing manager (D73)', async () => {
+    const { fixture, element, sent } = await render(null);
+    type(element, '#request-title', 'Festive gifting');
+    await submit(fixture);
+
+    expect(sent.map((s) => s.teamId)).toEqual(['studio']);
   });
 
   it('keeps each deliverable under 200 characters', async () => {

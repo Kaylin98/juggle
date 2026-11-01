@@ -10,8 +10,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | --- | --- |
 | Current phase | J - Roles and jobs |
 | Phase status | In progress |
-| Last completed task | J.2 Jobs replace requests, projects and tasks |
-| Next task | J.3 Job ID from the org's format and a per-brand counter |
+| Last completed task | J.3 Job ID from the org's format and a per-brand counter |
+| Next task | J.4 Brief form sections A to F and the job page |
 | Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; list them in the Phase J review summary for the client |
 | Last updated | 2026-11-01 |
 
@@ -877,7 +877,7 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 
 - [x] J.1 Roles as org data (D70, D77): the `Capability` enum in code; `Role` per org with its capabilities, and `User.RoleId`, replacing `OrgRole` and `TeamMembership.Role`; access checked by capability on the server (`Permissions`); org settings for terms, default working hours and holiday country, sent with `/api/auth/me`; login grouped by the org's roles; nav and landing from capabilities; seed of The Core Group's five roles and 18 users in one studio (D73); migration `Roles`; tests, including that no code checks a role name
 - [x] J.2 Jobs replace requests, projects and tasks (D68, D69, D72, D77): `Job`, `JobEvent`, `Allocation.JobId`; `BoardColumn`, `JobStatus` and `WorkflowTransition` as org data, with the `WorkflowAction` and `ApprovalStage` enums in code; `JobWorkflow` reading the org's workflow (Submit gives the first status); board columns and status chips from the data, with brand colours, the booked chip and filters, no drag between columns; job visibility by capability; seed of The Core Group's statuses, columns and workflow, and of its jobs, including the closed history; dashboard and briefs report moved onto jobs; migration `Jobs`; tests
-- [ ] J.3 Job ID from the org's format (`Organisation.JobCodeFormat`) and the per-brand `Department.LastJobNumber` at submission, code fixed (D71, D77); migration `JobNumbers`; tests for the counter, the format and the code
+- [x] J.3 Job ID from the org's format (`Organisation.JobCodeFormat`) and the per-brand `Department.LastJobNumber` at submission, code fixed (D71, D77); migration `JobNumbers`; tests for the counter, the format and the code
 - [ ] J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; the job page for the Marketing Manager; migration `BriefSections`; tests
 
 **Acceptance criteria**
@@ -886,7 +886,7 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - [ ] Roles, statuses, columns, the workflow, terms and the job ID format come from The Core Group's seeded configuration; no code checks a role or status name (D77)
 - [ ] The board shows Incoming, In Design, In Review, With Marketing and Done, each card with its detailed status, job ID, brand colour and designer
 - [ ] Marketing Managers have no board or schedule; designers see only their own jobs
-- [ ] A submitted brief gets the next number for its brand (DJI0143 in the seed) and its code never changes
+- [x] A submitted brief gets the next number for its brand (DJI0143 in the seed) and its code never changes
 - [ ] The brief form has every field of section 3.1, with several deliverables and links
 
 **Notes and deviations**
@@ -904,6 +904,10 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - J.2 seed: 33 open jobs, in every open status except Marketing Changes Required (no step leads there, open question 3), one closed this week, and from the eight months before 45 closed jobs and 2 cancelled (the two earlier rejected briefs, now BAMBU0047 and ULTRA0016, which fill the gaps in those brands' numbers). Each job has its Submit event; closed jobs their Close event, cancelled ones their Cancel event with the reason. The steps between, and approval records, are seeded with the actions in Phase W. A booked job's planned start and expected completion are its first and last booked days. The load story is unchanged: the bookings moved from projects to the designer's job for the same brand
 - J.2: the `Jobs` migration drops requests, projects, tasks and workflow statuses and links bookings to jobs, so a database with data needs `--reset-demo`
 - J.2 checked in Chromium at 1440 against the API on 5268 with freshly reset data: the board shows Incoming 6, In Design 22, In Review 2, With Marketing 3 and Done 48 (collapsed), each card with its job ID in the brand colour, the status chip in its hue, "Starts" on the 8 scheduled cards, the booking chip and the designer; Priya's board has only her 6 jobs and My work groups them In Design 4 and With Marketing 2; Zanele's My requests lists her 28 jobs with their status and a board URL sends her back; the dashboard shows 4 overdue, 4 awaiting approval, 5 incoming and Lerato over; the report shows 58% done of 79. No console errors. Tests: 69 API (new: `JobsTests`, `WorkflowConfigTests`; the request and task tests replaced), 126 web
+- J.3: `Organisation.JobCodeFormat` holds the format with the tokens {prefix}, {number} or {number:4}, {quarter}, {yy} and {name}; The Core Group's is `{prefix}{number:4}_Q{quarter}'{yy}_{name}`. Submitting counts the brand's `LastJobNumber` up in one `UPDATE ... RETURNING` inside the job's transaction, so a failed save uses no number and briefs sent at once queue on the brand's row; a unique index on brand and number guards it. `Job.Number` keeps the number. The seed sets each brand's counter to its highest seeded number (DJI 142); brands without seeded jobs start at 1 (open question 10 asks for the real numbers). `JobCodes.NextNumber` (reading project names) is gone
+- J.3: the `JobNumbers` migration adds a unique index on brand and number, which existing jobs (all number 0) would break, so a database with data needs `--reset-demo`
+- J.3: found while checking: since J.1 marketing managers are in no team (D73), so the brief form started with no team and refused to send. It now starts on the only team when the user has no current team
+- J.3 checked in Chromium at 1440 against the API on 5268 with freshly reset data: Zanele sends a brief with no required date and gets `DJI0143_Q1'27_Summer Holiday Sale` at once (toast, her job page, My requests), and it tops Chloe's queue with the same ID. No console errors. Tests: 76 API (new: the format, the next number per brand, six briefs sent at once get 1 to 6, a new format applies to new jobs only; `WorkflowConfigTests` renamed `OrganisationConfigTests`), 127 web
 
 **Review gate**
 
@@ -1081,3 +1085,4 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - 2026-11-01: Phase R approved (D74 to D76 added); D77 recorded (Juggle configurable per organisation). J.1 built: roles as org data with capabilities, access by capability, organisation terms and settings, login by role, nav and landing from capabilities, seed of The Core Group's five roles and 18 users in one studio. Build with no warnings, lint, 82 API tests and 135 web tests pass; checked in Edge at 1440. Demo data reset.
 - 2026-11-01: D77 recorded fully in `docs/plan.md` and `docs/gap-analysis.md`. J.2 pre-work: `Features/Workflow/JobWorkflow.cs`, `WorkflowController.cs` and `WorkflowDtos.cs` scaffolded (untracked). Session ended at the CLI limit before `Auth/JobAccess.cs` was written. Docs updated.
 - 2026-11-01: The previous session left more of J.2 uncommitted than the log said: besides the workflow files, the `Job` and workflow entities, `Features/Jobs` and the removal of requests, projects and tasks were in the working tree. J.2 finished: jobs on the board in the org's columns, job visibility by capability, the incoming queue, My work and My requests on jobs, the dashboard and report on jobs, the seed of the workflow and jobs, migration `Jobs`. Build with no warnings, lint, 69 API tests and 126 web tests pass; checked in Chromium at 1440. Demo data reset.
+- 2026-11-01: J.3 built: job IDs from the org's format and an atomic per-brand counter at submission, never changed; migration `JobNumbers`; the brief form starts on the only team for marketing managers. Build with no warnings, lint, 76 API tests and 127 web tests pass; DJI0143 checked in Chromium at 1440.

@@ -1,6 +1,9 @@
 import { Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { FormField, disabled, form, max, maxLength, min, required, submit } from '@angular/forms/signals';
+import { RouterLink } from '@angular/router';
 import { Person, Task, UpdateTask } from '../../core/models';
+import { TeamContextService } from '../../core/team-context.service';
+import { startOfWeek } from '../../shared/dates';
 import { Drawer } from '../../shared/drawer';
 import { Select, SelectOption } from '../../shared/select';
 import { ToastService } from '../../shared/toast.service';
@@ -44,18 +47,19 @@ function toUpdate(value: TaskForm): UpdateTask {
 
 @Component({
   selector: 'app-task-drawer',
-  imports: [BookOnSchedule, Drawer, FormField, Select, Tooltip],
+  imports: [BookOnSchedule, Drawer, FormField, RouterLink, Select, Tooltip],
   templateUrl: './task-drawer.html',
 })
 export class TaskDrawer {
   private readonly boardService = inject(BoardService);
   private readonly toast = inject(ToastService);
+  protected readonly teamContext = inject(TeamContextService);
 
   readonly card = input.required<BoardCard>();
   readonly people = input.required<Person[]>();
   /** Only Team Admins change the assignee (D36); planned to become a per-team setting after the MVP. */
   readonly canReassign = input.required<boolean>();
-  /** Team Admins book the assignee on the schedule from here (D28). */
+  /** Team Admins book the assignee on the schedule from here, or view the task's bookings there (D28, D59). */
   readonly canBook = input.required<boolean>();
   readonly closed = output<void>();
   readonly saved = output<Task>();
@@ -71,6 +75,15 @@ export class TaskDrawer {
 
   /** The saved assignee, who a booking is for. */
   protected readonly assignee = computed(() => this.people().find((p) => p.id === this.card().task.assigneePersonId) ?? null);
+
+  /** The week of the first booking, where "View on schedule" opens the schedule (as the card's chip does). */
+  protected readonly bookedWeek = computed(() => startOfWeek(this.card().task.bookings[0].startDate));
+
+  /** Another booking is offered until the bookings cover the estimate; always when there is no estimate (D59). */
+  protected readonly canAddBooking = computed(() => {
+    const { estimateHours, bookedHours } = this.card().task;
+    return this.assignee() !== null && (estimateHours === null || bookedHours < estimateHours);
+  });
 
   /** The booking form is open. Closes when another task opens. */
   protected readonly booking = linkedSignal({ source: () => this.card().task.id, computation: () => false });

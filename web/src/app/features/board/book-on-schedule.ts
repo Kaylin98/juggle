@@ -18,10 +18,11 @@ const DEFAULT_HOURS_PER_DAY = 4;
 
 /**
  * Defaults (D28): start on the next working day; spread the estimate at about half a day a day, since people
- * juggle several projects; hours/day is the estimate over the days, to the nearest half hour.
+ * juggle several projects; hours/day is the estimate over the days, to the nearest half hour. Another booking
+ * spreads what is left of the estimate after the task's bookings (D59).
  */
-function defaults(task: Task): BookingForm {
-  const estimate = task.estimateHours ?? 0;
+export function defaults(task: Task): BookingForm {
+  const estimate = Math.max(0, (task.estimateHours ?? 0) - task.bookedHours);
   const days = Math.max(1, Math.ceil(estimate / DEFAULT_HOURS_PER_DAY));
   const hoursPerDay = estimate > 0 ? Math.max(0.5, Math.round((estimate / days) * 2) / 2) : DEFAULT_HOURS_PER_DAY;
   return { startDate: nextWeekday(today()), days, hoursPerDay };

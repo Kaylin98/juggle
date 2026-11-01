@@ -22,10 +22,26 @@
       </div>
     }
 
-    @if (canBook() && assignee(); as assignee) {
-      @if (booking()) {
+    <!--
+      Unbooked: "Book on schedule". Booked: "View on schedule", and "Add booking" until the estimate is booked (D59).
+      Members see a task's bookings through the card's chip.
+    -->
+    @if (canBook()) {
+      @if (booking() && assignee(); as assignee) {
         <app-book-on-schedule [task]="card().task" [assignee]="assignee" (closed)="booking.set(false)" (booked)="booked.emit()" />
-      } @else {
+      } @else if (card().task.bookings.length > 0) {
+        <div class="flex items-center gap-4">
+          <a
+            class="btn-secondary inline-flex flex-1 items-center justify-center"
+            [routerLink]="['/t', teamContext.teamId(), 'capacity']"
+            [queryParams]="{ week: bookedWeek() }"
+            >View on schedule</a
+          >
+          @if (canAddBooking()) {
+            <button type="button" class="btn-quiet" (click)="booking.set(true)">Add booking</button>
+          }
+        </div>
+      } @else if (assignee()) {
         <button type="button" class="btn-secondary w-full" (click)="booking.set(true)">Book on schedule</button>
       }
     }

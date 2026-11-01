@@ -1,4 +1,4 @@
-using Juggle.Api.Features.Requests;
+using Juggle.Api.Features.Jobs;
 
 namespace Juggle.Api.Tests;
 

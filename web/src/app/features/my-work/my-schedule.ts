@@ -90,10 +90,10 @@ export function scheduleWeeks(days: DayLoad[], bookings: Allocation[], locale: s
                 @for (booking of day.bookings; track booking.id) {
                   <div
                     class="hue-booking hue-edge flex items-baseline gap-1 rounded-bar border-l-3 px-2 py-1 text-xs"
-                    [style.--hue]="booking.projectColour"
-                    [attr.aria-label]="booking.projectName + ', ' + hours(booking.hoursPerDay) + 'h'"
+                    [style.--hue]="booking.colour"
+                    [attr.aria-label]="booking.jobCode + ', ' + hours(booking.hoursPerDay) + 'h'"
                   >
-                    <span class="min-w-0 flex-1 truncate">{{ booking.projectName }}</span>
+                    <span class="min-w-0 flex-1 truncate">{{ booking.jobCode }}</span>
                     <span class="shrink-0 font-semibold">{{ hours(booking.hoursPerDay) }}h</span>
                   </div>
                 } @empty {

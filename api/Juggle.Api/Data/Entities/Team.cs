@@ -8,5 +8,4 @@ public class Team
     public required string Colour { get; set; }
 
     public List<TeamMembership> Memberships { get; set; } = [];
-    public List<WorkflowStatus> Statuses { get; set; } = [];
 }

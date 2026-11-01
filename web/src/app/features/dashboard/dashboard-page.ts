@@ -1,5 +1,6 @@
 import { Component, LOCALE_ID, computed, inject, input, linkedSignal, resource } from '@angular/core';
 import { Params } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 import { Dashboard, TeamCount } from '../../core/models';
 import { ALL_TEAMS, TeamContextService } from '../../core/team-context.service';
 import { addDays, formatDateRange, startOfWeek, today } from '../../shared/dates';
@@ -9,9 +10,9 @@ import { CardLink, SummaryCard } from './summary-card';
 import { UtilisationPanel } from './utilisation-panel';
 
 /**
- * The team dashboard (Team Admins and Org Admins): summary cards (overdue, awaiting review, triage, over capacity)
- * that open the filtered board, triage or schedule, utilisation per person, and open work by department. "All teams"
- * shows every team (Org Admin).
+ * The team dashboard (ViewAllJobs): summary cards (overdue, awaiting approval, incoming, over capacity)
+ * that open the filtered board, triage or schedule, utilisation per person, and open jobs by brand. "All teams"
+ * shows every team.
  */
 @Component({
   selector: 'app-dashboard-page',
@@ -28,25 +29,25 @@ import { UtilisationPanel } from './utilisation-panel';
       } @else if (data(); as data) {
         <div class="mt-6 grid grid-cols-2 gap-6 xl:grid-cols-4">
           <app-summary-card
-            label="Overdue tasks"
+            [label]="'Overdue ' + jobs()"
             tone="over"
-            [count]="total(data.overdueTasks)"
-            detail="Due before today and not done"
+            [count]="total(data.overdueJobs)"
+            detail="Required before today and still open"
             [links]="overdueLinks()"
           />
           <app-summary-card
-            label="Awaiting review"
+            label="Awaiting approval"
             tone="warn"
-            [count]="total(data.awaitingReview)"
-            detail="Waiting on feedback or approval"
-            [links]="reviewLinks()"
+            [count]="total(data.awaitingApproval)"
+            detail="Waiting for design, marketing or business approval"
+            [links]="approvalLinks()"
           />
           <app-summary-card
-            label="Requests in triage"
+            label="Incoming"
             tone="accent"
-            [count]="total(data.triageRequests)"
-            detail="New requests waiting for a decision"
-            [links]="triageLinks()"
+            [count]="total(data.incoming)"
+            [detail]="briefs() + ' waiting to be reviewed or scheduled'"
+            [links]="incomingLinks()"
           />
           <app-summary-card
             label="Over capacity this week"
@@ -75,6 +76,7 @@ export class DashboardPage {
   private readonly dashboardService = inject(DashboardService);
   private readonly locale = inject(LOCALE_ID);
   protected readonly teamContext = inject(TeamContextService);
+  private readonly auth = inject(AuthService);
 
   /** From the `/t/:teamId/dashboard` route. */
   readonly teamId = input.required<string>();
@@ -110,16 +112,23 @@ export class DashboardPage {
     },
   ]);
 
+  /** The org's words, such as "jobs" and "Briefs" (D77). */
+  protected readonly jobs = computed(() => `${this.auth.terms().job.toLowerCase()}s`);
+  protected readonly briefs = computed(() => `${this.auth.terms().brief}s`);
+
   protected readonly overdueLinks = computed(() =>
-    teamLinks(this.data()?.overdueTasks ?? [], this.teamContext.allTeams(), 'board', 'Show on the board', { due: 'overdue' }),
+    teamLinks(this.data()?.overdueJobs ?? [], this.teamContext.allTeams(), 'board', 'Show on the board', { due: 'overdue' }),
   );
 
-  protected readonly reviewLinks = computed(() =>
-    teamLinks(this.data()?.awaitingReview ?? [], this.teamContext.allTeams(), 'board', 'Show on the board'),
+  protected readonly approvalLinks = computed(() =>
+    teamLinks(this.data()?.awaitingApproval ?? [], this.teamContext.allTeams(), 'board', 'Show on the board'),
   );
 
-  protected readonly triageLinks = computed(() =>
-    teamLinks(this.data()?.triageRequests ?? [], this.teamContext.allTeams(), 'triage', 'Open triage'),
+  /** Only users who triage open the queue; the others see it on the board. */
+  protected readonly incomingLinks = computed(() =>
+    this.auth.can('TriageBriefs')
+      ? teamLinks(this.data()?.incoming ?? [], this.teamContext.allTeams(), 'triage', 'Open triage')
+      : teamLinks(this.data()?.incoming ?? [], this.teamContext.allTeams(), 'board', 'Show on the board'),
   );
 
   protected total(counts: TeamCount[]): number {

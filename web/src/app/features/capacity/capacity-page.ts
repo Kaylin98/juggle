@@ -87,7 +87,7 @@ export class CapacityPage {
   protected readonly brands = computed(() =>
     legendBrands(
       (this.shown()?.allocations ?? []).filter((a) => !a.otherTeam),
-      (a) => ({ name: a.projectDepartment, colour: a.projectColour }),
+      (a) => ({ name: a.department, colour: a.colour }),
     ),
   );
 
@@ -102,12 +102,12 @@ export class CapacityPage {
   /** The viewer's own row, where anyone with a Person record picks days to ask for time off (D47). */
   protected readonly ownPersonId = computed(() => this.auth.me()?.personId ?? null);
 
-  protected readonly projects = resource({
+  protected readonly jobs = resource({
     params: () => {
       if (!this.editable()) return undefined;
       return this.teamContext.allTeams() ? this.auth.teams().map((t) => t.id) : [this.teamId()];
     },
-    loader: ({ params }) => this.capacityService.projects(params),
+    loader: ({ params }) => this.capacityService.openJobs(params),
   });
 
   /** The booking popover, when open. Closes when the team or view changes. */
@@ -154,7 +154,7 @@ export class CapacityPage {
   /** The popover stays open while the clash dialog asks, so Cancel goes back to it. */
   protected async onPopoverSaved(details: BookingDetails): Promise<void> {
     const { allocation, personId, startDate, endDate, origin } = this.popover()!;
-    const request = { personId, startDate, endDate, taskId: allocation?.taskId ?? null, ...details };
+    const request = { personId, startDate, endDate, ...details };
     const book = async () => {
       this.popover.set(null);
       await this.save(allocation?.id ?? null, request);
@@ -258,6 +258,6 @@ interface Clash {
 }
 
 function toSave(allocation: Allocation): SaveAllocation {
-  const { personId, projectId, taskId, startDate, endDate, hoursPerDay, notes } = allocation;
-  return { personId, projectId, taskId, startDate, endDate, hoursPerDay, notes };
+  const { personId, jobId, startDate, endDate, hoursPerDay, notes } = allocation;
+  return { personId, jobId, startDate, endDate, hoursPerDay, notes };
 }

@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { DesignerCount, StatusCount } from '../../core/models';
+import { DesignerCount, ColumnCount } from '../../core/models';
 import { Tooltip } from '../../shared/tooltip';
 import { StatusLegend } from './status-legend';
 
@@ -11,7 +11,7 @@ export function tickStep(largest: number): number {
 }
 
 /**
- * "Capacity by designer": a column of cards per person, stacked by status in board order from the baseline, so the
+ * "Capacity by designer": a column of jobs per person, stacked by board column in order from the baseline, so the
  * open work sits at the bottom and lines up across people. Each segment's tooltip gives its count.
  */
 @Component({
@@ -20,9 +20,9 @@ export function tickStep(largest: number): number {
   host: { class: 'panel block p-6' },
   template: `
     <h2 class="font-display text-lg font-semibold">{{ teamName() }} capacity by designer</h2>
-    <p class="mt-1 text-sm text-ink-muted">Cards per person by status, the most open work first</p>
+    <p class="mt-1 text-sm text-ink-muted">Jobs per person by board column, the most open work first</p>
 
-    @if (columns().length === 0) {
+    @if (bars().length === 0) {
       <p class="empty-state mt-6">No one in this team yet.</p>
     } @else {
       <div class="mt-8 flex gap-2">
@@ -36,21 +36,21 @@ export function tickStep(largest: number): number {
             @for (tick of ticks(); track tick) {
               <div class="absolute inset-x-0 border-t border-line" [style.bottom.%]="(tick / top()) * 100"></div>
             }
-            @for (column of columns(); track column.key) {
+            @for (bar of bars(); track bar.key) {
               <div
                 class="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end rounded-control focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
                 tabindex="0"
-                [attr.aria-label]="column.label"
+                [attr.aria-label]="bar.label"
               >
-                <span class="mb-1 text-xs font-semibold tabular-nums">{{ column.total }}</span>
+                <span class="mb-1 text-xs font-semibold tabular-nums">{{ bar.total }}</span>
                 <div
                   class="flex w-6 flex-col-reverse gap-0.5 overflow-hidden rounded-t-bar"
-                  [style.height.%]="(column.total / top()) * 100"
+                  [style.height.%]="(bar.total / top()) * 100"
                 >
-                  @for (segment of column.segments; track segment.statusId) {
+                  @for (segment of bar.segments; track segment.columnId) {
                     <div
                       class="min-h-0.5 basis-0"
-                      [class]="colours().get(segment.statusId)"
+                      [class]="colours().get(segment.columnId)"
                       [style.flex-grow]="segment.count"
                       [appTooltip]="segment.label"
                     ></div>
@@ -60,29 +60,29 @@ export function tickStep(largest: number): number {
             }
           </div>
           <div class="mt-2 flex" aria-hidden="true">
-            @for (column of columns(); track column.key) {
-              <span class="min-w-0 flex-1 truncate px-0.5 text-center text-xs text-ink-muted" [appTooltip]="column.name">
-                {{ column.shortName }}
+            @for (bar of bars(); track bar.key) {
+              <span class="min-w-0 flex-1 truncate px-0.5 text-center text-xs text-ink-muted" [appTooltip]="bar.name">
+                {{ bar.shortName }}
               </span>
             }
           </div>
         </div>
       </div>
-      <app-status-legend class="mt-6" [statuses]="statuses()" [colours]="colours()" />
+      <app-status-legend class="mt-6" [columns]="columns()" [colours]="colours()" />
     }
   `,
 })
 export class DesignerChart {
   readonly designers = input.required<DesignerCount[]>();
-  readonly statuses = input.required<StatusCount[]>();
+  readonly columns = input.required<ColumnCount[]>();
   readonly colours = input.required<Map<string, string>>();
   readonly teamName = input.required<string>();
 
-  protected readonly columns = computed(() =>
+  protected readonly bars = computed(() =>
     this.designers().map((designer) => {
-      const name = designer.name ?? 'Unassigned';
-      const segments = this.statuses()
-        .map((status) => ({ statusId: status.statusId, count: designer.counts[status.statusId] ?? 0, name: status.name }))
+      const name = designer.name ?? 'No designer';
+      const segments = this.columns()
+        .map((column) => ({ columnId: column.columnId, count: designer.counts[column.columnId] ?? 0, name: column.name }))
         .filter((segment) => segment.count > 0)
         .map((segment) => ({ ...segment, label: `${name} · ${segment.name}: ${segment.count}` }));
       const total = segments.reduce((sum, s) => sum + s.count, 0);
@@ -92,16 +92,16 @@ export class DesignerChart {
         shortName: designer.name?.split(' ')[0] ?? name,
         total,
         segments,
-        label: `${name}: ${total} ${total === 1 ? 'card' : 'cards'}${segments.map((s) => `, ${s.name} ${s.count}`).join('')}`,
+        label: `${name}: ${total} ${total === 1 ? 'job' : 'jobs'}${segments.map((s) => `, ${s.name} ${s.count}`).join('')}`,
       };
     }),
   );
 
-  private readonly step = computed(() => tickStep(Math.max(0, ...this.columns().map((c) => c.total))));
+  private readonly step = computed(() => tickStep(Math.max(0, ...this.bars().map((b) => b.total))));
 
   /** The axis top: the largest column, rounded up to a whole step. */
   protected readonly top = computed(() => {
-    const largest = Math.max(1, ...this.columns().map((c) => c.total));
+    const largest = Math.max(1, ...this.bars().map((b) => b.total));
     return Math.ceil(largest / this.step()) * this.step();
   });
 

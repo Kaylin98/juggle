@@ -7,7 +7,7 @@ import { formatHours } from '../../shared/load-colour';
 export type BarGrip = 'body' | 'start' | 'end';
 
 /**
- * One booking: hours/day, then project and department, on a soft tint of the project colour. Another team's work
+ * One booking: hours/day, then the job ID and brand, on a soft tint of the brand colour. Another team's work
  * is greyed. An editable bar can be dragged (the grid handles the pointer), resized by the grips at the booking's
  * start and end, and opened with Enter. While held it lifts above the other bookings.
  */
@@ -24,7 +24,7 @@ export type BarGrip = 'body' | 'start' | 'end';
     '[class.border-line-strong]': 'allocation().otherTeam',
     '[class.text-ink-muted]': 'allocation().otherTeam',
     '[class]': 'pointerClass()',
-    '[style.--hue]': 'allocation().projectColour',
+    '[style.--hue]': 'allocation().colour',
     '[attr.title]': 'title()',
     '[attr.data-allocation-id]': 'editable() ? allocation().id : null',
     '[attr.data-booking]': 'allocation().id',
@@ -33,7 +33,7 @@ export type BarGrip = 'body' | 'start' | 'end';
   },
   template: `
     <span class="truncate text-xs font-semibold">{{ hours() }}h/day</span>
-    <span class="truncate text-[11px]">{{ allocation().projectName }} &middot; {{ allocation().projectDepartment }}</span>
+    <span class="truncate text-[11px]">{{ allocation().jobCode }} &middot; {{ allocation().department }}</span>
     @if (editable()) {
       @if (first()) {
         <span class="absolute inset-y-0 left-0 flex w-2.5 cursor-ew-resize items-center justify-center" data-edge="start">
@@ -72,12 +72,12 @@ export class AllocationBar {
 
   protected readonly hours = computed(() => formatHours(this.allocation().hoursPerDay));
 
-  /** For example "Q1 Campaign · Marketing (Design team): 4h/day, 12 Oct to 20 Nov". */
+  /** For example "DJI0141_Q1'27_Black Friday · DJI (Design Studio team): 4h/day, 12 Oct to 20 Nov". */
   protected readonly title = computed(() => {
     const a = this.allocation();
     const from = formatDate(a.startDate, 'd MMM', this.locale);
     const to = formatDate(a.endDate, 'd MMM', this.locale);
-    return `${a.projectName} · ${a.projectDepartment} (${a.teamName} team): ${this.hours()}h/day, ${from} to ${to}`;
+    return `${a.jobCode} · ${a.department} (${a.teamName} team): ${this.hours()}h/day, ${from} to ${to}`;
   });
 
   /** A resize grip shows on hover, and in the accent while its end is dragged; hidden while the bar is moved. */

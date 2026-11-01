@@ -2,7 +2,7 @@ import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { formatDate } from '@angular/common';
 import { Component, LOCALE_ID, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { FormField, form, max, maxLength, min, required, submit } from '@angular/forms/signals';
-import { Allocation, Project } from '../../core/models';
+import { Allocation, Job } from '../../core/models';
 import { segmentClass } from '../../shared/segment';
 import { Select, SelectOption } from '../../shared/select';
 import { Tooltip } from '../../shared/tooltip';
@@ -18,13 +18,13 @@ export interface BookingDraft {
 }
 
 export interface BookingDetails {
-  projectId: string;
+  jobId: string;
   hoursPerDay: number;
   notes: string | null;
 }
 
 interface BookingForm {
-  projectId: string;
+  jobId: string;
   hoursPerDay: number | null;
   notes: string;
 }
@@ -34,7 +34,7 @@ type Tab = 'booking' | 'timeOff';
 const DEFAULT_HOURS_PER_DAY = 4;
 
 /**
- * Days picked on the grid open this. The Booking tab takes project and hours/day for a new booking (Team Admins);
+ * Days picked on the grid open this. The Booking tab takes the job and hours/day for a new booking (Allocate);
  * the Time off tab asks for time off on the viewer's own row (D47). An existing booking shows hours/day and notes,
  * and can be deleted (D29).
  */
@@ -94,10 +94,10 @@ const DEFAULT_HOURS_PER_DAY = 4;
         <form novalidate (submit)="save($event)">
           <div class="mt-6 space-y-4">
             <div>
-              <label class="form-label" for="booking-project">Project</label>
-              <app-select triggerId="booking-project" [options]="projectOptions()" [formField]="bookingForm.projectId" />
-              @if (bookingForm.projectId().touched() && bookingForm.projectId().invalid()) {
-                <p class="field-error">{{ bookingForm.projectId().errors()[0].message }}</p>
+              <label class="form-label" for="booking-job">{{ jobLabel() }}</label>
+              <app-select triggerId="booking-job" [options]="jobOptions()" [formField]="bookingForm.jobId" />
+              @if (bookingForm.jobId().touched() && bookingForm.jobId().invalid()) {
+                <p class="field-error">{{ bookingForm.jobId().errors()[0].message }}</p>
               }
             </div>
             <div>
@@ -132,7 +132,10 @@ export class AllocationPopover {
   private readonly locale = inject(LOCALE_ID);
 
   readonly draft = input.required<BookingDraft>();
-  readonly projects = input.required<Project[]>();
+  /** The open jobs that can be booked. */
+  readonly jobs = input.required<Job[]>();
+  /** The org's word for a job, such as "Job" (D77). */
+  readonly jobLabel = input('Job');
   /** Team Admins book work (D24); everyone else can only ask for time off on their own row. */
   readonly canBook = input(true);
   /** The viewer's own person, whose row's days can be asked for as time off. */
@@ -159,22 +162,31 @@ export class AllocationPopover {
     return startDate === endDate ? date(startDate) : `${date(startDate)} – ${date(endDate)}`;
   });
 
-  protected readonly projectOptions = computed<SelectOption[]>(() => [
-    { value: '', label: 'Choose a project' },
-    ...this.projects().map((p) => ({ value: p.id, label: p.name, colour: p.colour })),
-  ]);
+  /** An existing booking's job stays in the list after the job closes, so the booking still shows what it is for. */
+  protected readonly jobOptions = computed<SelectOption[]>(() => {
+    const allocation = this.draft().allocation;
+    const closed =
+      allocation && !this.jobs().some((j) => j.id === allocation.jobId)
+        ? [{ value: allocation.jobId, label: allocation.jobCode, colour: allocation.colour }]
+        : [];
+    return [
+      { value: '', label: `Choose a ${this.jobLabel().toLowerCase()}` },
+      ...closed,
+      ...this.jobs().map((j) => ({ value: j.id, label: j.code, colour: j.colour })),
+    ];
+  });
 
   protected readonly model = linkedSignal<BookingForm>(() => {
     const allocation = this.draft().allocation;
     return {
-      projectId: allocation?.projectId ?? '',
+      jobId: allocation?.jobId ?? '',
       hoursPerDay: allocation?.hoursPerDay ?? DEFAULT_HOURS_PER_DAY,
       notes: allocation?.notes ?? '',
     };
   });
 
   protected readonly bookingForm = form(this.model, (booking) => {
-    required(booking.projectId, { message: 'Choose a project.' });
+    required(booking.jobId, { message: () => `Choose a ${this.jobLabel().toLowerCase()}.` });
     required(booking.hoursPerDay, { message: 'Enter the hours per day.' });
     min(booking.hoursPerDay, 0.5, { message: 'Book at least half an hour a day.' });
     max(booking.hoursPerDay, 24, { message: 'A day has 24 hours.' });
@@ -188,8 +200,8 @@ export class AllocationPopover {
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
     await submit(this.bookingForm, async () => {
-      const { projectId, hoursPerDay, notes } = this.model();
-      this.saved.emit({ projectId, hoursPerDay: hoursPerDay!, notes: notes.trim() || null });
+      const { jobId, hoursPerDay, notes } = this.model();
+      this.saved.emit({ jobId, hoursPerDay: hoursPerDay!, notes: notes.trim() || null });
       return undefined;
     });
   }

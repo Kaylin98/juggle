@@ -8,7 +8,7 @@ async function render(canBook: boolean, ownPersonId: string) {
   TestBed.configureTestingModule({ providers: [{ provide: TimeOffService, useValue: {} }] });
   const fixture = TestBed.createComponent(AllocationPopover);
   fixture.componentRef.setInput('draft', DRAFT);
-  fixture.componentRef.setInput('projects', []);
+  fixture.componentRef.setInput('jobs', []);
   fixture.componentRef.setInput('canBook', canBook);
   fixture.componentRef.setInput('ownPersonId', ownPersonId);
   await fixture.whenStable();

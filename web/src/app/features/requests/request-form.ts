@@ -2,15 +2,15 @@ import { Component, computed, inject, linkedSignal, resource } from '@angular/co
 import { FormField, form, maxLength, required, submit, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { JobsService } from '../../core/jobs.service';
 import { Priority } from '../../core/models';
-import { RequestsService } from '../../core/requests.service';
 import { TeamContextService } from '../../core/team-context.service';
 import { today } from '../../shared/dates';
 import { Select, SelectOption } from '../../shared/select';
 import { ToastService } from '../../shared/toast.service';
 import { RequestGuide } from './request-guide';
 
-/** The longest deliverable, so each can become a task title (D51). */
+/** The longest deliverable. */
 const DELIVERABLE_MAX = 200;
 
 interface RequestForm {
@@ -19,13 +19,13 @@ interface RequestForm {
   title: string;
   mainGoal: string;
   deliverables: string;
-  requestedDueDate: string;
+  requiredDate: string;
   priority: Priority;
 }
 
 /**
- * Asks a team for work with a brief in the studio's template (D50). Anyone can submit; on submit it opens the
- * request, with its status. The form keeps to about 720px so it reads like a form, with a guide beside it, centred
+ * Sends a brief in the studio's template (D50), for users who brief work (SubmitBrief). It becomes a job with its job
+ * ID at once (D63) and opens on its page. The form keeps to about 720px so it reads like a form, with a guide beside it, centred
  * together (an exception to the full-width page rule, asked for in the Phase 5 review). The team starts as the last
  * team the user viewed and the department as the first brand they manage. The signed-in user is always the requester
  * (D58).
@@ -39,7 +39,7 @@ interface RequestForm {
       <div class="mx-auto max-w-268">
         <h1 class="page-title">New {{ auth.terms().brief.toLowerCase() }}</h1>
         <p class="mt-1 text-sm text-ink-muted">
-          Brief a team on new work. They will triage it and let you know.
+          Brief the studio on new work. It gets its {{ auth.terms().job.toLowerCase() }} ID as soon as you send it.
         </p>
 
         <div class="mt-6 grid items-start gap-8 min-[1100px]:grid-cols-[minmax(0,1fr)_20rem]">
@@ -124,14 +124,14 @@ interface RequestForm {
                       class="form-input"
                       type="date"
                       [min]="today"
-                      [formField]="requestForm.requestedDueDate"
+                      [formField]="requestForm.requiredDate"
                     />
                     @if (
-                      requestForm.requestedDueDate().touched() &&
-                      requestForm.requestedDueDate().invalid()
+                      requestForm.requiredDate().touched() &&
+                      requestForm.requiredDate().invalid()
                     ) {
                       <p class="field-error">
-                        {{ requestForm.requestedDueDate().errors()[0].message }}
+                        {{ requestForm.requiredDate().errors()[0].message }}
                       </p>
                     }
                   </div>
@@ -149,7 +149,7 @@ interface RequestForm {
                     >Cancel</a
                   >
                   <button type="submit" class="btn-primary" [disabled]="requestForm().submitting()">
-                    Send request
+                    Send {{ auth.terms().brief.toLowerCase() }}
                   </button>
                 </div>
               </form>
@@ -164,7 +164,7 @@ interface RequestForm {
   `,
 })
 export class RequestFormPage {
-  private readonly requests = inject(RequestsService);
+  private readonly jobs = inject(JobsService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly teamContext = inject(TeamContextService);
@@ -173,7 +173,7 @@ export class RequestFormPage {
   protected readonly today = today();
   /** The org's word for a department, lower case, such as "brand" (D48). */
   protected readonly departmentLabel = computed(() => this.auth.departmentLabel().toLowerCase());
-  protected readonly options = resource({ loader: () => this.requests.options() });
+  protected readonly options = resource({ loader: () => this.jobs.options() });
 
   protected readonly teamOptions = computed<SelectOption[]>(() => [
     { value: '', label: 'Choose a team' },
@@ -193,7 +193,7 @@ export class RequestFormPage {
     title: '',
     mainGoal: '',
     deliverables: '',
-    requestedDueDate: '',
+    requiredDate: '',
     priority: 'Medium',
   }));
 
@@ -211,7 +211,7 @@ export class RequestFormPage {
         ? { kind: 'deliverable', message: `Keep each deliverable under ${DELIVERABLE_MAX} characters.` }
         : undefined,
     );
-    validate(request.requestedDueDate, ({ value }) =>
+    validate(request.requiredDate, ({ value }) =>
       value() && value() < this.today
         ? { kind: 'past', message: "The deadline can't be in the past." }
         : undefined,
@@ -221,16 +221,16 @@ export class RequestFormPage {
   protected async send(event: Event): Promise<void> {
     event.preventDefault();
     await submit(this.requestForm, async () => {
-      const { title, mainGoal, deliverables, requestedDueDate, ...rest } = this.model();
+      const { title, mainGoal, deliverables, requiredDate, ...rest } = this.model();
       try {
-        const created = await this.requests.create({
+        const created = await this.jobs.submit({
           ...rest,
           title: title.trim(),
           mainGoal: mainGoal.trim() || null,
           deliverables: deliverables.trim() || null,
-          requestedDueDate: requestedDueDate || null,
+          requiredDate: requiredDate || null,
         });
-        this.toast.show('Request sent.', 'success');
+        this.toast.show(`${this.auth.terms().brief} sent as ${created.code}.`, 'success');
         await this.router.navigate(['/requests', created.id]);
       } catch (error) {
         this.toast.error(error);

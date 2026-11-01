@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Juggle.Api.Common;
 using Juggle.Api.Features.Allocations;
 using Juggle.Api.Features.Capacity;
+using Juggle.Api.Features.Jobs;
 using Juggle.Api.Features.Teams;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +19,9 @@ public sealed class AllocationsTests(ApiFactory api)
     public async Task Traffic_manager_creates_an_allocation_that_shows_on_the_schedule()
     {
         var client = await api.SignInAsAsync("Chloe Adams");
-        var (person, project) = await StudioPersonAndProjectAsync(client, "Priya Naidoo");
+        var (person, job) = await StudioPersonAndJobAsync(client, "Priya Naidoo");
 
-        var response = await client.PostAsJsonAsync("/api/allocations", Booking(person, project, 4), ApiFactory.Json, _ct);
+        var response = await client.PostAsJsonAsync("/api/allocations", Booking(person, job, 4), ApiFactory.Json, _ct);
         var saved = await response.Content.ReadFromJsonAsync<SavedAllocationDto>(ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -33,10 +34,10 @@ public sealed class AllocationsTests(ApiFactory api)
     public async Task Booking_over_capacity_is_saved_and_lists_the_clash_days()
     {
         var client = await api.SignInAsAsync("Chloe Adams");
-        var (person, project) = await StudioPersonAndProjectAsync(client, "Lerato Mokoena");
-        await client.PostAsJsonAsync("/api/allocations", Booking(person, project, 6), ApiFactory.Json, _ct);
+        var (person, job) = await StudioPersonAndJobAsync(client, "Lerato Mokoena");
+        await client.PostAsJsonAsync("/api/allocations", Booking(person, job, 6), ApiFactory.Json, _ct);
 
-        var response = await client.PostAsJsonAsync("/api/allocations", Booking(person, project, 4), ApiFactory.Json, _ct);
+        var response = await client.PostAsJsonAsync("/api/allocations", Booking(person, job, 4), ApiFactory.Json, _ct);
         var saved = await response.Content.ReadFromJsonAsync<SavedAllocationDto>(ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -48,11 +49,11 @@ public sealed class AllocationsTests(ApiFactory api)
     public async Task Update_moves_an_allocation_to_other_dates_and_another_person()
     {
         var client = await api.SignInAsAsync("Chloe Adams");
-        var (ethan, project) = await StudioPersonAndProjectAsync(client, "Ethan Pillay");
-        var (amahle, _) = await StudioPersonAndProjectAsync(client, "Amahle Dlamini");
-        var created = await CreateAsync(client, Booking(ethan, project, 3));
+        var (ethan, job) = await StudioPersonAndJobAsync(client, "Ethan Pillay");
+        var (amahle, _) = await StudioPersonAndJobAsync(client, "Amahle Dlamini");
+        var created = await CreateAsync(client, Booking(ethan, job, 3));
 
-        var moved = Booking(amahle, project, 5) with { StartDate = _monday.AddDays(1), EndDate = _monday.AddDays(2), Notes = "  Moved  " };
+        var moved = Booking(amahle, job, 5) with { StartDate = _monday.AddDays(1), EndDate = _monday.AddDays(2), Notes = "  Moved  " };
         var response = await client.PutAsJsonAsync($"/api/allocations/{created.Id}", moved, ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -64,8 +65,8 @@ public sealed class AllocationsTests(ApiFactory api)
     public async Task Delete_removes_the_allocation()
     {
         var client = await api.SignInAsAsync("Chloe Adams");
-        var (person, project) = await StudioPersonAndProjectAsync(client, "Ruben Fourie");
-        var created = await CreateAsync(client, Booking(person, project, 2));
+        var (person, job) = await StudioPersonAndJobAsync(client, "Ruben Fourie");
+        var created = await CreateAsync(client, Booking(person, job, 2));
 
         var response = await client.DeleteAsync($"/api/allocations/{created.Id}", _ct);
 
@@ -77,12 +78,12 @@ public sealed class AllocationsTests(ApiFactory api)
     public async Task Only_users_who_book_work_create_or_change_bookings()
     {
         var chloe = await api.SignInAsAsync("Chloe Adams");
-        var (person, project) = await StudioPersonAndProjectAsync(chloe, "Ethan Pillay");
-        var created = await CreateAsync(chloe, Booking(person, project, 2));
+        var (person, job) = await StudioPersonAndJobAsync(chloe, "Ethan Pillay");
+        var created = await CreateAsync(chloe, Booking(person, job, 2));
         var priya = await api.SignInAsAsync("Priya Naidoo");
         var naledi = await api.SignInAsAsync("Naledi Khumalo");
 
-        var designerCreate = await priya.PostAsJsonAsync("/api/allocations", Booking(person, project, 2), ApiFactory.Json, _ct);
+        var designerCreate = await priya.PostAsJsonAsync("/api/allocations", Booking(person, job, 2), ApiFactory.Json, _ct);
         var headDelete = await naledi.DeleteAsync($"/api/allocations/{created.Id}", _ct);
 
         Assert.Equal(HttpStatusCode.Forbidden, designerCreate.StatusCode);
@@ -93,11 +94,11 @@ public sealed class AllocationsTests(ApiFactory api)
     public async Task Invalid_bookings_return_400()
     {
         var client = await api.SignInAsAsync("Chloe Adams");
-        var (person, project) = await StudioPersonAndProjectAsync(client, "Sipho Ndlovu");
+        var (person, job) = await StudioPersonAndJobAsync(client, "Sipho Ndlovu");
 
-        var endBeforeStart = Booking(person, project, 4) with { EndDate = _monday.AddDays(-1) };
-        var noHours = Booking(person, project, 0);
-        var notInTeam = Booking(Guid.CreateVersion7(), project, 4);
+        var endBeforeStart = Booking(person, job, 4) with { EndDate = _monday.AddDays(-1) };
+        var noHours = Booking(person, job, 0);
+        var notInTeam = Booking(Guid.CreateVersion7(), job, 4);
 
         foreach (var request in new[] { endBeforeStart, noHours, notInTeam })
         {
@@ -110,18 +111,18 @@ public sealed class AllocationsTests(ApiFactory api)
     public async Task Errors_shown_to_users_say_booking()
     {
         var client = await api.SignInAsAsync("Chloe Adams");
-        var (person, project) = await StudioPersonAndProjectAsync(client, "Sipho Ndlovu");
+        var (person, job) = await StudioPersonAndJobAsync(client, "Sipho Ndlovu");
 
         var tooLong = await client.PostAsJsonAsync(
-            "/api/allocations", Booking(person, project, 4) with { EndDate = _monday.AddYears(2) }, ApiFactory.Json, _ct);
+            "/api/allocations", Booking(person, job, 4) with { EndDate = _monday.AddYears(2) }, ApiFactory.Json, _ct);
         var missing = await client.DeleteAsync($"/api/allocations/{Guid.CreateVersion7()}", _ct);
 
         Assert.Equal("A booking can be at most a year long.", (await tooLong.Content.ReadFromJsonAsync<ProblemDetails>(_ct))!.Detail);
         Assert.Equal("Booking not found.", (await missing.Content.ReadFromJsonAsync<ProblemDetails>(_ct))!.Detail);
     }
 
-    private SaveAllocationRequest Booking(Guid personId, Guid projectId, decimal hoursPerDay) =>
-        new(personId, projectId, null, _monday, _monday.AddDays(4), hoursPerDay, null);
+    private SaveAllocationRequest Booking(Guid personId, Guid jobId, decimal hoursPerDay) =>
+        new(personId, jobId, _monday, _monday.AddDays(4), hoursPerDay, null);
 
     private async Task<SavedAllocationDto> CreateAsync(HttpClient client, SaveAllocationRequest request)
     {
@@ -130,12 +131,12 @@ public sealed class AllocationsTests(ApiFactory api)
         return (await response.Content.ReadFromJsonAsync<SavedAllocationDto>(ApiFactory.Json, _ct))!;
     }
 
-    private async Task<(Guid Person, Guid Project)> StudioPersonAndProjectAsync(HttpClient client, string name)
+    private async Task<(Guid Person, Guid Job)> StudioPersonAndJobAsync(HttpClient client, string name)
     {
         var studioId = await GetTeamIdAsync(client, "Design Studio");
         var people = await client.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct);
-        var projects = await client.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct);
-        return (people!.Single(p => p.Name == name).Id, projects!.First().Id);
+        var jobs = await client.GetFromJsonAsync<List<JobDto>>($"/api/teams/{studioId}/jobs", ApiFactory.Json, _ct);
+        return (people!.Single(p => p.Name == name).Id, jobs!.First().Id);
     }
 
     private async Task<CapacityDto> GetStudioScheduleAsync(HttpClient client) =>

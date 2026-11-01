@@ -6,7 +6,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthService } from '../core/auth.service';
-import { RequestsService } from '../core/requests.service';
+import { JobsService } from '../core/jobs.service';
 import { TeamContextService } from '../core/team-context.service';
 import { TimeOffService } from '../core/time-off.service';
 import { BRANDING } from '../branding';
@@ -17,7 +17,7 @@ interface NavItem {
   label: string;
   link: string[];
   icon: string;
-  /** Shown as a badge when above zero: New requests waiting in triage, or time off waiting for approval. */
+  /** Shown as a badge when above zero: jobs in the incoming queue, or time off waiting for approval. */
   count?: number;
 }
 
@@ -64,7 +64,7 @@ const FLYOUT_POSITIONS: ConnectedPosition[] = [
 export class Nav {
   private readonly auth = inject(AuthService);
   private readonly teamContext = inject(TeamContextService);
-  private readonly requests = inject(RequestsService);
+  private readonly jobs = inject(JobsService);
   private readonly timeOff = inject(TimeOffService);
   private readonly prefs = inject(NavPrefsService);
   private readonly router = inject(Router);
@@ -109,8 +109,8 @@ export class Nav {
   });
 
   protected readonly triageCount = computed(() => {
-    const inbox = this.requests.inbox;
-    return this.auth.can('TriageBriefs') && inbox.hasValue() ? inbox.value().length : 0;
+    const incoming = this.jobs.incoming;
+    return this.auth.can('TriageBriefs') && incoming.hasValue() ? incoming.value().length : 0;
   });
 
   protected readonly timeOffCount = computed(() => {

@@ -10,7 +10,7 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
 {
     /// <summary>
     /// The schedule for a team (ViewSchedule), or for everyone when teamId is null (ViewSchedule and ViewAllJobs).
-    /// Load counts every allocation a person has, including other teams' projects.
+    /// Load counts every allocation a person has, including other teams' jobs.
     /// </summary>
     public async Task<CapacityDto> GetAsync(Guid? teamId, DateOnly start, int weeks, CancellationToken ct)
     {
@@ -34,10 +34,10 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
         var personIds = team.Select(p => p.Id).ToList();
 
         var allocations = await db.Allocations
-            .Include(a => a.Project).ThenInclude(p => p.Department)
+            .Include(a => a.Job).ThenInclude(j => j.Department)
             .Where(a => personIds.Contains(a.PersonId) && a.StartDate <= to && a.EndDate >= from)
             .OrderBy(a => a.StartDate)
-            .ThenBy(a => a.Project.Name)
+            .ThenBy(a => a.Job.Code)
             .AsNoTracking()
             .ToListAsync(ct);
 
@@ -71,6 +71,6 @@ public sealed class CapacityService(JuggleDbContext db, CurrentUser currentUser,
         return new CapacityDto(
             days,
             people,
-            allocations.Select(a => AllocationDto.From(a, teamNames[a.Project.TeamId], teamId is not null && a.Project.TeamId != teamId)).ToList());
+            allocations.Select(a => AllocationDto.From(a, teamNames[a.Job.TeamId], teamId is not null && a.Job.TeamId != teamId)).ToList());
     }
 }

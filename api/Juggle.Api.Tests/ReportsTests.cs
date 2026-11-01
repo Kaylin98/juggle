@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using Juggle.Api.Common;
 using Juggle.Api.Data.Entities;
+using Juggle.Api.Features.Jobs;
 using Juggle.Api.Features.Reports;
-using Juggle.Api.Features.Tasks;
 using Juggle.Api.Features.Teams;
 
 namespace Juggle.Api.Tests;
@@ -15,31 +15,34 @@ public sealed class ReportsTests(ApiFactory api)
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task Status_and_designer_counts_match_the_board()
+    public async Task Column_and_designer_counts_match_the_board_without_cancelled_jobs()
     {
         var client = await api.SignInAsAsync("Naledi Khumalo");
         var studioId = await GetTeamIdAsync(client, "Design Studio");
-        var tasks = (await client.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!;
+        var jobs = (await client.GetFromJsonAsync<List<JobDto>>($"/api/teams/{studioId}/jobs", ApiFactory.Json, _ct))!
+            .Where(j => j.StatusKind != JobStatusKind.Cancelled)
+            .ToList();
         var people = (await client.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{studioId}/people", ApiFactory.Json, _ct))!;
 
         var report = await GetReportAsync(client, studioId);
 
-        Assert.Equal(["Briefed in", "Working on it", "Feedback needed", "Awaiting approval", "Done"], report.ByStatus.Select(s => s.Name));
-        Assert.All(report.ByStatus, s => Assert.Equal(tasks.Count(t => t.StatusId == s.StatusId), s.Count));
-        // Most cards are delivered briefs from earlier months.
-        var done = report.ByStatus.Single(s => s.Category == StatusCategory.Done).Count;
-        Assert.True(done > tasks.Count / 2);
+        Assert.Equal(["Incoming", "In Design", "In Review", "With Marketing", "Done"], report.ByColumn.Select(c => c.Name));
+        Assert.Equal([false, false, false, false, true], report.ByColumn.Select(c => c.Done));
+        Assert.All(report.ByColumn, c => Assert.Equal(jobs.Count(j => j.ColumnId == c.ColumnId), c.Count));
+        // Most jobs are closed jobs from earlier months.
+        Assert.True(report.ByColumn[^1].Count > jobs.Count / 2);
 
         // Everyone in the team, the most open work first: Lerato is the overloaded designer.
         Assert.Equal(people.Select(p => p.Id).Order(), report.ByDesigner.Where(d => d.PersonId != null).Select(d => d.PersonId!.Value).Order());
         Assert.Equal("Lerato Mokoena", report.ByDesigner[0].Name);
         foreach (var designer in report.ByDesigner)
         {
-            var theirs = tasks.Where(t => t.AssigneePersonId == designer.PersonId).ToList();
+            var theirs = jobs.Where(j => j.DesignerPersonId == designer.PersonId).ToList();
             Assert.Equal(theirs.Count, designer.Counts.Values.Sum());
-            Assert.All(designer.Counts, c => Assert.Equal(theirs.Count(t => t.StatusId == c.Key), c.Value));
+            Assert.All(designer.Counts, c => Assert.Equal(theirs.Count(j => j.ColumnId == c.Key), c.Value));
         }
     }
+
 
     [Fact]
     public async Task Briefs_received_cover_nine_months_ending_this_month()
@@ -62,15 +65,13 @@ public sealed class ReportsTests(ApiFactory api)
         var studioId = await GetTeamIdAsync(client, "Design Studio");
         var all = await GetReportAsync(client, studioId);
         var dji = all.Brands.Single(b => b.Name == "DJI");
-        var projects = (await client.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))!;
-        var djiProjects = projects.Where(p => p.Department == "DJI").Select(p => p.Id).ToHashSet();
-        var tasks = (await client.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!;
+        var jobs = (await client.GetFromJsonAsync<List<JobDto>>($"/api/teams/{studioId}/jobs", ApiFactory.Json, _ct))!;
 
         var report = await GetReportAsync(client, studioId, dji.Id);
 
         Assert.Equal(all.Brands, report.Brands);
-        Assert.Equal(tasks.Count(t => djiProjects.Contains(t.ProjectId)), report.ByStatus.Sum(s => s.Count));
-        Assert.Equal(report.ByStatus.Sum(s => s.Count), report.ByDesigner.Sum(d => d.Counts.Values.Sum()));
+        Assert.Equal(jobs.Count(j => j.Department == "DJI" && j.StatusKind != JobStatusKind.Cancelled), report.ByColumn.Sum(c => c.Count));
+        Assert.Equal(report.ByColumn.Sum(c => c.Count), report.ByDesigner.Sum(d => d.Counts.Values.Sum()));
         Assert.InRange(report.ReceivedByMonth.Sum(m => m.Count), 1, all.ReceivedByMonth.Sum(m => m.Count) - 1);
     }
 

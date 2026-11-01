@@ -19,7 +19,7 @@ import { Avatar } from './avatar';
 import { SelectChevron } from './select-chevron';
 
 /**
- * One choice. Set avatarColour to show an avatar (people) or colour to show a dot (projects, teams);
+ * One choice. Set avatarColour to show an avatar (people) or colour to show a dot (brands, jobs, teams);
  * otherwise the label is plain text.
  */
 export interface SelectOption {

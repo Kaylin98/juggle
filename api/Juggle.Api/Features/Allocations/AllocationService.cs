@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Juggle.Api.Features.Allocations;
 
 /// <summary>
-/// Books people onto projects. An allocation belongs to its project's team, so only users who may book work (Allocate)
+/// Books people onto jobs. An allocation belongs to its job's team, so only users who may book work (Allocate)
 /// in that team change it. Saving never fails on a clash; the response lists the days now over capacity.
 /// </summary>
 public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess)
@@ -40,13 +40,13 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
 
     private async Task<Allocation> FindManageableAsync(Guid id, CancellationToken ct)
     {
-        var allocation = await db.Allocations.Include(a => a.Project).FirstOrDefaultAsync(a => a.Id == id, ct)
+        var allocation = await db.Allocations.Include(a => a.Job).FirstOrDefaultAsync(a => a.Id == id, ct)
             ?? throw new NotFoundException("Booking not found.");
-        await teamAccess.EnsureAsync(allocation.Project.TeamId, Capability.Allocate, ct);
+        await teamAccess.EnsureAsync(allocation.Job.TeamId, Capability.Allocate, ct);
         return allocation;
     }
 
-    /// <summary>Validates the request against the project's team and copies it onto the allocation.</summary>
+    /// <summary>Validates the request against the job's team and copies it onto the allocation.</summary>
     private async Task ApplyAsync(Allocation allocation, SaveAllocationRequest request, CancellationToken ct)
     {
         if (request.EndDate < request.StartDate)
@@ -58,22 +58,17 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
             throw new BadRequestException("A booking can be at most a year long.");
         }
 
-        var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == request.ProjectId, ct)
-            ?? throw new BadRequestException("The project does not exist.");
-        await teamAccess.EnsureAsync(project.TeamId, Capability.Allocate, ct);
+        var job = await db.Jobs.FirstOrDefaultAsync(j => j.Id == request.JobId, ct)
+            ?? throw new BadRequestException("The job does not exist.");
+        await teamAccess.EnsureAsync(job.TeamId, Capability.Allocate, ct);
 
-        if (!await db.People.AnyAsync(p => p.Id == request.PersonId && p.User.Memberships.Any(m => m.TeamId == project.TeamId), ct))
+        if (!await db.People.AnyAsync(p => p.Id == request.PersonId && p.User.Memberships.Any(m => m.TeamId == job.TeamId), ct))
         {
-            throw new BadRequestException("The person is not in this project's team.");
-        }
-        if (request.TaskId is { } taskId && !await db.Tasks.AnyAsync(t => t.Id == taskId && t.ProjectId == project.Id, ct))
-        {
-            throw new BadRequestException("The task is not in this project.");
+            throw new BadRequestException("The person is not in this job's team.");
         }
 
         allocation.PersonId = request.PersonId;
-        allocation.ProjectId = project.Id;
-        allocation.TaskId = request.TaskId;
+        allocation.JobId = job.Id;
         allocation.StartDate = request.StartDate;
         allocation.EndDate = request.EndDate;
         allocation.HoursPerDay = request.HoursPerDay;
@@ -86,8 +81,7 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
         return new(
             allocation.Id,
             allocation.PersonId,
-            allocation.ProjectId,
-            allocation.TaskId,
+            allocation.JobId,
             allocation.StartDate,
             allocation.EndDate,
             allocation.HoursPerDay,

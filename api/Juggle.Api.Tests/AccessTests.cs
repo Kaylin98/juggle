@@ -3,8 +3,7 @@ using System.Net.Http.Json;
 using Juggle.Api.Common;
 using Juggle.Api.Data.Entities;
 using Juggle.Api.Features.Allocations;
-using Juggle.Api.Features.Requests;
-using Juggle.Api.Features.Tasks;
+using Juggle.Api.Features.Jobs;
 using Juggle.Api.Features.Teams;
 
 namespace Juggle.Api.Tests;
@@ -24,104 +23,84 @@ public sealed class AccessTests(ApiFactory api)
         var client = api.CreateClient();
 
         await AssertGetStatusAsync(client, HttpStatusCode.Unauthorized,
-            "/api/auth/me", "/api/teams", "/api/requests/mine", "/api/dashboard?teamId=all");
+            "/api/auth/me", "/api/teams", "/api/jobs/mine", "/api/workflow", "/api/dashboard?teamId=all");
     }
 
     [Fact]
-    public async Task Marketing_manager_sees_no_board_schedule_or_workloads_and_cannot_change_work()
+    public async Task Marketing_manager_sees_no_board_schedule_or_workloads_and_cannot_book()
     {
         var data = await StudioDataAsync();
         var zanele = await api.SignInAsAsync("Zanele Mthembu");
         var team = $"/api/teams/{data.TeamId}";
 
-        // CD5: only their own briefs; no board, schedule, workloads or other managers' briefs.
+        // CD5: only their own jobs; no board, schedule, workloads or other managers' jobs.
         await AssertGetStatusAsync(zanele, HttpStatusCode.Forbidden,
-            $"{team}/tasks", $"{team}/projects", $"{team}/people", $"{team}/requests",
+            $"{team}/jobs", $"{team}/people", $"{team}/incoming",
             $"/api/capacity?teamId={data.TeamId}&start={_monday:yyyy-MM-dd}", $"/api/dashboard?teamId={data.TeamId}",
-            $"/api/requests/{data.SomeoneElsesRequest}", $"{team}/reports/briefs", "/api/my-work");
-        await AssertGetStatusAsync(zanele, HttpStatusCode.OK, "/api/requests/mine", "/api/requests/options");
+            $"/api/jobs/{data.SomeoneElsesJob}", $"{team}/reports/briefs", "/api/my-work");
+        await AssertGetStatusAsync(zanele, HttpStatusCode.OK, "/api/jobs/mine", "/api/jobs/options");
 
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(zanele, $"{team}/tasks", new CreateTaskRequest("Mine", data.ProjectId, null, null, null, null, null)));
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(zanele, $"/api/tasks/{data.OthersTask.Id}/move", new MoveTaskRequest(data.OthersTask.StatusId, 0)));
         Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(zanele, "/api/allocations", Booking(data)));
     }
 
     [Fact]
-    public async Task Designer_sees_the_board_but_not_the_schedule_and_cannot_triage_book_or_change_others_tasks()
+    public async Task Designer_sees_the_board_but_not_the_schedule_and_cannot_triage_brief_or_book()
     {
         var data = await StudioDataAsync();
         var ethan = await api.SignInAsAsync("Ethan Pillay");
         var team = $"/api/teams/{data.TeamId}";
 
-        await AssertGetStatusAsync(ethan, HttpStatusCode.OK, $"{team}/tasks", "/api/my-work");
+        await AssertGetStatusAsync(ethan, HttpStatusCode.OK, $"{team}/jobs", "/api/my-work");
         await AssertGetStatusAsync(ethan, HttpStatusCode.Forbidden,
             $"/api/capacity?teamId={data.TeamId}&start={_monday:yyyy-MM-dd}", $"/api/capacity?teamId=all&start={_monday:yyyy-MM-dd}",
-            $"{team}/requests", $"/api/requests/{data.NewRequest}/new-brief", $"/api/dashboard?teamId={data.TeamId}",
+            $"{team}/incoming", $"/api/jobs/{data.SomeoneElsesJob}", $"/api/dashboard?teamId={data.TeamId}",
             "/api/dashboard?teamId=all", $"{team}/reports/briefs", "/api/time-off/approvals");
 
-        var others = data.OthersTask;
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, "/api/requests", Brief(data)));
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, $"/api/requests/{data.NewRequest}/accept", new AcceptRequestRequest(data.ProjectId, null, null, null, null)));
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, $"/api/requests/{data.NewRequest}/reject", new RejectRequestRequest("No")));
+        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, "/api/jobs", Brief(data)));
         Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, "/api/allocations", Booking(data)));
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(ethan, $"/api/tasks/{others.Id}/move", new MoveTaskRequest(others.StatusId, 0)));
-        var update = new UpdateTaskRequest("Renamed", null, others.AssigneePersonId, null, null, null);
-        Assert.Equal(HttpStatusCode.Forbidden, (await ethan.PutAsJsonAsync($"/api/tasks/{others.Id}", update, ApiFactory.Json, _ct)).StatusCode);
     }
 
     [Theory]
     [InlineData("Naledi Khumalo")]
     [InlineData("Megan Botha")]
-    public async Task Heads_see_all_the_work_but_cannot_triage_book_or_change_tasks(string head)
+    public async Task Heads_see_all_the_work_but_cannot_triage_brief_or_book(string head)
     {
         var data = await StudioDataAsync();
         var client = await api.SignInAsAsync(head);
         var team = $"/api/teams/{data.TeamId}";
 
         await AssertGetStatusAsync(client, HttpStatusCode.OK,
-            $"{team}/tasks", $"/api/capacity?teamId={data.TeamId}&start={_monday:yyyy-MM-dd}",
+            $"{team}/jobs", $"/api/jobs/{data.SomeoneElsesJob}", $"/api/capacity?teamId={data.TeamId}&start={_monday:yyyy-MM-dd}",
             $"/api/dashboard?teamId={data.TeamId}", $"{team}/reports/briefs");
-        await AssertGetStatusAsync(client, HttpStatusCode.Forbidden, $"{team}/requests", "/api/time-off/approvals");
+        await AssertGetStatusAsync(client, HttpStatusCode.Forbidden, $"{team}/incoming", "/api/time-off/approvals");
 
-        var others = data.OthersTask;
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(client, "/api/requests", Brief(data)));
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(client, $"/api/requests/{data.NewRequest}/reject", new RejectRequestRequest("No")));
+        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(client, "/api/jobs", Brief(data)));
         Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(client, "/api/allocations", Booking(data)));
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(client, $"/api/tasks/{others.Id}/move", new MoveTaskRequest(others.StatusId, 0)));
     }
 
-    private sealed record StudioData(Guid TeamId, Guid ProjectId, Guid DepartmentId, Guid PersonId, TaskDto OthersTask, Guid NewRequest, Guid SomeoneElsesRequest);
+    /// <param name="SomeoneElsesJob">Not briefed by Zanele, and not Ethan's.</param>
+    private sealed record StudioData(Guid TeamId, Guid JobId, Guid DepartmentId, Guid PersonId, Guid SomeoneElsesJob);
 
-    /// <summary>
-    /// Ids from the studio, read as the Traffic Manager. The task is not Ethan's and not a brand Zanele manages; the
-    /// request is not Zanele's.
-    /// </summary>
+    /// <summary>Ids from the studio, read as the Traffic Manager.</summary>
     private async Task<StudioData> StudioDataAsync()
     {
         var chloe = await api.SignInAsAsync("Chloe Adams");
         var teamId = (await chloe.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct))!.Single().Id;
         var people = (await chloe.GetFromJsonAsync<List<PersonDto>>($"/api/teams/{teamId}/people", ApiFactory.Json, _ct))!;
-        var projects = (await chloe.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{teamId}/projects", ApiFactory.Json, _ct))!;
-        var tasks = (await chloe.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{teamId}/tasks", ApiFactory.Json, _ct))!;
-        var inbox = (await chloe.GetFromJsonAsync<List<RequestDto>>($"/api/teams/{teamId}/requests?status=New", ApiFactory.Json, _ct))!;
+        var jobs = (await chloe.GetFromJsonAsync<List<JobDto>>($"/api/teams/{teamId}/jobs", ApiFactory.Json, _ct))!;
 
-        var ethan = people.Single(p => p.Name == "Ethan Pillay").Id;
         var priya = people.Single(p => p.Name == "Priya Naidoo").Id;
-        var notZanelesBrand = projects.Where(p => p.Department is not ("DJI" or "Pure Electric")).Select(p => p.Id).ToHashSet();
         return new StudioData(
             teamId,
-            projects[0].Id,
-            projects[0].DepartmentId,
+            jobs[0].Id,
+            jobs[0].DepartmentId,
             priya,
-            tasks.First(t => t.AssigneePersonId is { } a && a != ethan && notZanelesBrand.Contains(t.ProjectId)),
-            inbox[0].Id,
-            inbox.First(r => r.RequesterName != "Zanele Mthembu").Id);
+            jobs.First(j => j.RequesterName != "Zanele Mthembu" && j.DesignerName is not (null or "Ethan Pillay")).Id);
     }
 
-    private SaveAllocationRequest Booking(StudioData data) =>
-        new(data.PersonId, data.ProjectId, null, _monday, _monday.AddDays(1), 2, null);
+    private SaveAllocationRequest Booking(StudioData data) => new(data.PersonId, data.JobId, _monday, _monday.AddDays(1), 2, null);
 
-    private static CreateRequestRequest Brief(StudioData data) =>
+    private static CreateJobRequest Brief(StudioData data) =>
         new(data.TeamId, "Not allowed", null, null, data.DepartmentId, null, Priority.Medium);
 
     /// <summary>GETs each url and checks the status.</summary>

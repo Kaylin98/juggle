@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SaveAllocation, SavedAllocation } from './models';
 
-/** Books people onto projects. Used by the schedule and by "Book on schedule" in the task drawer. */
+/** Books people onto jobs. Used by the schedule and by "Book on schedule" in the job drawer. */
 @Injectable({ providedIn: 'root' })
 export class AllocationsService {
   private readonly http = inject(HttpClient);

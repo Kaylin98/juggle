@@ -5,8 +5,7 @@ namespace Juggle.Api.Features.Allocations;
 /// <summary>Creates or replaces an allocation. Dates are inclusive.</summary>
 public sealed record SaveAllocationRequest(
     Guid PersonId,
-    Guid ProjectId,
-    Guid? TaskId,
+    Guid JobId,
     DateOnly StartDate,
     DateOnly EndDate,
     [Range(0.5, 24.0)] decimal HoursPerDay,
@@ -17,8 +16,7 @@ public sealed record SaveAllocationRequest(
 public sealed record SavedAllocationDto(
     Guid Id,
     Guid PersonId,
-    Guid ProjectId,
-    Guid? TaskId,
+    Guid JobId,
     DateOnly StartDate,
     DateOnly EndDate,
     decimal HoursPerDay,

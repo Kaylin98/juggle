@@ -33,9 +33,9 @@ import { Component } from '@angular/core';
 })
 export class RequestGuide {
   protected readonly steps = [
-    'The team reviews your request in triage.',
-    'It is accepted with an assignee and a due date, or rejected with a reason.',
-    'Track it in My requests.',
+    'It gets its job ID straight away, and the studio reviews it. They may ask you for more information.',
+    'It is scheduled with a designer, a planned start and an expected completion date.',
+    'Track it in My requests, and review the artwork once the studio has approved it.',
   ];
 
   protected readonly tips = [

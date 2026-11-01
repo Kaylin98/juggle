@@ -6,9 +6,9 @@ public class Department
     public Guid OrgId { get; set; }
     public required string Name { get; set; }
 
-    /// <summary>One of the 8 palette hues; its tasks and bookings take it (D61).</summary>
+    /// <summary>One of the 8 palette hues; its jobs and bookings take it (D61).</summary>
     public required string Colour { get; set; }
 
-    /// <summary>Starts the job codes of this department's projects, such as "DJI" (D52).</summary>
+    /// <summary>Starts the job IDs of this department's jobs, such as "DJI" (D52).</summary>
     public string? JobCodePrefix { get; set; }
 }

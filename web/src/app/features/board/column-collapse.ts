@@ -1,4 +1,8 @@
-import { WorkflowStatus } from '../../core/models';
+/** A board column as the collapse rules see it: done when every status in it is done or cancelled. */
+export interface CollapsibleColumn {
+  id: string;
+  done: boolean;
+}
 
 // Widths in px. Keep in step with the classes in board-column.ts (min-w-60, w-14) and the board's gap-6.
 const EXPANDED_MIN = 240;
@@ -7,13 +11,13 @@ const GAP = 24;
 
 /**
  * Which columns are collapsed for a width. Columns the viewer collapsed (`manual`) stay collapsed at any width.
- * While the columns would not fit at their minimum, the others collapse one at a time: Done-category columns
+ * While the columns would not fit at their minimum, the others collapse one at a time: done columns
  * first, then the columns closest to Done (right to left), so To Do and the early work stay open longest. One
  * column always stays expanded. A width of 0 means not measured yet, so nothing collapses automatically.
  * While a filter is on, the columns it leaves empty (`empty`) collapse before the rest, so the matches stay in view.
  */
 export function collapsedColumns(
-  statuses: WorkflowStatus[],
+  statuses: CollapsibleColumn[],
   manual: ReadonlySet<string>,
   width: number,
   empty: ReadonlySet<string> = new Set(),
@@ -63,9 +67,9 @@ export function expandOnDrop(collapsed: ReadonlySet<string>, statusId: string): 
   return next;
 }
 
-/** Empty columns first, then Done-category columns from the right, then the rest from the right. */
-function collapseOrder(statuses: WorkflowStatus[], empty: ReadonlySet<string>): WorkflowStatus[] {
+/** Empty columns first, then done columns from the right, then the rest from the right. */
+function collapseOrder(statuses: CollapsibleColumn[], empty: ReadonlySet<string>): CollapsibleColumn[] {
   const fromRight = [...statuses].reverse();
-  const order = [...fromRight.filter((s) => s.category === 'Done'), ...fromRight.filter((s) => s.category !== 'Done')];
+  const order = [...fromRight.filter((s) => s.done), ...fromRight.filter((s) => !s.done)];
   return [...order.filter((s) => empty.has(s.id)), ...order.filter((s) => !empty.has(s.id))];
 }

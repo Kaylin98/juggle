@@ -3,6 +3,7 @@ using Juggle.Api.Common;
 using Juggle.Api.Data;
 using Juggle.Api.Data.Entities;
 using Juggle.Api.Features.Capacity;
+using Juggle.Api.Features.Workflow;
 using Microsoft.EntityFrameworkCore;
 
 namespace Juggle.Api.Features.Dashboard;
@@ -13,6 +14,7 @@ public sealed class DashboardService(
     Permissions permissions,
     TeamAccess teamAccess,
     CapacityService capacity,
+    JobWorkflow workflow,
     OrgClock clock)
 {
     /// <summary>This week and the next four.</summary>
@@ -53,37 +55,33 @@ public sealed class DashboardService(
                 thisWeek.Any(d => d.Allocated > d.Capacity));
         }).ToList();
 
-        var openTasks = db.Tasks.Where(t => teamIds.Contains(t.TeamId) && t.Status.Category != StatusCategory.Done);
+        var openJobs = db.Jobs.Where(j => teamIds.Contains(j.TeamId) && j.Status.Kind == JobStatusKind.Open);
+        var awaitingApproval = (await workflow.AwaitingApprovalAsync(ct)).ToList();
+        var incoming = (await workflow.IncomingAsync(ct)).ToList();
 
-        // Overdue (D21): due before today and not done.
-        var overdue = await openTasks
-            .Where(t => t.DueDate < today)
-            .GroupBy(t => t.TeamId)
-            .ToDictionaryAsync(g => g.Key, g => g.Count(), ct);
+        // Overdue (D21): required before today and still open.
+        var overdueCounts = await CountByTeamAsync(openJobs.Where(j => j.RequiredDate < today), ct);
+        var approvalCounts = await CountByTeamAsync(openJobs.Where(j => awaitingApproval.Contains(j.StatusId)), ct);
+        var incomingCounts = await CountByTeamAsync(openJobs.Where(j => incoming.Contains(j.StatusId)), ct);
 
-        // Awaiting review (D53): sitting in a review column, waiting on feedback or approval.
-        var awaitingReview = await openTasks
-            .Where(t => t.Status.Category == StatusCategory.Review)
-            .GroupBy(t => t.TeamId)
-            .ToDictionaryAsync(g => g.Key, g => g.Count(), ct);
-
-        var triage = await db.Requests
-            .Where(r => teamIds.Contains(r.TeamId) && r.Status == RequestStatus.New)
-            .GroupBy(r => r.TeamId)
-            .ToDictionaryAsync(g => g.Key, g => g.Count(), ct);
-
-        var byDepartment = await openTasks
-            .GroupBy(t => t.Project.Department.Name)
+        var byDepartment = await openJobs
+            .GroupBy(j => j.Department.Name)
             .Select(g => new DepartmentCountDto(g.Key, g.Count()))
             .ToListAsync(ct);
 
+        List<TeamCountDto> PerTeam(Dictionary<Guid, int> counts) =>
+            teams.Select(t => new TeamCountDto(t.Id, t.Name, counts.GetValueOrDefault(t.Id))).ToList();
+
         return new DashboardDto(
             people,
-            teams.Select(t => new TeamCountDto(t.Id, t.Name, overdue.GetValueOrDefault(t.Id))).ToList(),
-            teams.Select(t => new TeamCountDto(t.Id, t.Name, awaitingReview.GetValueOrDefault(t.Id))).ToList(),
-            teams.Select(t => new TeamCountDto(t.Id, t.Name, triage.GetValueOrDefault(t.Id))).ToList(),
+            PerTeam(overdueCounts),
+            PerTeam(approvalCounts),
+            PerTeam(incomingCounts),
             byDepartment.OrderByDescending(d => d.Count).ThenBy(d => d.Department).ToList());
     }
+
+    private static Task<Dictionary<Guid, int>> CountByTeamAsync(IQueryable<Job> jobs, CancellationToken ct) =>
+        jobs.GroupBy(j => j.TeamId).ToDictionaryAsync(g => g.Key, g => g.Count(), ct);
 
     private static LoadDto Total(IEnumerable<DayLoad> days) =>
         days.Aggregate(new LoadDto(0, 0), (sum, day) => new LoadDto(sum.Allocated + day.Allocated, sum.Capacity + day.Capacity));

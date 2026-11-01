@@ -1,38 +1,35 @@
-import { CdkDragDrop, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { Component, ElementRef, computed, effect, inject, input, linkedSignal, resource, signal, viewChild } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
-import { Task, WorkflowStatus } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { BrandLegend, legendBrands } from '../../shared/brand-legend';
-import { Drawer } from '../../shared/drawer';
-import { ToastService } from '../../shared/toast.service';
 import { BoardColumn } from './board-column';
 import { BoardFilters, matchesFilters } from './board-filters';
 import { BoardPrefsService } from './board-prefs.service';
 import { BoardService } from './board.service';
-import { collapsedColumns, expandOnDrop, toggleColumn } from './column-collapse';
-import { columnWithout, moveTask, toColumnIndex } from './move-task';
-import { BoardCard } from './task-card';
-import { NewTaskDrawer } from './new-task-drawer';
-import { RequestChangesDialog } from './request-changes-dialog';
-import { TaskDrawer } from './task-drawer';
+import { collapsedColumns, toggleColumn } from './column-collapse';
+import { BoardCard, toCard } from './job-card';
+import { JobDrawer } from './job-drawer';
 
+/**
+ * The board (D64): the organisation's columns, each with its jobs in status order, then by required date. Users who
+ * see all the work see every job; anyone else sees their own (D70). Cards open the job; they move through workflow
+ * actions, which come in Phase W, not by dragging.
+ */
 @Component({
   selector: 'app-board-page',
-  imports: [CdkDropListGroup, BoardColumn, BoardFilters, BrandLegend, Drawer, NewTaskDrawer, RequestChangesDialog, TaskDrawer],
+  imports: [BoardColumn, BoardFilters, BrandLegend, JobDrawer],
   templateUrl: './board-page.html',
 })
 export class BoardPage {
   private readonly boardService = inject(BoardService);
   private readonly prefs = inject(BoardPrefsService);
   protected readonly auth = inject(AuthService);
-  private readonly toast = inject(ToastService);
   protected readonly teamContext = inject(TeamContextService);
 
   /** From the `/t/:teamId/board` route. */
   readonly teamId = input.required<string>();
 
-  /** `?due=overdue` (from the dashboard) opens the board showing only overdue tasks. */
+  /** `?due=overdue` (from the dashboard) opens the board showing only overdue jobs. */
   readonly due = input<string>();
 
   protected readonly board = resource({
@@ -42,34 +39,14 @@ export class BoardPage {
 
   protected readonly data = computed(() => (this.board.hasValue() ? this.board.value() : null));
 
-  /** Updated in place on drag and save, so the board responds before the API does. */
-  private readonly tasks = linkedSignal(() => this.data()?.tasks ?? []);
-
-  protected readonly assigneeFilter = linkedSignal({ source: this.teamId, computation: () => '' });
-  protected readonly projectFilter = linkedSignal({ source: this.teamId, computation: () => '' });
+  protected readonly designerFilter = linkedSignal({ source: this.teamId, computation: () => '' });
+  protected readonly departmentFilter = linkedSignal({ source: this.teamId, computation: () => '' });
   protected readonly dueFilter = linkedSignal({
     source: () => ({ teamId: this.teamId(), due: this.due() }),
     computation: ({ due }): string => (due === 'overdue' ? due : ''),
   });
   protected readonly bookingFilter = linkedSignal({ source: this.teamId, computation: () => '' });
-  protected readonly openTaskId = linkedSignal<string, string | null>({
-    source: this.teamId,
-    computation: () => null,
-  });
-
-  /**
-   * The column a new task is being added to, or null. Users who book work (Allocate) add tasks for anyone; users who
-   * work on jobs (WorkOnJobs) only for themselves (D24, D77).
-   */
-  protected readonly addingTo = linkedSignal<string, WorkflowStatus | null>({
-    source: this.teamId,
-    computation: () => null,
-  });
-
-  protected readonly canAdd = computed(() => this.auth.can('Allocate') || (this.auth.can('WorkOnJobs') && this.auth.me()?.personId != null));
-
-  /** The card its brand's manager is sending back for changes, or null (D58). */
-  protected readonly changesFor = linkedSignal<string, string | null>({
+  protected readonly openJobId = linkedSignal<string, string | null>({
     source: this.teamId,
     computation: () => null,
   });
@@ -104,163 +81,81 @@ export class BoardPage {
     });
   }
 
-  /** The Done-category columns: their cards show no booking chip and are never "not booked" (D57). */
-  private readonly doneStatusIds = computed(
-    () => new Set((this.data()?.statuses ?? []).filter((s) => s.category === 'Done').map((s) => s.id)),
-  );
-
-  /**
-   * The approval column: the last of two or more review columns (Awaiting approval for the Studio), where the
-   * brand's manager approves or sends back a card (D58). Null on a board without one.
-   */
-  private readonly approvalStatusId = computed(() => {
-    const review = (this.data()?.statuses ?? []).filter((s) => s.category === 'Review');
-    return review.length >= 2 ? review[review.length - 1].id : null;
-  });
-
   private readonly cards = computed<BoardCard[]>(() => {
     const data = this.data();
     if (!data) return [];
-    const projects = new Map(data.projects.map((p) => [p.id, p]));
     const people = new Map(data.people.map((p) => [p.id, p]));
-    const managed = this.auth.managedDepartmentIds();
-    return this.tasks().map((task) => {
-      const project = projects.get(task.projectId)!;
+    const scheduled = new Set(data.workflow.scheduledStatusIds);
+    return data.jobs.map((job) => toCard(job, people, scheduled));
+  });
+
+  /** Each column with its matching cards: by status in the column's order, then by required date, undated last. */
+  protected readonly columns = computed(() => {
+    const visible = this.cards().filter((card) => this.matches(card));
+    return (this.data()?.workflow.columns ?? []).map((column) => {
+      const order = new Map(column.statuses.map((s, i) => [s.id, i]));
       return {
-        task,
-        project,
-        assignee: task.assigneePersonId ? (people.get(task.assigneePersonId) ?? null) : null,
-        canEdit: this.canEdit(task),
-        done: this.doneStatusIds().has(task.statusId),
-        approvable: task.statusId === this.approvalStatusId() && managed.has(project.departmentId),
+        column,
+        done: column.statuses.every((s) => s.kind !== 'Open'),
+        cards: visible
+          .filter((card) => order.has(card.job.statusId))
+          .sort(
+            (a, b) =>
+              order.get(a.job.statusId)! - order.get(b.job.statusId)! ||
+              (a.job.requiredDate ?? '9999').localeCompare(b.job.requiredDate ?? '9999'),
+          ),
       };
     });
   });
 
-  /** Every status except the first, Triage, which is handled in the triage inbox (D18). */
-  protected readonly columns = computed(() => {
-    const visible = this.cards()
-      .filter((card) => this.matchesFilters(card.task))
-      .sort((a, b) => a.task.sortOrder - b.task.sortOrder);
-    return (this.data()?.statuses ?? []).slice(1).map((status) => ({
-      status,
-      cards: visible.filter((card) => card.task.statusId === status.id),
-    }));
-  });
-
   /**
-   * Status ids of the collapsed columns: the viewer's own, plus as many more as it takes for the columns to fit.
-   * After a click, the columns stay as the viewer left them until the next resize or page load.
+   * Ids of the collapsed columns: the viewer's own, plus as many more as it takes for the columns to fit, done columns
+   * first. After a click, the columns stay as the viewer left them until the next resize or page load.
    */
   protected readonly collapsed = computed(
     () =>
       this.heldByClick() ??
-      collapsedColumns((this.data()?.statuses ?? []).slice(1), this.manuallyCollapsed(), this.areaWidth(), this.emptyWhileFiltered()),
+      collapsedColumns(
+        this.columns().map((c) => ({ id: c.column.id, done: c.done })),
+        this.manuallyCollapsed(),
+        this.areaWidth(),
+        this.emptyWhileFiltered(),
+      ),
   );
 
   /** Columns a filter leaves empty; they collapse first so the matching cards stay in view. */
   private readonly emptyWhileFiltered = computed(
-    () => new Set(this.filtered() ? this.columns().filter((c) => c.cards.length === 0).map((c) => c.status.id) : []),
+    () => new Set(this.filtered() ? this.columns().filter((c) => c.cards.length === 0).map((c) => c.column.id) : []),
   );
 
   /** The brands of the cards shown, for the colour key (D61). */
   protected readonly brands = computed(() =>
     legendBrands(
       this.columns().flatMap((c) => c.cards),
-      (card) => ({ name: card.project.department, colour: card.project.colour }),
+      (card) => ({ name: card.job.department, colour: card.job.colour }),
     ),
   );
 
   protected readonly filtered = computed(
-    () => !!(this.assigneeFilter() || this.projectFilter() || this.dueFilter() || this.bookingFilter()),
+    () => !!(this.designerFilter() || this.departmentFilter() || this.dueFilter() || this.bookingFilter()),
   );
 
-  protected readonly openCard = computed(
-    () => this.cards().find((card) => card.task.id === this.openTaskId()) ?? null,
-  );
-
-  protected readonly changesCard = computed(
-    () => this.cards().find((card) => card.task.id === this.changesFor()) ?? null,
-  );
-
-  /** Approved cards go to the top of Done; the board reloads for the new order. */
-  protected async approve(task: Task): Promise<void> {
-    try {
-      await this.boardService.approve(task.id);
-      this.toast.show('Approved.', 'success');
-    } catch (error) {
-      this.toast.error(error);
-    }
-    this.board.reload();
-  }
-
-  protected onChangesSent(): void {
-    this.changesFor.set(null);
-    this.toast.show('Sent back for changes.', 'success');
-    this.board.reload();
-  }
-
-  protected async drop(event: CdkDragDrop<string, string, Task>): Promise<void> {
-    const task = event.item.data;
-    const statusId = event.container.data;
-    if (event.previousContainer === event.container && event.previousIndex === event.currentIndex) {
-      return;
-    }
-
-    if (this.collapsed().has(statusId)) {
-      this.heldByClick.set(expandOnDrop(this.collapsed(), statusId));
-    }
-
-    const column = columnWithout(this.tasks(), statusId, task.id);
-    const visible = column.filter((t) => this.matchesFilters(t));
-    const index = toColumnIndex(column, visible, event.currentIndex);
-    this.tasks.update((tasks) => moveTask(tasks, task.id, statusId, index));
-
-    try {
-      this.replaceTask(await this.boardService.moveTask(task.id, statusId, index));
-    } catch (error) {
-      this.toast.error(error);
-      this.board.reload();
-    }
-  }
+  protected readonly openCard = computed(() => this.cards().find((card) => card.job.id === this.openJobId()) ?? null);
 
   /** A manual collapse is remembered for this user; a manual expand holds only until the next resize. */
-  protected toggleColumn(statusId: string): void {
-    const next = toggleColumn(this.collapsed(), this.manuallyCollapsed(), statusId);
+  protected toggleColumn(columnId: string): void {
+    const next = toggleColumn(this.collapsed(), this.manuallyCollapsed(), columnId);
     this.heldByClick.set(next.collapsed);
     this.manuallyCollapsed.set(next.manual);
     this.prefs.saveCollapsedColumns(this.auth.me()!.id, next.manual);
   }
 
-  protected onSaved(task: Task): void {
-    this.replaceTask(task);
-    this.openTaskId.set(null);
-    this.toast.show('Task saved.');
-  }
-
-  protected onCreated(task: Task): void {
-    this.tasks.update((tasks) => [...tasks, task]);
-    this.addingTo.set(null);
-    this.toast.show('Task added.');
-  }
-
-  /** Users who book work edit every task; users who work on jobs only their own (D24, D77). The API enforces the same rule. */
-  private canEdit(task: Task): boolean {
-    const personId = this.auth.me()?.personId;
-    return this.auth.can('Allocate') || (this.auth.can('WorkOnJobs') && personId != null && task.assigneePersonId === personId);
-  }
-
-  private matchesFilters(task: Task): boolean {
-    return matchesFilters(task, {
-      assigneeId: this.assigneeFilter(),
-      projectId: this.projectFilter(),
+  private matches(card: BoardCard): boolean {
+    return matchesFilters(card.job, {
+      designerId: this.designerFilter(),
+      departmentId: this.departmentFilter(),
       due: this.dueFilter(),
       booking: this.bookingFilter(),
-      doneStatusIds: this.doneStatusIds(),
     });
-  }
-
-  private replaceTask(saved: Task): void {
-    this.tasks.update((tasks) => tasks.map((t) => (t.id === saved.id ? saved : t)));
   }
 }

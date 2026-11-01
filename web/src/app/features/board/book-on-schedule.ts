@@ -2,7 +2,7 @@ import { formatDate } from '@angular/common';
 import { Component, LOCALE_ID, inject, input, linkedSignal, output } from '@angular/core';
 import { FormField, form, max, min, required, submit } from '@angular/forms/signals';
 import { AllocationsService } from '../../core/allocations.service';
-import { Person, Task } from '../../core/models';
+import { Job, Person } from '../../core/models';
 import { clashMessage } from '../../shared/clash-message';
 import { addWeekdays, nextWeekday, today } from '../../shared/dates';
 import { ToastService } from '../../shared/toast.service';
@@ -18,23 +18,23 @@ const DEFAULT_HOURS_PER_DAY = 4;
 
 /**
  * Defaults (D28): start on the next working day; spread the estimate at about half a day a day, since people
- * juggle several projects; hours/day is the estimate over the days, to the nearest half hour. Another booking
- * spreads what is left of the estimate after the task's bookings (D59).
+ * juggle several jobs; hours/day is the estimate over the days, to the nearest half hour. Another booking
+ * spreads what is left of the estimate after the job's bookings (D59).
  */
-export function defaults(task: Task): BookingForm {
-  const estimate = Math.max(0, (task.estimateHours ?? 0) - task.bookedHours);
+export function defaults(job: Job): BookingForm {
+  const estimate = Math.max(0, (job.estimateHours ?? 0) - job.bookedHours);
   const days = Math.max(1, Math.ceil(estimate / DEFAULT_HOURS_PER_DAY));
   const hoursPerDay = estimate > 0 ? Math.max(0.5, Math.round((estimate / days) * 2) / 2) : DEFAULT_HOURS_PER_DAY;
   return { startDate: nextWeekday(today()), days, hoursPerDay };
 }
 
-/** Books the task's assignee on the schedule for the task's project, linked to the task (D28). */
+/** Books the job's designer on the schedule for the job (D28). */
 @Component({
   selector: 'app-book-on-schedule',
   imports: [FormField],
   template: `
     <form class="rounded-control bg-surface-muted p-4" novalidate (submit)="book($event)">
-      <p class="text-sm">Book <span class="font-semibold">{{ assignee().name }}</span> on the schedule</p>
+      <p class="text-sm">Book <span class="font-semibold">{{ designer().name }}</span> on the schedule</p>
       <div class="mt-4 grid grid-cols-2 gap-4">
         <div class="col-span-2">
           <label class="form-label" for="book-start">Start</label>
@@ -66,12 +66,12 @@ export class BookOnSchedule {
   private readonly toast = inject(ToastService);
   private readonly locale = inject(LOCALE_ID);
 
-  readonly task = input.required<Task>();
-  readonly assignee = input.required<Person>();
+  readonly job = input.required<Job>();
+  readonly designer = input.required<Person>();
   readonly closed = output<void>();
   readonly booked = output<void>();
 
-  protected readonly model = linkedSignal(() => defaults(this.task()));
+  protected readonly model = linkedSignal(() => defaults(this.job()));
 
   protected readonly bookingForm = form(this.model, (booking) => {
     required(booking.startDate, { message: 'Choose a start date.' });
@@ -90,18 +90,17 @@ export class BookOnSchedule {
       const endDate = addWeekdays(startDate, Math.round(days!) - 1);
       try {
         const saved = await this.allocations.create({
-          personId: this.assignee().id,
-          projectId: this.task().projectId,
-          taskId: this.task().id,
+          personId: this.designer().id,
+          jobId: this.job().id,
           startDate,
           endDate,
           hoursPerDay: hoursPerDay!,
           notes: null,
         });
-        const clash = clashMessage(this.assignee().name, saved.clashDays, saved.leaveDays, this.locale);
+        const clash = clashMessage(this.designer().name, saved.clashDays, saved.leaveDays, this.locale);
         const date = (d: string) => formatDate(d, 'EEE d MMM', this.locale);
         this.toast.show(
-          clash ?? `Booked ${this.assignee().name} for ${hoursPerDay}h/day, ${date(startDate)} to ${date(endDate)}.`,
+          clash ?? `Booked ${this.designer().name} for ${hoursPerDay}h/day, ${date(startDate)} to ${date(endDate)}.`,
           clash ? 'warning' : 'success',
         );
         this.booked.emit();

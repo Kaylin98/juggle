@@ -2,12 +2,12 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { CreateRequest, RequestOptions, WorkRequest } from '../../core/models';
-import { RequestsService } from '../../core/requests.service';
+import { CreateJob, Job, JobOptions } from '../../core/models';
+import { JobsService } from '../../core/jobs.service';
 import { TeamContextService } from '../../core/team-context.service';
 import { RequestFormPage } from './request-form';
 
-const options: RequestOptions = {
+const options: JobOptions = {
   teams: [{ id: 'studio', name: 'Studio', colour: '#8a78d6' }],
   departments: [{ id: 'dji', name: 'DJI' }],
   priorities: ['Low', 'Medium', 'High', 'Urgent'],
@@ -15,18 +15,18 @@ const options: RequestOptions = {
 };
 
 async function render() {
-  const sent: CreateRequest[] = [];
+  const sent: CreateJob[] = [];
   TestBed.configureTestingModule({
     imports: [RequestFormPage],
     providers: [
       provideRouter([]),
       {
-        provide: RequestsService,
+        provide: JobsService,
         useValue: {
           options: () => Promise.resolve(options),
-          create: (request: CreateRequest) => {
+          submit: (request: CreateJob) => {
             sent.push(request);
-            return Promise.resolve({ id: 'r1' } as WorkRequest);
+            return Promise.resolve({ id: 'j1', code: "DJI0143_Q1'27_Festive gifting" } as Job);
           },
         },
       },
@@ -88,13 +88,13 @@ describe('RequestFormPage', () => {
         title: 'Festive gifting',
         mainGoal: 'Drive festive gift sales.',
         deliverables: 'Takealot banners\nSocial tiles x6',
-        requestedDueDate: null,
+        requiredDate: null,
         priority: 'Medium',
       },
     ]);
   });
 
-  it('keeps each deliverable short enough to become a task title', async () => {
+  it('keeps each deliverable under 200 characters', async () => {
     const { fixture, element, sent } = await render();
     type(element, '#request-title', 'Festive gifting');
     type(element, '#request-deliverables', `Banner\n${'x'.repeat(201)}`);

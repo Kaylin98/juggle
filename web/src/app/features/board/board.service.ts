@@ -1,49 +1,26 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom, forkJoin } from 'rxjs';
-import { CreateTask, Person, Project, Task, UpdateTask, WorkflowStatus } from '../../core/models';
+import { Job, Person, Workflow } from '../../core/models';
 
 export interface Board {
-  statuses: WorkflowStatus[];
-  projects: Project[];
+  workflow: Workflow;
   people: Person[];
-  tasks: Task[];
+  jobs: Job[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class BoardService {
   private readonly http = inject(HttpClient);
 
+  /** The organisation's columns, the team's people, and the team's jobs the viewer may see. */
   load(teamId: string): Promise<Board> {
     return firstValueFrom(
       forkJoin({
-        statuses: this.http.get<WorkflowStatus[]>(`/api/teams/${teamId}/statuses`),
-        projects: this.http.get<Project[]>(`/api/teams/${teamId}/projects`),
+        workflow: this.http.get<Workflow>('/api/workflow'),
         people: this.http.get<Person[]>(`/api/teams/${teamId}/people`),
-        tasks: this.http.get<Task[]>(`/api/teams/${teamId}/tasks`),
+        jobs: this.http.get<Job[]>(`/api/teams/${teamId}/jobs`),
       }),
     );
-  }
-
-  createTask(teamId: string, task: CreateTask): Promise<Task> {
-    return firstValueFrom(this.http.post<Task>(`/api/teams/${teamId}/tasks`, task));
-  }
-
-  updateTask(id: string, changes: UpdateTask): Promise<Task> {
-    return firstValueFrom(this.http.put<Task>(`/api/tasks/${id}`, changes));
-  }
-
-  moveTask(id: string, statusId: string, index: number): Promise<Task> {
-    return firstValueFrom(this.http.post<Task>(`/api/tasks/${id}/move`, { statusId, index }));
-  }
-
-  /** The brand's manager approves a card awaiting approval; it moves to Done (D58). */
-  approve(id: string): Promise<Task> {
-    return firstValueFrom(this.http.post<Task>(`/api/tasks/${id}/approve`, {}));
-  }
-
-  /** The brand's manager sends a card awaiting approval back to Feedback needed with a comment (D58). */
-  requestChanges(id: string, comment: string): Promise<Task> {
-    return firstValueFrom(this.http.post<Task>(`/api/tasks/${id}/request-changes`, { comment }));
   }
 }

@@ -10,7 +10,7 @@ import { Tooltip } from '../../shared/tooltip';
   host: { class: 'panel block p-6' },
   template: `
     <h2 class="font-display text-lg font-semibold">Briefs received over the last 9 months</h2>
-    <p class="mt-1 text-sm text-ink-muted">Requests sent to the {{ teamName() }} team, by the month they came in</p>
+    <p class="mt-1 text-sm text-ink-muted">Briefs sent to the {{ teamName() }} team, by the month they came in</p>
 
     @if (total() === 0) {
       <p class="empty-state mt-6">No briefs received in the last 9 months.</p>

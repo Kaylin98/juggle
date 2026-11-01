@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { Capability } from '../core/models';
-import { RequestsService } from '../core/requests.service';
+import { JobsService } from '../core/jobs.service';
 import { TeamContextService } from '../core/team-context.service';
 import { TimeOffService } from '../core/time-off.service';
 import { Nav } from './nav';
@@ -30,7 +30,7 @@ async function render(capabilities: Capability[], url: string, personId: string 
         },
       },
       { provide: TeamContextService, useValue: { teamId: signal(teamId) } },
-      { provide: RequestsService, useValue: { inbox: { hasValue: () => true, value: () => [{}, {}, {}] } } },
+      { provide: JobsService, useValue: { incoming: { hasValue: () => true, value: () => [{}, {}, {}] } } },
       { provide: TimeOffService, useValue: { approvals: { hasValue: () => true, value: () => [{}, {}] } } },
     ],
   });

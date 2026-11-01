@@ -1,9 +1,9 @@
-namespace Juggle.Api.Features.Requests;
+namespace Juggle.Api.Features.Jobs;
 
-/// <summary>A brief's deliverables, typed one per line; each can become a task (D51).</summary>
+/// <summary>A brief's deliverables, typed one per line.</summary>
 public static class Deliverables
 {
-    /// <summary>The longest deliverable, so each fits a task title.</summary>
+    /// <summary>The longest deliverable.</summary>
     public const int MaxLength = 200;
 
     /// <summary>The non-empty lines, trimmed and without a leading bullet, in the order given.</summary>

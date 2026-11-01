@@ -46,20 +46,4 @@ public sealed class TeamAccess(JuggleDbContext db, CurrentUser currentUser, Perm
             ? db.People
             : db.People.Where(p => p.User.Memberships.Any(m => db.TeamMemberships.Any(a => a.TeamId == m.TeamId && a.UserId == currentUser.UserId)));
     }
-
-    /// <summary>With Allocate a user edits any task in a team they can open; with WorkOnJobs only the tasks assigned to them.</summary>
-    public async Task EnsureCanEditTaskAsync(TaskItem task, CancellationToken ct)
-    {
-        if (await permissions.HasAsync(Capability.Allocate, ct) && await CanOpenAsync(task.TeamId, ct))
-        {
-            return;
-        }
-
-        var isAssignee = task.AssigneePersonId is { } assigneeId
-            && await db.People.AnyAsync(p => p.Id == assigneeId && p.UserId == currentUser.UserId, ct);
-        if (!await permissions.HasAsync(Capability.WorkOnJobs, ct) || !isAssignee)
-        {
-            throw new ForbiddenException("You can only edit tasks assigned to you.");
-        }
-    }
 }

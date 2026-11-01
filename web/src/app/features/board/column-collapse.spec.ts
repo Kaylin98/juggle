@@ -1,7 +1,7 @@
-import { StatusCategory, WorkflowStatus } from '../../core/models';
-import { collapsedColumns, expandOnDrop, toggleColumn } from './column-collapse';
+import { CollapsibleColumn, collapsedColumns, expandOnDrop, toggleColumn } from './column-collapse';
 
-const status = (id: string, category: StatusCategory): WorkflowStatus => ({ id, name: id, order: 0, category });
+type Category = 'Todo' | 'InProgress' | 'Review' | 'Done';
+const status = (id: string, category: Category): CollapsibleColumn => ({ id, done: category === 'Done' });
 
 // Marketing-like: two Done-category columns at the end. Expanded at the minimum this needs 5 x 240 + 4 x 24 = 1296px.
 // Each collapsed column saves 240 - 56 = 184px.

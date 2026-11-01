@@ -6,12 +6,12 @@ import { Select, SelectOption } from '../../shared/select';
 import { BriefsReportService } from './briefs-report.service';
 import { DesignerChart } from './designer-chart';
 import { ReceivedChart } from './received-chart';
-import { statusColours } from './status-colours';
+import { columnColours } from './column-colours';
 import { StatusSplit } from './status-split';
 
 /**
- * The briefs report (D56), for Team Admins and Org Admins, like the studio's Monday report: briefs done and in
- * progress, cards per designer, and briefs received per month. The brand filter applies to all three.
+ * The briefs report (D56), for users who see all the work, like the studio's Monday report: briefs done and in
+ * progress, jobs per designer, and briefs received per month. The brand filter applies to all three.
  */
 @Component({
   selector: 'app-briefs-report-page',
@@ -34,11 +34,11 @@ import { StatusSplit } from './status-split';
       @if (report.error()) {
         <p class="empty-state mt-6 text-over-700">The report could not be loaded. Refresh the page to try again.</p>
       } @else if (data(); as data) {
-        <app-status-split class="mt-6" [statuses]="data.byStatus" [colours]="colours()" [teamName]="teamName()" />
+        <app-status-split class="mt-6" [columns]="data.byColumn" [colours]="colours()" [teamName]="teamName()" />
         <div class="mt-6 grid items-start gap-6 xl:grid-cols-2">
           <app-designer-chart
             [designers]="data.byDesigner"
-            [statuses]="data.byStatus"
+            [columns]="data.byColumn"
             [colours]="colours()"
             [teamName]="teamName()"
           />
@@ -74,7 +74,7 @@ export class BriefsReportPage {
 
   protected readonly teamName = computed(() => this.teamContext.team()?.name ?? '');
 
-  protected readonly colours = computed(() => statusColours(this.data()?.byStatus ?? []));
+  protected readonly colours = computed(() => columnColours(this.data()?.byColumn ?? []));
 
   protected readonly brandOptions = computed<SelectOption[]>(() => [
     { value: '', label: `All ${this.auth.departmentLabel().toLowerCase()}s` },

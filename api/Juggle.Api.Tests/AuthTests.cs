@@ -72,7 +72,7 @@ public sealed class AuthTests(ApiFactory api)
             var teamId = (await client.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct))!.Single().Id;
 
             var me = await client.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct);
-            var inbox = await client.GetAsync($"/api/teams/{teamId}/requests", _ct);
+            var inbox = await client.GetAsync($"/api/teams/{teamId}/incoming", _ct);
 
             Assert.Equal("Studio Coordinator", me!.Role);
             Assert.Equal(HttpStatusCode.OK, inbox.StatusCode);

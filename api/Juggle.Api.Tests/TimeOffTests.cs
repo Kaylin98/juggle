@@ -5,6 +5,7 @@ using Juggle.Api.Data.Entities;
 using Juggle.Api.Features.Allocations;
 using Juggle.Api.Features.Auth;
 using Juggle.Api.Features.Capacity;
+using Juggle.Api.Features.Jobs;
 using Juggle.Api.Features.MyWork;
 using Juggle.Api.Features.Teams;
 using Juggle.Api.Features.TimeOffRequests;
@@ -143,11 +144,11 @@ public sealed class TimeOffTests(ApiFactory api)
         var leave = await RequestAsync(ruben, TimeOffType.AnnualLeave, monday, monday.AddDays(1));
         await chloe.PostAsync($"/api/time-off/{leave.Id}/approve", null, _ct);
         var studioId = await TeamIdAsync(chloe, "Design Studio");
-        var project = (await chloe.GetFromJsonAsync<List<ProjectDto>>($"/api/teams/{studioId}/projects", ApiFactory.Json, _ct))![0];
+        var job = (await chloe.GetFromJsonAsync<List<JobDto>>($"/api/teams/{studioId}/jobs", ApiFactory.Json, _ct))![0];
         var rubenId = (await ruben.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct))!.PersonId!.Value;
 
         var response = await chloe.PostAsJsonAsync(
-            "/api/allocations", new SaveAllocationRequest(rubenId, project.Id, null, monday, monday.AddDays(2), 4, null), ApiFactory.Json, _ct);
+            "/api/allocations", new SaveAllocationRequest(rubenId, job.Id, monday, monday.AddDays(2), 4, null), ApiFactory.Json, _ct);
         var saved = (await response.Content.ReadFromJsonAsync<SavedAllocationDto>(ApiFactory.Json, _ct))!;
 
         Assert.Equal([monday, monday.AddDays(1)], saved.LeaveDays);

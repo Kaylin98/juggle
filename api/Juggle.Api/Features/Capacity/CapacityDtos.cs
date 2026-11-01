@@ -21,32 +21,32 @@ public sealed record CapacityPersonDto(
     decimal HoursPerDay,
     IReadOnlyList<DayLoad> Days);
 
-/// <param name="OtherTeam">The project belongs to another team, so the bar is shown greyed.</param>
+/// <param name="JobCode">The job ID, which the bar shows.</param>
+/// <param name="Colour">The job's brand colour, which its bookings take (D61).</param>
+/// <param name="OtherTeam">The job belongs to another team, so the bar is shown greyed.</param>
 public sealed record AllocationDto(
     Guid Id,
     Guid PersonId,
-    Guid ProjectId,
-    string ProjectName,
-    string ProjectColour,
-    string ProjectDepartment,
+    Guid JobId,
+    string JobCode,
+    string Colour,
+    string Department,
     string TeamName,
-    Guid? TaskId,
     DateOnly StartDate,
     DateOnly EndDate,
     decimal HoursPerDay,
     string? Notes,
     bool OtherTeam)
 {
-    /// <summary>Maps an allocation loaded with its project and the project's department.</summary>
+    /// <summary>Maps an allocation loaded with its job and the job's department.</summary>
     public static AllocationDto From(Allocation a, string teamName, bool otherTeam) => new(
         a.Id,
         a.PersonId,
-        a.ProjectId,
-        a.Project.Name,
-        a.Project.Department.Colour,
-        a.Project.Department.Name,
+        a.JobId,
+        a.Job.Code,
+        a.Job.Department.Colour,
+        a.Job.Department.Name,
         teamName,
-        a.TaskId,
         a.StartDate,
         a.EndDate,
         a.HoursPerDay,

@@ -17,10 +17,11 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
     public DbSet<Person> People => Set<Person>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<DepartmentManager> DepartmentManagers => Set<DepartmentManager>();
-    public DbSet<WorkflowStatus> WorkflowStatuses => Set<WorkflowStatus>();
-    public DbSet<Request> Requests => Set<Request>();
-    public DbSet<Project> Projects => Set<Project>();
-    public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<BoardColumn> BoardColumns => Set<BoardColumn>();
+    public DbSet<JobStatus> JobStatuses => Set<JobStatus>();
+    public DbSet<WorkflowTransition> WorkflowTransitions => Set<WorkflowTransition>();
+    public DbSet<Job> Jobs => Set<Job>();
+    public DbSet<JobEvent> JobEvents => Set<JobEvent>();
     public DbSet<Allocation> Allocations => Set<Allocation>();
     public DbSet<TimeOff> TimeOff => Set<TimeOff>();
 
@@ -54,8 +55,6 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.HasQueryFilter(d => d.OrgId == OrgId);
             e.Property(d => d.JobCodePrefix).HasMaxLength(10);
         });
-        modelBuilder.Entity<WorkflowStatus>().HasQueryFilter(s => s.OrgId == OrgId);
-        modelBuilder.Entity<Project>().HasQueryFilter(p => p.OrgId == OrgId);
         modelBuilder.Entity<Allocation>().HasQueryFilter(a => a.OrgId == OrgId);
         modelBuilder.Entity<TimeOff>().HasQueryFilter(t => t.OrgId == OrgId);
 
@@ -82,29 +81,52 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
 
         modelBuilder.Entity<Person>().HasIndex(p => p.UserId).IsUnique();
 
-        modelBuilder.Entity<Request>(e =>
+        modelBuilder.Entity<BoardColumn>(e =>
         {
-            e.HasQueryFilter(r => r.OrgId == OrgId);
-            e.Property(r => r.MainGoal).HasMaxLength(2000);
-            e.Property(r => r.Deliverables).HasMaxLength(4000);
-            e.Property(r => r.RejectionReason).HasMaxLength(1000);
-            e.HasOne(r => r.Requester).WithMany().HasForeignKey(r => r.RequesterUserId);
-            e.HasOne<TaskItem>().WithMany().HasForeignKey(r => r.TaskId);
+            e.HasQueryFilter(c => c.OrgId == OrgId);
+            e.Property(c => c.Name).HasMaxLength(64);
         });
 
-        modelBuilder.Entity<TaskItem>(e =>
+        // Statuses and steps in use cannot be deleted; an organisation changes its workflow around them.
+        modelBuilder.Entity<JobStatus>(e =>
         {
-            e.ToTable("Tasks");
+            e.HasQueryFilter(s => s.OrgId == OrgId);
+            e.Property(s => s.Name).HasMaxLength(64);
+            e.Property(s => s.Colour).HasMaxLength(7);
+            e.HasOne(s => s.Column).WithMany().HasForeignKey(s => s.ColumnId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<WorkflowTransition>(e =>
+        {
             e.HasQueryFilter(t => t.OrgId == OrgId);
-            e.Property(t => t.Description).HasMaxLength(4000);
-            e.Property(t => t.Link).HasMaxLength(1000);
-            e.Property(t => t.Feedback).HasMaxLength(1000);
-            e.HasOne(t => t.Assignee).WithMany().HasForeignKey(t => t.AssigneePersonId);
-            e.HasOne<Team>().WithMany().HasForeignKey(t => t.TeamId);
+            e.HasOne<JobStatus>().WithMany().HasForeignKey(t => t.FromStatusId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<JobStatus>().WithMany().HasForeignKey(t => t.ToStatusId).OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<Project>().HasOne<Team>().WithMany().HasForeignKey(p => p.TeamId);
-        modelBuilder.Entity<Allocation>().HasOne<TaskItem>().WithMany().HasForeignKey(a => a.TaskId);
+        modelBuilder.Entity<Job>(e =>
+        {
+            e.HasQueryFilter(j => j.OrgId == OrgId);
+            e.Property(j => j.Code).HasMaxLength(300);
+            e.HasIndex(j => new { j.OrgId, j.Code }).IsUnique();
+            e.Property(j => j.MainGoal).HasMaxLength(2000);
+            e.Property(j => j.Deliverables).HasMaxLength(4000);
+            e.HasOne(j => j.Requester).WithMany().HasForeignKey(j => j.RequesterUserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(j => j.Status).WithMany().HasForeignKey(j => j.StatusId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(j => j.Designer).WithMany().HasForeignKey(j => j.DesignerPersonId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<User>().WithMany().HasForeignKey(j => j.ClosedByUserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<JobEvent>(e =>
+        {
+            e.HasQueryFilter(j => j.OrgId == OrgId);
+            e.Property(j => j.Message).HasMaxLength(2000);
+            e.HasIndex(j => new { j.JobId, j.At });
+            e.HasOne<Job>().WithMany().HasForeignKey(j => j.JobId);
+            e.HasOne<User>().WithMany().HasForeignKey(j => j.UserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<JobStatus>().WithMany().HasForeignKey(j => j.FromStatusId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<JobStatus>().WithMany().HasForeignKey(j => j.ToStatusId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<TimeOff>(e =>
         {
             e.Property(t => t.Note).HasMaxLength(500);

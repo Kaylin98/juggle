@@ -4,13 +4,12 @@ using Juggle.Api.Common;
 using Juggle.Api.Data.Entities;
 using Juggle.Api.Features.Capacity;
 using Juggle.Api.Features.Dashboard;
-using Juggle.Api.Features.Requests;
-using Juggle.Api.Features.Tasks;
+using Juggle.Api.Features.Jobs;
 using Juggle.Api.Features.Teams;
 
 namespace Juggle.Api.Tests;
 
-// Other test classes add tasks and requests in parallel, so these run on their own and compare against the live data.
+// Other test classes add jobs and bookings in parallel, so these run on their own and compare against the live data.
 [CollectionDefinition(DisableParallelization = true)]
 public sealed class RunsAlone;
 
@@ -68,24 +67,21 @@ public sealed class DashboardTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Counts_match_the_board_and_the_triage_inbox()
+    public async Task Counts_match_the_board_and_the_incoming_queue()
     {
         var client = await api.SignInAsAsync("Chloe Adams");
         var studioId = await GetTeamIdAsync(client, "Design Studio");
-        var tasks = (await client.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{studioId}/tasks", ApiFactory.Json, _ct))!;
-        var statuses = await client.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{studioId}/statuses", ApiFactory.Json, _ct);
-        var inbox = await client.GetFromJsonAsync<List<RequestDto>>($"/api/teams/{studioId}/requests?status=New", ApiFactory.Json, _ct);
-        var done = statuses!.Where(s => s.Category == StatusCategory.Done).Select(s => s.Id).ToHashSet();
-        var review = statuses!.Where(s => s.Category == StatusCategory.Review).Select(s => s.Id).ToHashSet();
+        var jobs = (await client.GetFromJsonAsync<List<JobDto>>($"/api/teams/{studioId}/jobs", ApiFactory.Json, _ct))!;
+        var incoming = await client.GetFromJsonAsync<List<JobDto>>($"/api/teams/{studioId}/incoming", ApiFactory.Json, _ct);
+        string[] approvals = ["Awaiting Design Approval", "Awaiting Marketing Approval", "Awaiting Business Approval"];
 
         var dashboard = await GetDashboardAsync(client, studioId.ToString());
 
-        Assert.Equal([new TeamCountDto(studioId, "Design Studio", tasks.Count(t => t.IsOverdue))], dashboard.OverdueTasks);
-        Assert.Equal([new TeamCountDto(studioId, "Design Studio", inbox!.Count)], dashboard.TriageRequests);
-        Assert.Equal([new TeamCountDto(studioId, "Design Studio", tasks.Count(t => review.Contains(t.StatusId)))], dashboard.AwaitingReview);
-        Assert.True(dashboard.AwaitingReview[0].Count > 0);
-        Assert.True(dashboard.OverdueTasks[0].Count > 0);
-        Assert.Equal(tasks.Count(t => !done.Contains(t.StatusId)), dashboard.WorkByDepartment.Sum(d => d.Count));
+        Assert.Equal([new TeamCountDto(studioId, "Design Studio", jobs.Count(j => j.IsOverdue))], dashboard.OverdueJobs);
+        Assert.Equal([new TeamCountDto(studioId, "Design Studio", incoming!.Count)], dashboard.Incoming);
+        Assert.Equal([new TeamCountDto(studioId, "Design Studio", jobs.Count(j => approvals.Contains(j.StatusName)))], dashboard.AwaitingApproval);
+        Assert.Equal((4, 4), (dashboard.AwaitingApproval[0].Count, dashboard.OverdueJobs[0].Count));
+        Assert.Equal(jobs.Count(j => j.StatusKind == JobStatusKind.Open), dashboard.WorkByDepartment.Sum(d => d.Count));
         Assert.Equal(dashboard.WorkByDepartment.OrderByDescending(d => d.Count), dashboard.WorkByDepartment);
     }
 
@@ -98,9 +94,9 @@ public sealed class DashboardTests(ApiFactory api)
 
         var dashboard = await GetDashboardAsync(client, "all");
 
-        Assert.Equal(["Design Studio"], dashboard.OverdueTasks.Select(t => t.TeamName));
-        Assert.Equal(["Design Studio"], dashboard.TriageRequests.Select(t => t.TeamName));
-        Assert.Equal(["Design Studio"], dashboard.AwaitingReview.Select(t => t.TeamName));
+        Assert.Equal(["Design Studio"], dashboard.OverdueJobs.Select(t => t.TeamName));
+        Assert.Equal(["Design Studio"], dashboard.Incoming.Select(t => t.TeamName));
+        Assert.Equal(["Design Studio"], dashboard.AwaitingApproval.Select(t => t.TeamName));
         Assert.Equal(schedule!.People.Count, dashboard.People.Count);
     }
 

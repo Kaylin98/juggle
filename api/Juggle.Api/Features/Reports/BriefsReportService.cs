@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Juggle.Api.Features.Reports;
 
 /// <summary>
-/// The briefs report (D56), like the studio's Monday report: the board's cards by status and by assignee, and the
+/// The briefs report (D56), like the studio's Monday report: the team's jobs by board column and by designer, and the
 /// briefs received each month, for every brand or one. It covers the whole team, so it needs ViewAllJobs too until
-/// reports are scoped to the viewer (V.6).
+/// reports are scoped to the viewer (V.6). A column whose statuses are all done or cancelled counts as completed.
 /// </summary>
 public sealed class BriefsReportService(JuggleDbContext db, TeamAccess teamAccess, Permissions permissions, OrgClock clock)
 {
@@ -22,54 +22,59 @@ public sealed class BriefsReportService(JuggleDbContext db, TeamAccess teamAcces
         await permissions.EnsureAsync(Capability.ViewAllJobs, ct);
 
         var brands = await db.Departments
-            .Where(d => db.Projects.Any(p => p.TeamId == teamId && p.DepartmentId == d.Id)
-                || db.Requests.Any(r => r.TeamId == teamId && r.DepartmentId == d.Id))
+            .Where(d => db.Jobs.Any(j => j.TeamId == teamId && j.DepartmentId == d.Id))
             .OrderBy(d => d.Name)
             .Select(d => new BrandDto(d.Id, d.Name))
             .ToListAsync(ct);
 
-        // The first status, Triage, is the inbox rather than a board column (D18).
-        var statuses = await db.WorkflowStatuses.Where(s => s.TeamId == teamId).OrderBy(s => s.Order).Skip(1).ToListAsync(ct);
-        var counts = (await db.Tasks
-                .Where(t => t.TeamId == teamId && (departmentId == null || t.Project.DepartmentId == departmentId))
-                .GroupBy(t => new { t.StatusId, t.AssigneePersonId })
-                .Select(g => new { g.Key.StatusId, g.Key.AssigneePersonId, Count = g.Count() })
-                .ToListAsync(ct))
-            .Where(c => statuses.Any(s => s.Id == c.StatusId))
-            .ToList();
+        var columns = await db.BoardColumns.OrderBy(c => c.Order).ToListAsync(ct);
+        var statuses = await db.JobStatuses.ToListAsync(ct);
+        var doneColumns = columns
+            .Where(c => statuses.Where(s => s.ColumnId == c.Id).All(s => s.Kind != JobStatusKind.Open))
+            .Select(c => c.Id)
+            .ToHashSet();
 
-        var assigneeIds = counts.Where(c => c.AssigneePersonId != null).Select(c => c.AssigneePersonId!.Value).Distinct().ToList();
+        var counts = await db.Jobs
+            .Where(j => j.TeamId == teamId
+                && j.Status.Kind != JobStatusKind.Cancelled
+                && (departmentId == null || j.DepartmentId == departmentId))
+            .GroupBy(j => new { j.Status.ColumnId, j.DesignerPersonId })
+            .Select(g => new { g.Key.ColumnId, g.Key.DesignerPersonId, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var designerIds = counts.Where(c => c.DesignerPersonId != null).Select(c => c.DesignerPersonId!.Value).Distinct().ToList();
         var people = await db.People
-            .Where(p => p.User.Memberships.Any(m => m.TeamId == teamId) || assigneeIds.Contains(p.Id))
+            .Where(p => p.User.Memberships.Any(m => m.TeamId == teamId) || designerIds.Contains(p.Id))
             .OrderBy(p => p.User.Name)
             .Select(p => new { p.Id, p.User.Name })
             .ToListAsync(ct);
 
-        var done = statuses.Where(s => s.Category == StatusCategory.Done).Select(s => s.Id).ToHashSet();
         DesignerCountDto Designer(Guid? personId, string? name) => new(
             personId,
             name,
-            counts.Where(c => c.AssigneePersonId == personId).ToDictionary(c => c.StatusId, c => c.Count));
-        int Open(DesignerCountDto designer) => designer.Counts.Where(c => !done.Contains(c.Key)).Sum(c => c.Value);
+            counts.Where(c => c.DesignerPersonId == personId).ToDictionary(c => c.ColumnId, c => c.Count));
+        int Open(DesignerCountDto designer) => designer.Counts.Where(c => !doneColumns.Contains(c.Key)).Sum(c => c.Value);
 
         var byDesigner = people
             .Select(p => Designer(p.Id, p.Name))
             .OrderByDescending(Open)
             .ThenBy(d => d.Name)
             .ToList();
-        if (counts.Any(c => c.AssigneePersonId == null))
+        if (counts.Any(c => c.DesignerPersonId == null))
         {
             byDesigner.Add(Designer(null, null));
         }
 
         return new BriefsReportDto(
             brands,
-            statuses.Select(s => new StatusCountDto(s.Id, s.Name, s.Category, counts.Where(c => c.StatusId == s.Id).Sum(c => c.Count))).ToList(),
+            columns
+                .Select(c => new ColumnCountDto(c.Id, c.Name, doneColumns.Contains(c.Id), counts.Where(n => n.ColumnId == c.Id).Sum(n => n.Count)))
+                .ToList(),
             byDesigner,
             await ReceivedByMonthAsync(teamId, departmentId, ct));
     }
 
-    /// <summary>Counted by the day each request was sent in the organisation's time zone, whatever became of it.</summary>
+    /// <summary>Counted by the day each brief was sent in the organisation's time zone, whatever became of it.</summary>
     private async Task<IReadOnlyList<MonthCountDto>> ReceivedByMonthAsync(Guid teamId, Guid? departmentId, CancellationToken ct)
     {
         var today = clock.Today;
@@ -77,9 +82,9 @@ public sealed class BriefsReportService(JuggleDbContext db, TeamAccess teamAcces
         // A day early in UTC, so nothing sent just after midnight in Johannesburg is missed; the dates sort it out.
         var since = new DateTimeOffset(firstMonth.AddDays(-1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
 
-        var sent = await db.Requests
-            .Where(r => r.TeamId == teamId && (departmentId == null || r.DepartmentId == departmentId) && r.CreatedAt >= since)
-            .Select(r => r.CreatedAt)
+        var sent = await db.Jobs
+            .Where(j => j.TeamId == teamId && (departmentId == null || j.DepartmentId == departmentId) && j.CreatedAt >= since)
+            .Select(j => j.CreatedAt)
             .ToListAsync(ct);
         var perMonth = sent
             .Select(OrgClock.DateOf)

@@ -15,7 +15,7 @@ export function legendBrands<T>(items: T[], brand: (item: T) => LegendBrand): Le
 let nextId = 0;
 
 /**
- * A small key to the brand colours that tasks and bookings take (D61): a dot and the name per brand shown.
+ * A small key to the brand colours that jobs and bookings take (D61): a dot and the name per brand shown.
  * The label is the org's word for a brand, in the plural, such as "Brands" (D48).
  */
 @Component({

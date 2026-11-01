@@ -4,8 +4,8 @@ using Juggle.Api.Common;
 using Juggle.Api.Data.Entities;
 using Juggle.Api.Features.Auth;
 using Juggle.Api.Features.Capacity;
+using Juggle.Api.Features.Jobs;
 using Juggle.Api.Features.MyWork;
-using Juggle.Api.Features.Tasks;
 using Juggle.Api.Features.Teams;
 
 namespace Juggle.Api.Tests;
@@ -18,7 +18,7 @@ public sealed class MyWorkTests(ApiFactory api)
     private readonly DateOnly _monday = new OrgClock(TimeProvider.System).Today.StartOfWeek();
 
     [Fact]
-    public async Task Lists_my_open_tasks_from_every_team_overdue_first()
+    public async Task Lists_my_open_jobs_from_every_team_overdue_first()
     {
         var priya = await api.SignInAsAsync("Priya Naidoo");
         var me = await priya.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct);
@@ -27,19 +27,16 @@ public sealed class MyWorkTests(ApiFactory api)
         var expected = new List<Guid>();
         foreach (var team in teams!)
         {
-            var statuses = await priya.GetFromJsonAsync<List<StatusDto>>($"/api/teams/{team.Id}/statuses", ApiFactory.Json, _ct);
-            var board = statuses!.Where(s => s.Order > statuses!.Min(x => x.Order) && s.Category != StatusCategory.Done).Select(s => s.Id).ToHashSet();
-            var tasks = await priya.GetFromJsonAsync<List<TaskDto>>($"/api/teams/{team.Id}/tasks", ApiFactory.Json, _ct);
-            expected.AddRange(tasks!.Where(t => t.AssigneePersonId == me!.PersonId && board.Contains(t.StatusId)).Select(t => t.Id));
+            var jobs = await priya.GetFromJsonAsync<List<JobDto>>($"/api/teams/{team.Id}/jobs", ApiFactory.Json, _ct);
+            expected.AddRange(jobs!.Where(j => j.DesignerPersonId == me!.PersonId && j.StatusKind == JobStatusKind.Open).Select(j => j.Id));
         }
 
         var myWork = await GetMyWorkAsync(priya);
 
-        Assert.Equal(expected.Order(), myWork.Tasks.Select(t => t.Task.Id).Order());
-        Assert.Equal(["Design Studio"], myWork.Tasks.Select(t => t.TeamName).Distinct());
-        Assert.DoesNotContain(myWork.Tasks, t => t.Category == StatusCategory.Done);
-        Assert.True(myWork.Tasks[0].Task.IsOverdue);
-        Assert.Equal(myWork.Tasks.OrderByDescending(t => t.Task.IsOverdue).ThenBy(t => t.Task.DueDate ?? DateOnly.MaxValue), myWork.Tasks);
+        Assert.Equal(expected.Order(), myWork.Jobs.Select(j => j.Id).Order());
+        Assert.Equal(["Design Studio"], myWork.Jobs.Select(j => j.TeamName).Distinct());
+        Assert.True(myWork.Jobs[0].IsOverdue);
+        Assert.Equal(myWork.Jobs.OrderByDescending(j => j.IsOverdue).ThenBy(j => j.RequiredDate ?? DateOnly.MaxValue), myWork.Jobs);
     }
 
     [Fact]

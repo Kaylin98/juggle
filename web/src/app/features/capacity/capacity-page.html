@@ -57,7 +57,8 @@
   >
     <app-allocation-popover
       [draft]="draft"
-      [projects]="projects.hasValue() ? projects.value() : []"
+      [jobs]="jobs.hasValue() ? jobs.value() : []"
+      [jobLabel]="auth.terms().job"
       [canBook]="editable()"
       [ownPersonId]="ownPersonId()"
       (timeOffRequested)="onTimeOffRequested()"

@@ -45,7 +45,7 @@ export interface Me {
   capabilities: Capability[];
   personId: string | null;
   terms: Terms;
-  /** The brands the user manages, whose cards they approve (D58). */
+  /** The brands the user manages (D58). */
   managedDepartmentIds: string[];
 }
 
@@ -55,21 +55,29 @@ export interface Team {
   colour: string;
 }
 
-export type StatusCategory = 'Todo' | 'InProgress' | 'Review' | 'Done';
+/** Whether a job in a status is still open, done, or cancelled (left out of completed counts, D75). */
+export type JobStatusKind = 'Open' | 'Done' | 'Cancelled';
 
-export interface WorkflowStatus {
-  id: string;
-  name: string;
-  order: number;
-  category: StatusCategory;
-}
-
-export interface Project {
+/** One of the organisation's detailed statuses (D69, D77), with one of the 8 palette hues for its chip. */
+export interface JobStatus {
   id: string;
   name: string;
   colour: string;
-  departmentId: string;
-  department: string;
+  kind: JobStatusKind;
+}
+
+/** A board column and its statuses, in order. */
+export interface BoardColumn {
+  id: string;
+  name: string;
+  statuses: JobStatus[];
+}
+
+/** The organisation's board (D64, D77). */
+export interface Workflow {
+  columns: BoardColumn[];
+  /** The statuses Allocate and schedule leads to, whose cards show "Starts <date>" (D76). */
+  scheduledStatusIds: string[];
 }
 
 export interface Person {
@@ -80,56 +88,54 @@ export interface Person {
   hoursPerDay: number;
 }
 
-export interface Task {
+/** A job: a brief from its marketing manager, with its job ID, status and designer (D68). */
+export interface Job {
   id: string;
-  projectId: string;
-  statusId: string;
+  teamId: string;
+  teamName: string;
+  /** The job ID, fixed when the brief was sent (D63). */
+  code: string;
   title: string;
-  description: string | null;
-  assigneePersonId: string | null;
+  departmentId: string;
+  department: string;
+  /** The brand's colour, which its cards and bookings take (D61). */
+  colour: string;
+  requesterName: string;
+  statusId: string;
+  /** The board column its status is in. */
+  columnId: string;
+  statusName: string;
+  statusColour: string;
+  statusKind: JobStatusKind;
+  priority: Priority;
+  requiredDate: string | null;
+  /** When the brief was sent: the date briefed. */
+  createdAt: string;
+  mainGoal: string | null;
+  /** One per line as typed, without empty lines or bullets. */
+  deliverables: string[];
+  designerPersonId: string | null;
+  designerName: string | null;
   estimateHours: number | null;
-  dueDate: string | null;
+  plannedStartDate: string | null;
+  expectedCompletionDate: string | null;
+  /** Open and the required date has passed. */
   isOverdue: boolean;
-  /** Due within the next 7 days, or overdue, and not done (D57). */
+  /** Open and required within the next 7 days, or overdue (D57). */
   isDueSoon: boolean;
-  reviewCycle: number;
-  sortOrder: number;
-  link: string | null;
   /** The hours of all its bookings, on the person's working days. */
   bookedHours: number;
-  /** The bookings linked to it, earliest first. */
-  bookings: TaskBooking[];
-  /** What the brand's manager asked to change when they last sent it back from approval (D58). */
-  feedback: string | null;
+  /** Its bookings, earliest first. */
+  bookings: JobBooking[];
 }
 
-export interface TaskBooking {
+export interface JobBooking {
   personId: string;
   personName: string;
   startDate: string;
   endDate: string;
   hoursPerDay: number;
   hours: number;
-}
-
-/** A task added from the board. With no status it goes in the first column after Triage. */
-export interface CreateTask {
-  title: string;
-  projectId: string;
-  statusId: string | null;
-  assigneePersonId: string | null;
-  estimateHours: number | null;
-  dueDate: string | null;
-  link: string | null;
-}
-
-export interface UpdateTask {
-  title: string;
-  description: string | null;
-  assigneePersonId: string | null;
-  estimateHours: number | null;
-  dueDate: string | null;
-  link: string | null;
 }
 
 export interface DayLoad {
@@ -156,18 +162,19 @@ export interface SchedulePerson {
 export interface Allocation {
   id: string;
   personId: string;
-  projectId: string;
-  projectName: string;
-  projectColour: string;
-  projectDepartment: string;
-  /** The team that owns the project. */
+  jobId: string;
+  /** The job ID, which the bar shows. */
+  jobCode: string;
+  /** The job's brand colour (D61). */
+  colour: string;
+  department: string;
+  /** The team that owns the job. */
   teamName: string;
-  taskId: string | null;
   startDate: string;
   endDate: string;
   hoursPerDay: number;
   notes: string | null;
-  /** The project belongs to another team; shown greyed. */
+  /** The job belongs to another team; shown greyed. */
   otherTeam: boolean;
 }
 
@@ -180,8 +187,7 @@ export interface Schedule {
 /** Creates or replaces an allocation. Dates are inclusive. */
 export interface SaveAllocation {
   personId: string;
-  projectId: string;
-  taskId: string | null;
+  jobId: string;
   startDate: string;
   endDate: string;
   hoursPerDay: number;
@@ -197,7 +203,6 @@ export interface SavedAllocation extends SaveAllocation {
 }
 
 export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
-export type RequestStatus = 'New' | 'Accepted' | 'Rejected';
 
 export interface Option {
   id: string;
@@ -208,69 +213,25 @@ export interface TeamOption extends Option {
   colour: string;
 }
 
-/**
- * What the request form offers. Any team can be asked for work; the department defaults to the first brand the user
- * manages (D58).
- */
-export interface RequestOptions {
+/** What the brief form offers. The brand defaults to the first brand the user manages (D58). */
+export interface JobOptions {
   teams: TeamOption[];
   departments: Option[];
   priorities: Priority[];
   myDepartmentId: string | null;
 }
 
-/** A brief, in the studio's template (D50). */
-export interface WorkRequest {
-  id: string;
+/** A brief in the studio's template (D50). The signed-in user sends it (D67). */
+export interface CreateJob {
   teamId: string;
-  teamName: string;
   /** The job name. */
-  title: string;
-  mainGoal: string | null;
-  /** One per line as typed, without empty lines or bullets. */
-  deliverables: string[];
-  department: string;
-  requesterName: string;
-  /** The studio deadline. */
-  requestedDueDate: string | null;
-  priority: Priority;
-  status: RequestStatus;
-  taskId: string | null;
-  rejectionReason: string | null;
-  createdAt: string;
-  /** Once accepted: who does the work, from the task (it follows reassignment). */
-  assigneeName: string | null;
-  /** Once accepted: the task's due date, which the team committed to. */
-  committedDueDate: string | null;
-}
-
-export interface CreateRequest {
-  teamId: string;
   title: string;
   mainGoal: string | null;
   /** One per line. */
   deliverables: string | null;
   departmentId: string;
-  requestedDueDate: string | null;
+  requiredDate: string | null;
   priority: Priority;
-}
-
-/**
- * Turns a request into work, with who does it, the estimate and the committed due date: into an existing project
- * (`projectId`, one task) or as a new brief (`newProjectName`, one task per deliverable), never both (D51).
- */
-export interface AcceptRequest {
-  projectId: string | null;
-  newProjectName: string | null;
-  assigneePersonId: string | null;
-  estimateHours: number | null;
-  dueDate: string | null;
-}
-
-/** What accepting as a new brief proposes: the next job code (null when the department has no prefix) and colour. */
-export interface NewBrief {
-  projectName: string | null;
-  colour: string;
 }
 
 /** Booked and available hours over a period; capacity is 0 when the person has no working days in it. */
@@ -305,26 +266,28 @@ export interface DepartmentCount {
 export interface Dashboard {
   people: PersonUtilisation[];
   /** One entry per team shown, so "All teams" can link to each team. */
-  overdueTasks: TeamCount[];
-  /** Open tasks in a review column, waiting on feedback or approval (D53). */
-  awaitingReview: TeamCount[];
-  triageRequests: TeamCount[];
-  /** Open tasks by their project's department, most first. */
+  overdueJobs: TeamCount[];
+  /** Jobs waiting for an approval (D53, D77). */
+  awaitingApproval: TeamCount[];
+  /** Jobs in the incoming queue. */
+  incoming: TeamCount[];
+  /** Open jobs by brand, most first. */
   workByDepartment: DepartmentCount[];
 }
 
-export interface StatusCount {
-  statusId: string;
+export interface ColumnCount {
+  columnId: string;
   name: string;
-  category: StatusCategory;
+  /** Every status in the column is done or cancelled, so its jobs count as completed. */
+  done: boolean;
   count: number;
 }
 
 export interface DesignerCount {
-  /** Null for the cards nobody is assigned to. */
+  /** Null for the jobs with no designer yet. */
   personId: string | null;
   name: string | null;
-  /** Cards per status id; statuses with none are left out. */
+  /** Jobs per column id; columns with none are left out. */
   counts: Record<string, number>;
 }
 
@@ -334,29 +297,16 @@ export interface MonthCount {
   count: number;
 }
 
-/** The briefs report (D56), for every brand or one. */
+/** The briefs report (D56), for every brand or one. Cancelled jobs are left out (D75). */
 export interface BriefsReport {
-  /** The brands with work in the team, for the brand filter; the same whatever the filter. */
+  /** The brands with jobs in the team, for the brand filter; the same whatever the filter. */
   brands: Option[];
-  /** Cards per board column, in board order. */
-  byStatus: StatusCount[];
-  /** Everyone in the team, the most open cards first, then unassigned cards. */
+  /** Jobs per board column, in board order. */
+  byColumn: ColumnCount[];
+  /** Everyone in the team, the most open jobs first, then jobs with no designer. */
   byDesigner: DesignerCount[];
-  /** Requests sent to the team in each of the last 9 months, oldest first. */
+  /** Briefs sent to the team in each of the last 9 months, oldest first. */
   receivedByMonth: MonthCount[];
-}
-
-/** A task assigned to the signed-in person, with what My work shows of its team, project and status. */
-export interface MyTask {
-  task: Task;
-  teamId: string;
-  teamName: string;
-  projectName: string;
-  projectColour: string;
-  projectDepartmentId: string;
-  projectDepartment: string;
-  statusName: string;
-  category: StatusCategory;
 }
 
 export type TimeOffType = 'AnnualLeave' | 'SickLeave' | 'FamilyResponsibility' | 'StudyLeave' | 'Other';
@@ -403,8 +353,8 @@ export interface TimeOffApproval {
 /** The signed-in person's work across all their teams. */
 export interface MyWork {
   person: Person;
-  /** Open tasks: overdue first, then by due date, undated last. */
-  tasks: MyTask[];
+  /** Open jobs they are the designer of: overdue first, then by required date, undated last. */
+  jobs: Job[];
   /** Each weekday of this week and next week. */
   days: DayLoad[];
   /** Bookings on those days, in every team. */

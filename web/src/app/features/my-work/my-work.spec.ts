@@ -1,38 +1,8 @@
-import { Allocation, DayLoad, MyTask, StatusCategory } from '../../core/models';
+import { Allocation, BoardColumn, DayLoad } from '../../core/models';
 import { addDays } from '../../shared/dates';
+import { job } from '../board/job.fixture';
+import { groupJobs } from './my-jobs';
 import { scheduleWeeks } from './my-schedule';
-import { groupTasks } from './my-tasks';
-
-function task(title: string, category: StatusCategory): MyTask {
-  return {
-    task: {
-      id: title,
-      projectId: 'p',
-      statusId: 's',
-      title,
-      description: null,
-      assigneePersonId: 'me',
-      estimateHours: null,
-      dueDate: null,
-      isOverdue: false,
-      isDueSoon: false,
-      reviewCycle: 1,
-      sortOrder: 0,
-      link: null,
-      bookedHours: 0,
-      bookings: [],
-      feedback: null,
-    },
-    teamId: 'design',
-    teamName: 'Design',
-    projectName: 'Project',
-    projectColour: '#5b8def',
-    projectDepartmentId: 'sales',
-    projectDepartment: 'Sales',
-    statusName: 'Status',
-    category,
-  };
-}
 
 const MONDAY = '2026-11-02';
 
@@ -44,12 +14,11 @@ function booking(id: string, from: number, to: number): Allocation {
   return {
     id,
     personId: 'me',
-    projectId: 'p',
-    projectName: id,
-    projectColour: '#5b8def',
-    projectDepartment: 'Sales',
+    jobId: 'p',
+    jobCode: id,
+    colour: '#5b8def',
+    department: 'Sales',
     teamName: 'Design',
-    taskId: null,
     startDate: addDays(MONDAY, from),
     endDate: addDays(MONDAY, to),
     hoursPerDay: 4,
@@ -58,14 +27,21 @@ function booking(id: string, from: number, to: number): Allocation {
   };
 }
 
-describe('groupTasks', () => {
-  it('groups by status category in board order, keeping the order given (overdue first)', () => {
-    const tasks = [task('Late review', 'Review'), task('Late todo', 'Todo'), task('Doing', 'InProgress'), task('Next todo', 'Todo')];
+describe('groupJobs', () => {
+  const column = (id: string): BoardColumn => ({ id, name: id, statuses: [] });
 
-    const groups = groupTasks(tasks);
+  it('groups by board column in board order, keeping the order given (overdue first), without empty columns', () => {
+    const jobs = [
+      job({ id: 'Late review', columnId: 'review' }),
+      job({ id: 'Late design', columnId: 'design' }),
+      job({ id: 'With marketing', columnId: 'marketing' }),
+      job({ id: 'Next design', columnId: 'design' }),
+    ];
 
-    expect(groups.map((g) => g.label)).toEqual(['To do', 'In progress', 'Review']);
-    expect(groups.map((g) => g.tasks.map((t) => t.task.title))).toEqual([['Late todo', 'Next todo'], ['Doing'], ['Late review']]);
+    const groups = groupJobs(jobs, ['incoming', 'design', 'review', 'marketing', 'done'].map(column));
+
+    expect(groups.map((g) => g.column.id)).toEqual(['design', 'review', 'marketing']);
+    expect(groups.map((g) => g.jobs.map((j) => j.id))).toEqual([['Late design', 'Next design'], ['Late review'], ['With marketing']]);
   });
 });
 
@@ -89,7 +65,7 @@ describe('scheduleWeeks', () => {
 
     const weeks = scheduleWeeks(days, [booking('Deck', 1, 3), booking('Social', 3, 8)], 'en-US');
 
-    const names = (w: number) => weeks[w].days.map((d) => d.bookings.map((b) => b.projectName));
+    const names = (w: number) => weeks[w].days.map((d) => d.bookings.map((b) => b.jobCode));
     expect(names(0)).toEqual([[], ['Deck'], [], ['Deck', 'Social'], ['Social']]);
     expect(names(1)).toEqual([['Social'], ['Social'], [], [], []]);
   });

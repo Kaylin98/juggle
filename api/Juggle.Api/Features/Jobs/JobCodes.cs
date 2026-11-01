@@ -1,10 +1,10 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace Juggle.Api.Features.Requests;
+namespace Juggle.Api.Features.Jobs;
 
 /// <summary>
-/// Job codes name a brief's project: <c>&lt;PREFIX&gt;&lt;NNNN&gt;_Q&lt;n&gt;'&lt;YY&gt;_&lt;job name&gt;</c>, such as
+/// Job IDs: <c>&lt;PREFIX&gt;&lt;NNNN&gt;_Q&lt;n&gt;'&lt;YY&gt;_&lt;job name&gt;</c>, such as
 /// <c>DJI0141_Q1'27_Black Friday</c> (D52). The prefix is the department's, the number counts up per prefix, and the
 /// quarter is the financial quarter of the deadline.
 /// </summary>
@@ -27,11 +27,11 @@ public static class JobCodes
         return ((monthsIn / 3) + 1, year);
     }
 
-    /// <summary>One more than the highest number after the prefix in the given project names; 1 when there is none.</summary>
-    public static int NextNumber(string prefix, IEnumerable<string> projectNames)
+    /// <summary>One more than the highest number after the prefix in the given job IDs; 1 when there is none.</summary>
+    public static int NextNumber(string prefix, IEnumerable<string> codes)
     {
         var pattern = new Regex($"^{Regex.Escape(prefix)}(\\d{{4}})", RegexOptions.IgnoreCase);
-        return projectNames
+        return codes
             .Select(name => pattern.Match(name))
             .Where(match => match.Success)
             .Select(match => int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture))

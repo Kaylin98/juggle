@@ -112,6 +112,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 - [ ] Saving an allocation that pushes a day over capacity shows a clash warning, but still allows it
 - [ ] Time off and public holidays show as hatched blocks and reduce capacity
 - [ ] Load includes allocations from other teams (shown greyed)
+- [ ] A "People" filter picks who the schedule shows (checkboxes, search, Select all / Clear, "Showing N of M"), remembered per user (D60)
 
 **3. Board**
 
@@ -196,7 +197,7 @@ One milestone per day, each ending with something runnable. The schedule gets th
 About 10 minutes, told as The Core Group's studio (Phase C): the pain points they live with today on Monday.com, then one DJI brief from the marketing manager to booked capacity.
 
 1. **Dashboard, as Naledi Khumalo (Head of Studio).** Lerato Mokoena is "Over capacity this week" and tops utilisation, while others have room: one designer carries far more than the rest. "Awaiting review" shows the approval backlog, and "Overdue tasks" the deadlines already missed. Then **Briefs report**, their Monday report without the spreadsheet: about 70% of briefs done, Lerato's column carries the most open work, and briefs received month by month over the last 9 months. Pick DJI in the Brand filter and all three widgets show DJI only
-2. **Schedule:** Lerato's red days this week and next, Priya Naidoo clearly available, Amahle on leave next week. Bookings read as job codes, so every brand's work is in one view
+2. **Schedule:** Lerato's red days this week and next, Priya Naidoo clearly available, Amahle on leave next week. Bookings read as job codes, so every brand's work is in one view. The People filter narrows it to whoever matters for a decision (say Lerato and Priya: "Showing 2 of 8"), and it is remembered next time
 3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), studio deadline in 2 weeks. It goes in as from Zanele: whoever is signed in sends the brief, so there is no "Requested by" field
 4. **Triage, as a new brief:** switch back to Naledi; the triage badge shows it. Accept: "New brief" proposes `DJI0143_Q<n>'<YY>_Summer Holiday Sale` (editable); assign Priya, estimate 16 h, keep the committed date. The board shows a new DJI project, in its own colour, with three cards in Briefed in
 5. **Book it:** on the board, set Booking to "Not booked": everything nobody is booked for yet, amber where it is due within 7 days, and the three new cards among it. Clear the filter, open the Takealot banners card (it carries the 16 h) and "Book on schedule" for 4 h/day over 4 days: the card now reads "Booked 16h", and its tooltip says who and when, and the drawer offers "View on schedule" in place of "Book on schedule" (no "Add booking", as the 16 h estimate is booked). Click "View on schedule": the schedule opens at that week, and on the 1-week view Priya goes from green to amber

@@ -12,6 +12,8 @@ import { CapacityService, Weeks } from './capacity.service';
 import { ClashDialog } from './clash-dialog';
 import { GridToolbar } from './grid-toolbar';
 import { clashDays, leaveDays, withBookings } from './live-load';
+import { PeopleFilter } from './people-filter';
+import { SchedulePrefsService } from './schedule-prefs.service';
 
 // Beside the pointer or booking, flipping to the other side when there is no room.
 const POPOVER_POSITIONS: ConnectedPosition[] = [
@@ -23,13 +25,14 @@ const POPOVER_POSITIONS: ConnectedPosition[] = [
 
 @Component({
   selector: 'app-capacity-page',
-  imports: [AllocationPopover, CapacityGrid, CdkConnectedOverlay, ClashDialog, GridToolbar],
+  imports: [AllocationPopover, CapacityGrid, CdkConnectedOverlay, ClashDialog, GridToolbar, PeopleFilter],
   templateUrl: './capacity-page.html',
 })
 export class CapacityPage {
   private readonly capacityService = inject(CapacityService);
   private readonly allocations = inject(AllocationsService);
   private readonly auth = inject(AuthService);
+  private readonly prefs = inject(SchedulePrefsService);
   private readonly toast = inject(ToastService);
   protected readonly teamContext = inject(TeamContextService);
 
@@ -60,6 +63,29 @@ export class CapacityPage {
     source: () => (this.schedule.hasValue() ? this.schedule.value() : null),
     computation: (value, previous) => value ?? previous?.value ?? null,
   });
+
+  /** The people the viewer left off the schedule, remembered per user (D60). */
+  protected readonly hiddenPeople = linkedSignal<ReadonlySet<string>>(() => {
+    const userId = this.auth.me()?.id;
+    return userId ? this.prefs.hiddenPeople(userId) : new Set<string>();
+  });
+
+  /** The schedule as the grid draws it: only the people picked in the filter, and their bookings. */
+  protected readonly shown = computed<Schedule | null>(() => {
+    const data = this.data();
+    if (!data) return null;
+    const hidden = this.hiddenPeople();
+    return {
+      ...data,
+      people: data.people.filter((p) => !hidden.has(p.id)),
+      allocations: data.allocations.filter((a) => !hidden.has(a.personId)),
+    };
+  });
+
+  protected setHiddenPeople(hidden: ReadonlySet<string>): void {
+    this.hiddenPeople.set(hidden);
+    this.prefs.saveHiddenPeople(this.auth.me()!.id, hidden);
+  }
 
   /** Team Admins book and change their team's work; Members see the schedule read-only (D24). */
   protected readonly editable = computed(() => this.teamContext.allTeams() || this.teamContext.isTeamAdmin());

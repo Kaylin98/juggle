@@ -10,12 +10,19 @@
         }
       </p>
     </div>
-    <app-grid-toolbar [(start)]="start" [(weeks)]="weeks" />
+    <div class="flex flex-wrap items-center gap-6">
+      @if (data(); as data) {
+        <app-people-filter [people]="data.people" [hiddenIds]="hiddenPeople()" (hiddenIdsChange)="setHiddenPeople($event)" />
+      }
+      <app-grid-toolbar [(start)]="start" [(weeks)]="weeks" />
+    </div>
   </div>
 
   @if (schedule.error()) {
     <p class="empty-state mx-8 text-over-700">The schedule could not be loaded. Refresh the page to try again.</p>
-  } @else if (data(); as data) {
+  } @else if (data()?.people?.length && !shown()?.people?.length) {
+    <p class="empty-state mx-8">No one is selected. Choose people in the People filter to see their schedule.</p>
+  } @else if (shown(); as data) {
     <div
       class="panel scroll-thin mx-8 mb-8 min-h-0 overflow-auto transition-opacity"
       [class.opacity-60]="schedule.isLoading()"

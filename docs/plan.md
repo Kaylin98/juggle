@@ -2,15 +2,17 @@
 
 Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
+**Source of truth (from 2026-11-01):** `docs/requirements.md`, the client's functional requirements. Its "Client decisions" section overrides the rest of that document and `docs/demo-brief.md` where they conflict. The gap analysis, proposed data model, permission matrix and demo slice are in `docs/gap-analysis.md`; decisions D62 to D73 below record them.
+
 ## Where we left off
 
 | | |
 | --- | --- |
-| Current phase | C - Client demo for The Core Group |
+| Current phase | R - Requirements and gap analysis |
 | Phase status | Awaiting review |
-| Last completed task | C.17 Brand colours (review round C.14 to C.17: requester model, drawer schedule actions, schedule people filter, brand colours; D58 to D61) |
-| Next task | C.18 User review of the round; then rehearse the full demo script (steps 2, 4, 5 and 7 changed). Before the demo: stop the API, run `--reset-demo`, start the API |
-| Blockers / open questions | Brand managers see the Studio schedule read-only, as any Member does (D58); say if they should not |
+| Last completed task | R.2 Plan updated with the client decisions (D62 to D67), the proposed decisions (D68 to D73) and Phases J, W and V |
+| Next task | User review of `docs/gap-analysis.md` (proposed decisions D68 to D73, and the open questions in its section 7); then Phase J. Phase C's C.18 is folded into this review (see Phase C) |
+| Blockers / open questions | 12 client questions and 1 for the user in `docs/gap-analysis.md` section 7; the demo goes ahead on the defaults stated there |
 | Last updated | 2026-11-01 |
 
 ## Phase overview
@@ -28,7 +30,11 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | P | Fri | Post-Phase 5 round | Done |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Done |
 | S | Sat | Stretch: My work, time off | Done |
-| C | - | Client demo for The Core Group | Awaiting review |
+| C | - | Client demo for The Core Group | Awaiting review (folded into R) |
+| R | - | Requirements and gap analysis | Awaiting review |
+| J | - | Roles and jobs | Not started |
+| W | - | Workflow | Not started |
+| V | - | Views and demo | Not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
 
@@ -50,7 +56,7 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D9 Add `Request.RejectionReason` (nullable). The brief needs a reject reason but the model has no field for it
 - D10 A `Person` is optional for a `User`: requesters are Users without a Person. A team's people are the Persons whose User has a membership in that team
 - D11 (replaced by D50 in Phase C: "Type of work" was dropped) `Request.Type` is a fixed list in code, shared by all teams: Presentation, Social, Print, Web, Video, Copy, Other
-- D12 (Requester dropped by D58) Demo login role labels: Org Admin, Team Admin, Member, Requester (Requester = no team membership)
+- D12 (replaced by D70, Phase R; Requester dropped by D58) Demo login role labels: Org Admin, Team Admin, Member, Requester (Requester = no team membership)
 
 **Business rules**
 
@@ -59,19 +65,19 @@ Status values: Not started, In progress, Awaiting review, Done. A phase is Done 
 - D15 Cell load colour: green under 80%, amber 80 to 100%, red over 100%. Hours free = capacity minus allocated, never below 0
 - D16 Clash: the save always succeeds; the response lists the days now over capacity and the UI shows a warning toast. No confirm dialog before saving
 - D17 Time off is full days only. Only `Approved` time off reduces capacity; pending leave is shown but does not (changed 2026-10-31 for D47: the seed had only approved leave)
-- D18 The Triage status is hidden on the board, because triage happens in the inbox. Accepting a request puts the task in the next status by `Order` (Design: To Do, Marketing: Planned)
+- D18 (replaced by D69, Phase R) The Triage status is hidden on the board, because triage happens in the inbox. Accepting a request puts the task in the next status by `Order` (Design: To Do, Marketing: Planned)
 - D19 Status categories (the Design statuses are replaced by the Studio statuses in D49, Phase C). Design: Triage, To Do = Todo; In Design = InProgress; Internal Review, With Requester = Review; Changes Requested = InProgress; Done = Done. Marketing: Triage, Planned = Todo; Writing = InProgress; Review = Review; Scheduled, Published = Done
 - D20 (the rule for going up is replaced by D58) Review cycle starts at 1 and goes up by 1 when a task moves from a Review-category status to an InProgress-category status (sent back for changes). Cards show "R2", "R3" when the cycle is above 1
 - D21 Overdue = due date before today (Africa/Johannesburg) and status category is not Done
 - D22 Card order: the move endpoint takes `{ statusId, index }` and the server renumbers `SortOrder` within the column
 - D23 Board filters run in the browser (about 40 tasks per team)
-- D24 Permissions:
+- D24 (replaced by D70, Phase R) Permissions:
   - Org Admin can do everything in every team
   - Team Admin can do everything in their team
   - Member sees the board and schedule of their own teams, but only edits tasks assigned to them (including drag). The grid is read-only for Members
   - Requester sees only the request form (D58: no Requester role; brand managers are Members who see their brands' cards)
 - D25 Allocations from another team show greyed and cannot be edited from the current team's grid. "All teams" (Org Admin only, grid only) shows every person and every bar is editable
-- D26 Landing pages: admins go to the dashboard, Members to My work (D46), Requesters to "My requests" (changed 2026-10-31 for the stretch: Members went to the board; 2026-10-30 after demo-v1: admins went to the schedule; Phase 5 review: requesters went to the request form). Switching team keeps the current page when the role allows it, otherwise the role's landing page
+- D26 (replaced by D70, Phase R) Landing pages: admins go to the dashboard, Members to My work (D46), Requesters to "My requests" (changed 2026-10-31 for the stretch: Members went to the board; 2026-10-30 after demo-v1: admins went to the schedule; Phase 5 review: requesters went to the request form). Switching team keeps the current page when the role allows it, otherwise the role's landing page
 - D27 Dashboard: per person, one bar for this week and one for the next 4 weeks combined. "Over capacity this week" = at least one red day this week. "Work by department" counts open (not Done) tasks of the current team, grouped by the project's department
 - D28 "Book on schedule" opens a small form: start date (default next working day), number of working days, hours/day (default estimate / days). It creates an allocation linked to the task
 - D29 Add allocation delete (button in the bar's edit popover), so a wrong drag during the demo can be undone. Small addition beyond the brief
@@ -684,7 +690,7 @@ Built after demo-v1 (approved 2026-10-31), one commit per item.
 
 ## Phase C - Client demo for The Core Group
 
-**Status:** Awaiting review (plan approved 2026-10-31, built 2026-10-31; briefs report and booked indicator added 2026-10-31)
+**Status:** Awaiting review (plan approved 2026-10-31, built 2026-10-31; briefs report and booked indicator added 2026-10-31). Folded into the Phase R review on 2026-11-01: the client's requirements replace this phase's job model, so C.14 to C.17 are reviewed against `docs/gap-analysis.md` section 5, and the C.18 rehearsal is replaced by the Phase V script. Proposed: mark Done when Phase R is approved
 **Done when:** the demo data and wording mirror The Core Group's studio process (today on Monday.com), a brief can be accepted as a new job, and the rewritten demo script runs start to finish
 
 **Context.** The Core Group's creative studio serves internal brand teams (DJI, GoPro, Bambu Lab, Pure Electric, MS Surface, Ultra Human, Reloved, CGA, ARP, InRetail, Mobile in Africa). Each brief has a job code such as `DJI0141_Q1'27_Black Friday` and many deliverables (Takealot banners, iStore, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP). Their statuses: Briefed in, Working on it, Feedback needed, Awaiting approval, Done. Their brief template: date briefed in, marketing manager, studio deadline, main goal, deliverables. Pain points the demo makes visible: one designer carries far more work than the others, work stuck in "Awaiting approval", overdue deadlines, briefs arriving as free text.
@@ -692,20 +698,20 @@ Built after demo-v1 (approved 2026-10-31), one commit per item.
 **Decisions (approved 2026-10-31)**
 
 - D48 Department label. `Organisation.DepartmentLabel` (default "Department") names the department concept in all user-facing text; the demo org sets it to "Brand". Sent with `GET /api/auth/me` and read once by `AuthService`. Used on the request form, request detail, triage ("From Zanele Mthembu, DJI"), the dashboard panel ("Work by brand", "Open tasks, by the brand each project is for") and the API's request validation message ("Choose a brand."). Lower case mid-sentence. Code, routes and DTOs keep "department" (as D35 and D44 do)
-- D49 Studio workflow (replaces the Design statuses in D19). Team "Studio" replaces Design: Triage, Briefed in = Todo; Working on it = InProgress; Feedback needed, Awaiting approval = Review; Done = Done. Accepted requests land in Briefed in (D18). Moving from Feedback needed or Awaiting approval back to Working on it bumps the review round through the existing Review to InProgress rule (D20), so no code change. Marketing keeps its statuses
-- D50 Request fields (replaces D11). The request follows their brief template: team, brand (the department, defaults to the user's own), job name (`Title`), main goal (`MainGoal`, the renamed `Description`, 2000), deliverables (`Deliverables`, one per line, 4000, each line up to 200 so it can become a task title), "Requested by" for members of the team asked and Org Admins (D55; replaces the marketing manager field, `MarketingManagerUserId`, dropped 2026-10-31), studio deadline (`RequestedDueDate`, labelled "Studio deadline"), priority. "Type of work" is dropped: the column, the `RequestType` enum and D11, since one brief mixes banners, video and print. Detail and triage show "Briefed in" (the sent date), who it is from, the main goal and the deliverables as a list. Accepting into an existing project makes one task whose description is the main goal and the deliverables under headings
-- D51 Accept as new brief. The triage accept drawer offers "New brief" (default) or "Existing project". New brief creates a project in the request's team (Studio in the demo) for the request's brand, named with the next job code (D52), shown in an editable field before saving (required, 200). Its due date is the studio deadline and its colour the first palette hue not yet used by that brand's projects (the first hue again once all 8 are used). Each non-empty deliverables line, trimmed and without a leading bullet (`-`, `*`, `•`), becomes a task in the first column after Triage (D18), in the order given, assigned to the chosen designer, due on the committed due date (which defaults to the studio deadline), with the main goal as its description. No deliverables: one task named after the job name. The estimate stays whole on the first task, the others have none (simpler than splitting, which needs rounding, and "Book on schedule" from the first card books the whole brief, as the demo does). `Request.TaskId` points to the first task. "New brief" is disabled with a tooltip when the brand has no job code prefix. API: `GET /api/requests/{id}/new-brief` -> `{ projectName, colour }`, with `projectName` null when the brand has no prefix (a normal state, so not a 400); `POST /api/requests/{id}/accept` takes `projectId` or `newProjectName` (exactly one, 400 otherwise)
-- D52 Job codes. `<PREFIX><NNNN>_Q<n>'<YY>_<job name>`. The prefix is stored on the brand (`Department.JobCodePrefix`, nullable, 10), so it can be changed per brand without a code change: CGA, DJI, ARP, BAMBU (Bambu Lab), INRETAIL, RELOVED, MSS (MS Surface), GOPRO, CVM, CCB, CORE, PURE (Pure Electric), MIA (Mobile in Africa), ULTRA (Ultra Human) (confirmed 2026-10-31). The number is one more than the highest 4-digit number after the prefix in that brand's project names, from 0001. The quarter comes from the studio deadline (today when none) and the financial year start month (`Organisation.FinancialYearStartMonth`, default 3, so Q1 = March to May); the year is the last two digits of the calendar year the financial year ends in. Seeded job codes use the same rule from each project's due date, so seed and generated codes agree. The demo org's financial year starts in October (confirmed 2026-10-31): Q1 = October to December, Q2 = January to March, Q3 = April to June, Q4 = July to September, so October 2026 is Q1'27 and Black Friday is Q1'27, as in their setup
+- D49 (replaced by D69, Phase R) Studio workflow (replaces the Design statuses in D19). Team "Studio" replaces Design: Triage, Briefed in = Todo; Working on it = InProgress; Feedback needed, Awaiting approval = Review; Done = Done. Accepted requests land in Briefed in (D18). Moving from Feedback needed or Awaiting approval back to Working on it bumps the review round through the existing Review to InProgress rule (D20), so no code change. Marketing keeps its statuses
+- D50 (replaced by D68, Phase R) Request fields (replaces D11). The request follows their brief template: team, brand (the department, defaults to the user's own), job name (`Title`), main goal (`MainGoal`, the renamed `Description`, 2000), deliverables (`Deliverables`, one per line, 4000, each line up to 200 so it can become a task title), "Requested by" for members of the team asked and Org Admins (D55; replaces the marketing manager field, `MarketingManagerUserId`, dropped 2026-10-31), studio deadline (`RequestedDueDate`, labelled "Studio deadline"), priority. "Type of work" is dropped: the column, the `RequestType` enum and D11, since one brief mixes banners, video and print. Detail and triage show "Briefed in" (the sent date), who it is from, the main goal and the deliverables as a list. Accepting into an existing project makes one task whose description is the main goal and the deliverables under headings
+- D51 (replaced by D68 and D71, Phase R) Accept as new brief. The triage accept drawer offers "New brief" (default) or "Existing project". New brief creates a project in the request's team (Studio in the demo) for the request's brand, named with the next job code (D52), shown in an editable field before saving (required, 200). Its due date is the studio deadline and its colour the first palette hue not yet used by that brand's projects (the first hue again once all 8 are used). Each non-empty deliverables line, trimmed and without a leading bullet (`-`, `*`, `•`), becomes a task in the first column after Triage (D18), in the order given, assigned to the chosen designer, due on the committed due date (which defaults to the studio deadline), with the main goal as its description. No deliverables: one task named after the job name. The estimate stays whole on the first task, the others have none (simpler than splitting, which needs rounding, and "Book on schedule" from the first card books the whole brief, as the demo does). `Request.TaskId` points to the first task. "New brief" is disabled with a tooltip when the brand has no job code prefix. API: `GET /api/requests/{id}/new-brief` -> `{ projectName, colour }`, with `projectName` null when the brand has no prefix (a normal state, so not a 400); `POST /api/requests/{id}/accept` takes `projectId` or `newProjectName` (exactly one, 400 otherwise)
+- D52 (number source replaced by D71, Phase R; format and quarter kept) Job codes. `<PREFIX><NNNN>_Q<n>'<YY>_<job name>`. The prefix is stored on the brand (`Department.JobCodePrefix`, nullable, 10), so it can be changed per brand without a code change: CGA, DJI, ARP, BAMBU (Bambu Lab), INRETAIL, RELOVED, MSS (MS Surface), GOPRO, CVM, CCB, CORE, PURE (Pure Electric), MIA (Mobile in Africa), ULTRA (Ultra Human) (confirmed 2026-10-31). The number is one more than the highest 4-digit number after the prefix in that brand's project names, from 0001. The quarter comes from the studio deadline (today when none) and the financial year start month (`Organisation.FinancialYearStartMonth`, default 3, so Q1 = March to May); the year is the last two digits of the calendar year the financial year ends in. Seeded job codes use the same rule from each project's due date, so seed and generated codes agree. The demo org's financial year starts in October (confirmed 2026-10-31): Q1 = October to December, Q2 = January to March, Q3 = April to June, Q4 = July to September, so October 2026 is Q1'27 and Black Friday is Q1'27, as in their setup
 - D53 Dashboard "Awaiting review" card. A fourth summary card: open tasks in Review-category statuses (Feedback needed and Awaiting approval for Studio), linking to the board; with "All teams" one line per team, as the overdue card does (D45)
-- D54 Seed (replaces D31). Org "The Core Group", emails `@thecoregroup.example`. Departments are their 14 brands (CGA, DJI, ARP, Bambu Lab, InRetail, Reloved, MS Surface, GoPro, CVM, CCB, CORE, Pure Electric, Mobile in Africa, Ultra Human; confirmed 2026-10-31), with job code prefixes (D52); team people have no brand. Teams Studio and Marketing. People keep the current made-up South African names: Naledi becomes Head of Studio (Org Admin, Studio Team Admin); Studio job titles such as Senior Designer, Digital Designer, Motion Designer, Artworker (the 5h/day part-timer) and Junior Designer; Jason stays shared with Marketing; Marketing keeps Megan (Team Admin), Thabo and Chloe. The three requesters are replaced by about 6 fictional brand marketing managers (one each for DJI, GoPro, Bambu Lab, Pure Electric, MS Surface and Ultra Human). Projects are briefs with job codes across about 8 brands, about 10 in Studio (for example `DJI0141_..._Black Friday`, `DJI0142_..._Amazon Brand Store`, GoPro, Bambu Lab, Pure Electric, MS Surface) and 4 in Marketing, coloured from the palette. About 40 tasks are deliverables (Black Friday has the deliverables listed above); about 6 in Awaiting approval, 3 or 4 overdue, some on round 2 or 3. Load: Lerato heavily overloaded this week and next with several red days, and the only person over this week; Priya under-loaded at 50% next week, so the demo's 16h booking takes her to amber; everyone else at 60 to 90%, with a day at exactly 8h left for the clash step; two Studio people on approved leave; Ethan's pending leave and Thabo's masked sick leave stay. Triage: 5 New briefs in Studio and 2 in Marketing written like their template (main goal, deliverables, marketing manager), plus 3 accepted. No brand logos anywhere: brands are names and palette colours only
+- D54 (replaced by D73, Phase R) Seed (replaces D31). Org "The Core Group", emails `@thecoregroup.example`. Departments are their 14 brands (CGA, DJI, ARP, Bambu Lab, InRetail, Reloved, MS Surface, GoPro, CVM, CCB, CORE, Pure Electric, Mobile in Africa, Ultra Human; confirmed 2026-10-31), with job code prefixes (D52); team people have no brand. Teams Studio and Marketing. People keep the current made-up South African names: Naledi becomes Head of Studio (Org Admin, Studio Team Admin); Studio job titles such as Senior Designer, Digital Designer, Motion Designer, Artworker (the 5h/day part-timer) and Junior Designer; Jason stays shared with Marketing; Marketing keeps Megan (Team Admin), Thabo and Chloe. The three requesters are replaced by about 6 fictional brand marketing managers (one each for DJI, GoPro, Bambu Lab, Pure Electric, MS Surface and Ultra Human). Projects are briefs with job codes across about 8 brands, about 10 in Studio (for example `DJI0141_..._Black Friday`, `DJI0142_..._Amazon Brand Store`, GoPro, Bambu Lab, Pure Electric, MS Surface) and 4 in Marketing, coloured from the palette. About 40 tasks are deliverables (Black Friday has the deliverables listed above); about 6 in Awaiting approval, 3 or 4 overdue, some on round 2 or 3. Load: Lerato heavily overloaded this week and next with several red days, and the only person over this week; Priya under-loaded at 50% next week, so the demo's 16h booking takes her to amber; everyone else at 60 to 90%, with a day at exactly 8h left for the clash step; two Studio people on approved leave; Ethan's pending leave and Thabo's masked sick leave stay. Triage: 5 New briefs in Studio and 2 in Marketing written like their template (main goal, deliverables, marketing manager), plus 3 accepted. No brand logos anywhere: brands are names and palette colours only
 - D55 (replaced by D58, 2026-11-01) (2026-10-31, Phase C review) Who a brief is from. "Marketing" here means the brands' marketing managers (the users with a brand), not the Marketing team. Members of the team asked (Studio members for the Studio's briefs) and Org Admins see "Requested by" on the request form, listing only the brands' marketing managers, and must choose one. Everyone else, brand managers and Marketing team members included, has no field and always sends as themselves: the API sets the requester from the signed-in user and ignores any `requestedByUserId` sent. The chosen manager becomes the requester (`RequesterUserId`), so the brief shows in their My requests; `Request.LoggedByUserId` keeps who entered it (the migration fills it from the requester for existing requests), and that person can open it and sees it in their My requests too. The request detail shows "Requested by" and "logged by" when someone logged it for the requester. API: `POST /api/requests` takes `requestedByUserId` (400 when a member of the team asked or an Org Admin leaves it out or picks someone without a brand); `GET /api/requests/options` lists `requesters` (users with a brand); `RequestDto` has `loggedByName` (null when the requester sent it). `MarketingManagerUserId` is dropped
 - D56 (2026-10-31, addition to Phase C) Briefs report, like the studio's Monday report. `/t/:teamId/briefs`, "Briefs report" in the menu under Dashboard, for Team Admins of the team and Org Admins; for the selected team only (no "All teams"). A brand filter at the top (All brands or one brand, worded with the org's label, D48) applies to all three widgets. "Briefs completed vs in progress" and "Studio capacity by designer" count the board's cards (the deliverables), since status and assignee live on tasks; Triage is left out (D18). The first is one segmented bar by status in board order, "NN% Done" (the share in Done-category columns) and a legend with the counts. The second has a column per person in the team (the title uses the team name), stacked by status from the baseline in board order, so open work lines up and Done sits on top; people with the most open cards first, then "Unassigned" when any card has no assignee. "Briefs received over the last 9 months" counts the requests sent to the team, whatever became of them, by the month of `CreatedAt` in Africa/Johannesburg: this month and the 8 before, a bar per month with its count. Status colours come from the category (grey to do, blue in progress, amber review, green done); a second status in the same category takes the darker step (Awaiting approval, Published). Neighbouring colours were checked for colour-blind separation with the dataviz palette validator; counts are always in text (legend, labels, tooltips, an accessible name per segment and column), so colour is never the only channel. Each widget has an empty state. API: `GET /api/teams/{teamId}/reports/briefs?departmentId=` (403 for Members and other teams' admins), two grouped queries and no new tables. Seed: 53 earlier briefs from the brands with a marketing manager, spread over the 8 months before this one (47 Studio, 6 Marketing; 2 rejected), each delivered brief a job-coded project with one Done (Published) card per deliverable and its accepted request; the open Studio and Marketing briefs with a manager also get their accepted request, sent 3 to 6 weeks ago. Earlier job numbers stay below the open briefs' and each brand's colour repeats, so the demo's next job code (`DJI0143`) and colour are unchanged; nothing open, booked or in triage changes
 - D57 (2026-10-31, addition to Phase C) Booked indicator on board cards. Each open card shows a chip: "Booked Nh" when bookings are linked to the task (`Allocation.TaskId`), otherwise a muted "Not booked", amber when the card is due within 7 days or overdue (`TaskDto.IsDueSoon`, worked out on the server with the org's date, as D21). Cards in a Done-category column show no chip; My work's cards show none either (the request was for the board). Booked hours count hours/day only on the person's working days (D13), so weekends, public holidays and approved leave book nothing. The chip's tooltip lists each booking on its own line ("Priya Naidoo · 2–5 Nov · 16h"); clicking it opens the schedule at the first booking's week (`/t/:teamId/capacity?week=yyyy-MM-dd`, a new query parameter; anything that is not a real date opens this week). The chip is a link, so the card is now a button that lies under the content (a link cannot sit inside a button); the due date, review round and chip take their own clicks. Board filter "Booking: Any / Not booked" shows open cards with no booking. A booking made with "Book on schedule" reloads the board, so the card shows its hours at once. API: `TaskDto` gains `isDueSoon`, `bookedHours` and `bookings` (person, dates, hours/day, hours) on the board, task saves and My work; `TaskBookings.LoadAsync` loads them for all the tasks in two queries (bookings, then the leave and holidays they cross), not one per task
 
 **Decisions (Phase C review round, 2026-11-01)**
 
-- D58 Requester model (replaces D55; updates D10, D12, D20, D24 and D26 for requesters). The requester is always the signed-in user: no "Requested by" field, `Request.LoggedByUserId` dropped (migration `BrandManagers`), `requestedByUserId`, `requesters` and `loggedByName` gone from the API. There is no separate Requester role: the login screen shows Org Admin, Team Admins and Members only. A brand's marketing manager is a normal Member of the Studio without a Person (so not on any schedule) who manages one or more brands through a many-to-many link, `DepartmentManager` (`UserId`, `DepartmentId`, `OrgId`), which replaces `User.DepartmentId` (the migration copies each user's department into it). The seed has five managers; Zanele Mthembu covers DJI and Pure Electric (Kagiso Molefe is gone, his briefs are hers). Managers land on the Studio board (Members without a Person, D26) and see only their brands' cards and projects there, enforced by the API (`TeamAccess.VisibleDepartmentsAsync`: Team Admins and anyone with a Person see every card; other Members only the brands they manage). Their cards are read-only, as for any Member who is not the assignee, and they cannot add tasks ("Add task" is hidden for Members without a Person). They see the schedule read-only like any Member, and their briefs in My requests (the briefs they sent). The request form's brand defaults to the first brand the user manages, by name (`myDepartmentId`). `MeDto` gains `managedDepartmentIds`, `ProjectDto` and My work's tasks `departmentId`. Approval: the approval column is a team's last Review-category status when it has two or more (Awaiting approval for the Studio; Marketing has none). On a card there whose brand they manage, the manager sees Approve, which moves it to the top of the first Done column and clears the feedback, and Request changes, a drawer asking "What needs to change?" (required, 1000), which moves it to the top of the first Review column (Feedback needed) with the comment in `TaskItem.Feedback` and the round up by one. The task drawer shows the latest comment under "Changes requested". API: `POST /api/tasks/{id}/approve` and `POST /api/tasks/{id}/request-changes` `{ comment }`, 403 for anyone who does not manage the card's brand (Org Admins included), 400 when the card is not in the approval column or the comment is blank. Review round (replaces D20's rule): it goes up when a card leaves the approval column for an earlier Review or In Progress column, so Request changes counts once and picking the changes up (Feedback needed to Working on it) does not count again; for Marketing, with one Review column, this is the same as D20. The seeded Feedback needed cards are on round 2 or 3 and carry the manager's comment
-- D59 Schedule actions in the task drawer (for Team Admins, who book; Members see bookings through the card's chip, D57). A task with no booking shows "Book on schedule" as before. A booked task shows "View on schedule", which opens the schedule at its first booking's week (as the chip does), and a secondary "Add booking" (quiet button) that opens the same booking form; "Add booking" is hidden once the booked hours reach the estimate, and always shown for a task without an estimate. The booking form's defaults (D39) spread what is left of the estimate after the task's bookings, so a second booking does not book the whole estimate again
+- D58 (approval on the board replaced by D69 and D70, Phase R; the signed-in requester stays, D67) Requester model (replaces D55; updates D10, D12, D20, D24 and D26 for requesters). The requester is always the signed-in user: no "Requested by" field, `Request.LoggedByUserId` dropped (migration `BrandManagers`), `requestedByUserId`, `requesters` and `loggedByName` gone from the API. There is no separate Requester role: the login screen shows Org Admin, Team Admins and Members only. A brand's marketing manager is a normal Member of the Studio without a Person (so not on any schedule) who manages one or more brands through a many-to-many link, `DepartmentManager` (`UserId`, `DepartmentId`, `OrgId`), which replaces `User.DepartmentId` (the migration copies each user's department into it). The seed has five managers; Zanele Mthembu covers DJI and Pure Electric (Kagiso Molefe is gone, his briefs are hers). Managers land on the Studio board (Members without a Person, D26) and see only their brands' cards and projects there, enforced by the API (`TeamAccess.VisibleDepartmentsAsync`: Team Admins and anyone with a Person see every card; other Members only the brands they manage). Their cards are read-only, as for any Member who is not the assignee, and they cannot add tasks ("Add task" is hidden for Members without a Person). They see the schedule read-only like any Member, and their briefs in My requests (the briefs they sent). The request form's brand defaults to the first brand the user manages, by name (`myDepartmentId`). `MeDto` gains `managedDepartmentIds`, `ProjectDto` and My work's tasks `departmentId`. Approval: the approval column is a team's last Review-category status when it has two or more (Awaiting approval for the Studio; Marketing has none). On a card there whose brand they manage, the manager sees Approve, which moves it to the top of the first Done column and clears the feedback, and Request changes, a drawer asking "What needs to change?" (required, 1000), which moves it to the top of the first Review column (Feedback needed) with the comment in `TaskItem.Feedback` and the round up by one. The task drawer shows the latest comment under "Changes requested". API: `POST /api/tasks/{id}/approve` and `POST /api/tasks/{id}/request-changes` `{ comment }`, 403 for anyone who does not manage the card's brand (Org Admins included), 400 when the card is not in the approval column or the comment is blank. Review round (replaces D20's rule): it goes up when a card leaves the approval column for an earlier Review or In Progress column, so Request changes counts once and picking the changes up (Feedback needed to Working on it) does not count again; for Marketing, with one Review column, this is the same as D20. The seeded Feedback needed cards are on round 2 or 3 and carry the manager's comment
+- D59 ("Book on schedule" replaced by Allocate and schedule, D68, Phase R; "View on schedule" and "Add booking" stay) Schedule actions in the task drawer (for Team Admins, who book; Members see bookings through the card's chip, D57). A task with no booking shows "Book on schedule" as before. A booked task shows "View on schedule", which opens the schedule at its first booking's week (as the chip does), and a secondary "Add booking" (quiet button) that opens the same booking form; "Add booking" is hidden once the booked hours reach the estimate, and always shown for a task without an estimate. The booking form's defaults (D39) spread what is left of the estimate after the task's bookings, so a second booking does not book the whole estimate again
 - D60 Schedule people filter. "People" beside the schedule's toolbar: a pill in the `pill-select` style ("Everyone", "N selected" or "No one") opening a panel (CDK Overlay and a multiple-choice CDK Listbox, `features/capacity/people-filter.ts`, so a separate control rather than a mode of `<app-select>`) with a search box, "Select all" and "Clear" (both for the people the search matches) and a checkbox, avatar and name per person; "Showing N of M" beside the pill. The grid draws only the people picked and their bookings; clash checks still use the full schedule. With no one picked the page says so in place of the grid. Remembered per user in this browser (`juggle.schedule.hidden.<userId>`), as the people hidden rather than shown, so someone new appears by default; one list for every team and "All teams"
 - D61 Brand colours (replaces the project colours of D51, D54 and the design pass). Each brand (`Department.Colour`, one of the 8 palette hues) has one colour, and its tasks (the card and drawer dot) and bookings (`hue-booking` on the schedule, My work) take it; `Project.Colour` is dropped (migration `BrandColours`, which gives each existing brand one of its projects' colours, slate blue when it has none). The API keeps sending `colour` on projects and `projectColour` on bookings and My work's tasks, now the brand's, so the screens draw as before. A new brief takes its brand's colour, which the accept drawer shows (`NewBriefDto.Colour`); `JobCodes.NextColour` and its palette are gone. The 14 seeded brands share 8 hues, chosen so each board's brands differ: on the Studio only Reloved (done work only) and Mobile in Africa share amber; Marketing's four are all different; DJI is blue, so the demo's new brief is blue. A small key (`shared/brand-legend.ts`) under the Board and Schedule headers names each brand shown, with its dot, under "Brands" (the org's label, D48): the board's from the cards shown (so it follows the filters, and a brand's marketing manager sees only theirs), the schedule's from the team's own bookings shown (other teams' are greyed). Status colours stay only on status chips and in reports (D56)
 
@@ -750,7 +756,7 @@ Review round (2026-11-01), one commit each:
 - [x] C.15 Drawer schedule actions (D59): "Book on schedule" when unbooked; "View on schedule" and "Add booking" when booked, "Add booking" hidden once the estimate is booked; booking defaults from the hours left; tests
 - [x] C.16 Schedule people filter (D60): multi-select with checkboxes, search, Select all / Clear, "Showing N of M", remembered per user; tests
 - [x] C.17 Brand colours (D61): `Department.Colour` replaces `Project.Colour`, tasks and bookings in their brand's colour, a brand key on Board and Schedule; tests
-- [ ] C.18 Review of C.14 to C.17 by the user; then rehearse the demo script on freshly reset data
+- [ ] C.18 Review of C.14 to C.17 by the user; then rehearse the demo script on freshly reset data (2026-11-01: superseded by Phase R; the rehearsal moves to V.8)
 
 **Demo script (written into `docs/demo-brief.md` in C.10)**
 
@@ -803,6 +809,142 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - [ ] **STOP** for review, with the screenshots
 - [ ] Approved by user
 
+---
+
+## Phase R - Requirements and gap analysis
+
+**Status:** Awaiting review
+**Done when:** `docs/gap-analysis.md` covers every requirement area, the data model, the permission matrix, the demo slice, the pending items, phases and open questions, and this plan records the client decisions
+
+**Context.** On 2026-11-01 the client's functional requirements (`docs/requirements.md`) became the source of truth. They describe a five-role creative studio workflow (Marketing Manager brief, Traffic Manager review and allocation, Designer, Head of Design approval, Marketing Manager approval with any business approval, closure) with standard statuses, approval records and revisions routed through the Traffic Manager. Juggle's general team model (Org Admin, Team Admin, Member; configurable columns; a card per deliverable) conflicts with it in the middle, so Phases J, W and V rebuild the job model and the workflow on top of the existing schedule, time off and design system.
+
+**Client decisions (2026-11-01, from `docs/requirements.md`)**
+
+- D62 (CD1) Traffic Manager is a separate role. They review every new brief, request missing information, estimate effort, allocate the designer and own the schedule. Designers cannot assign or book work for themselves
+- D63 (CD2) Job ID is the Monday-style name `<BRAND CODE><per-brand number>_<Quarter>'<YY>_<job name>`, e.g. `DJI0143_Q1'27_Summer Holiday Sale`. The number counts per brand since the brand started and never resets. The quarter follows the financial year starting in October (as D52). Replaces the `MKT-2026-0001` example in section 11.1
+- D64 (CD3) The board has five columns: Incoming, In Design, In Review, With Marketing, Done. Each groups several detailed statuses from section 6; the detailed status shows on each card and drives permissions, notifications and reporting
+- D65 (CD4) Sales and other stakeholders get no logins. The Marketing Manager records the outcome on the job ("Approved by Sales", the date, an optional note, link or attachment)
+- D66 (CD5) Marketing Manager access. Sees only the jobs they submitted (status, designer, expected completion, comments, artwork, full history); reports on their own requests only. Does: submit briefs, answer requests for information, review artwork only after Head of Design approval, approve, request changes (routed to the Traffic Manager), record business approval, close, request a reopen or a linked new job. Cannot see the board, schedule, workloads or other managers' jobs; cannot allocate, upload artwork or approve design quality. Nav: My dashboard, My requests, Reports. Open: whether they also see others' jobs for the brands they manage (until answered, no)
+- D67 (CD6) The requester is always the signed-in Marketing Manager; no "Requested by" field (already so since D58). Submitting on someone's behalf is a Head of Marketing override, deferred
+
+**Proposed decisions (2026-11-01, for approval at this review; details in `docs/gap-analysis.md` section 2)**
+
+- D68 A board card is a Job (confirmed by the user). The `Requests` table becomes `Jobs`, with the brief (sections A to F), one designer, estimate, planned start, expected completion and close fields; `Projects` and `Tasks` are dropped; deliverables become `JobDeliverable` rows (type, description, specs, deadline); supporting and reference links are `JobLink`; `Allocation.JobId` replaces `ProjectId` and `TaskId`. The Traffic Manager's "Allocate and schedule" sets the designer and dates and makes the booking in one step (replacing triage accept and "Book on schedule")
+- D69 Statuses are the 16 of section 6 as a `JobStatus` enum in code, each mapped to one of the five columns (table in `docs/gap-analysis.md`), replacing `WorkflowStatus` rows. Cards move only through workflow actions (one `JobWorkflow` class, unit tested); no drag between columns. Marketing Changes Required is recorded on the approval, and the job moves straight to Awaiting Revision Scheduling (open question 3)
+- D70 Five roles (`User.Role`: Head of Marketing, Head of Design, Traffic Manager, Designer, Marketing Manager) replace Org Admin, Team Admin and Member. Job visibility and every action are checked on the server by role (`JobAccess`), as in the permission matrix in `docs/gap-analysis.md` section 3; section 10's administrative overrides are deferred. Each role lands on its own dashboard; Reports is its own menu item. One team, "Design Studio", stays as the container; only the 6 designers are on the schedule. Time off is approved by the Traffic Manager (open question 6)
+- D71 The job number comes from a per-brand counter, `Department.LastJobNumber`, incremented atomically when the brief is submitted, with a unique index on brand and number. The code is fixed at submission and never changes, including through revisions. Replaces reading the highest number from project names at triage (D52's format and quarter rule stay)
+- D72 Approvals, revisions and history are records: `JobApproval` (design, marketing and business stages, with the artwork version reviewed), `JobRevision` (linked to the job, same job ID), `JobEvent` (every action, with the information request and answer text). Artwork versions are links in the demo (`JobArtwork`); file uploads come in the MVP. Each job page shows its own history; an organisation-wide audit screen is deferred
+- D73 Seed (replaces D54). The Core Group, its 14 brands unchanged, one team "Design Studio", 18 users: Head of Marketing Megan Botha, Head of Design Naledi Khumalo, Traffic Manager Chloe Adams, 6 designers (Ethan, Lerato, Amahle, Ruben at 5h/day, Priya, Sipho), 9 Marketing Managers (Zanele: DJI and Pure Electric; Pieter: GoPro; Ayesha: Bambu Lab; Nicole: MS Surface; Bongani: Ultra Human; Thabo: CORE and CGA; Lindiwe Khoza: InRetail and Reloved; Werner Steyn: ARP and CVM; Fatima Patel: Mobile in Africa and CCB). The Marketing team and Jason are removed. About 30 open jobs over every status; earlier briefs become closed jobs with approvals and events; DJI's next number is 0143; the load story (Lerato over, Priya at 50% next week, leave) stays
+
+**Tasks**
+
+- [x] R.1 `docs/gap-analysis.md`; `docs/requirements.md` committed
+- [x] R.2 This plan: source of truth, client decisions, proposed decisions, Phases J, W and V, deferred items under Later
+
+**Review gate**
+
+- [x] Docs only: no build or test change
+- [x] Committed, one commit per step
+- [x] "Where we left off" and the phase status updated to Awaiting review
+- [ ] **STOP** for review
+- [ ] Approved by user (D68 to D73 confirmed or changed; open questions answered or left on their defaults)
+
+---
+
+## Phase J - Roles and jobs
+
+**Status:** Not started
+**Done when:** the five roles sign in to their own landing page and nav, the board shows jobs in the five columns with their detailed status, and a submitted brief gets its job ID at once
+
+**Tasks**
+
+- [ ] J.1 Five roles (D70): `User.Role` replaces `OrgRole` and `TeamMembership.Role`; role-based access on the server; login grouped by role; nav and landing per role; seed of the 18 users in one studio (D73); migration `Roles`; tests
+- [ ] J.2 Jobs replace requests, projects and tasks (D68, D69, D72): `Job`, `JobStatus` and the column map, `JobEvent`, `Allocation.JobId`; board in five columns with status chips, brand colours, booked chip and filters, no drag between columns; server visibility by role; seed as jobs, including the closed history; dashboard and briefs report moved onto jobs; migration `Jobs`; tests
+- [ ] J.3 Job number from `Department.LastJobNumber` at submission, code fixed (D71); migration `JobNumbers`; tests for the counter and the code
+- [ ] J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; the job page for the Marketing Manager; migration `BriefSections`; tests
+
+**Acceptance criteria**
+
+- [ ] Each of the five roles lands on its page and sees only its nav items; the API refuses what the matrix does not allow (403)
+- [ ] The board shows Incoming, In Design, In Review, With Marketing and Done, each card with its detailed status, job ID, brand colour and designer
+- [ ] Marketing Managers have no board or schedule; designers see only their own jobs
+- [ ] A submitted brief gets the next number for its brand (DJI0143 in the seed) and its code never changes
+- [ ] The brief form has every field of section 3.1, with several deliverables and links
+
+**Review gate**
+
+- [ ] Build passes with no warnings, lint passes, smoke tests pass
+- [ ] Acceptance criteria ticked
+- [ ] Committed, one commit per step
+- [ ] "Where we left off" and the phase status updated to Awaiting review
+- [ ] **STOP** for review
+- [ ] Approved by user
+
+---
+
+## Phase W - Workflow
+
+**Status:** Not started
+**Done when:** one job runs from brief to close across all five roles, with one revision routed back through the Traffic Manager, and every step is recorded
+
+**Tasks**
+
+- [ ] W.1 Traffic Manager: Incoming (replaces Triage), Brief complete, Allocate and schedule (makes the booking; clash, leave and deadline warnings), View on schedule, Add booking (hidden at or above the estimate), reassign and reschedule
+- [ ] W.2 Request information and the Marketing Manager's answer (Awaiting Information, Awaiting Traffic Review)
+- [ ] W.3 Designer: Start, Submit artwork link (`JobArtwork` versions); no Schedule in the nav
+- [ ] W.4 Head of Design: approval queue, Approve and Send back with a comment (`JobApproval`)
+- [ ] W.5 Marketing Manager: Approve, Needs business approval, Record business approval (stakeholder, date, outcome, note, link), Close
+- [ ] W.6 Revisions: Request changes creates a `JobRevision` that goes to the Traffic Manager and is scheduled, worked and approved; revision badge on the card; the job page lists versions, approvals, revisions and history
+
+**Acceptance criteria**
+
+- [ ] Each transition in `docs/gap-analysis.md` section 2 works for its role only, and is refused for every other role and status
+- [ ] No artwork reaches the Marketing Manager before Head of Design approval
+- [ ] A revision goes to the Traffic Manager, never straight to the designer, and keeps the same job ID
+- [ ] Every action writes a `JobEvent` with user and time; approvals record reviewer, time, decision, comment and version
+
+**Review gate**
+
+- [ ] Build passes with no warnings, lint passes, smoke tests pass
+- [ ] Acceptance criteria ticked
+- [ ] Committed, one commit per step
+- [ ] "Where we left off" and the phase status updated to Awaiting review
+- [ ] **STOP** for review
+- [ ] Approved by user
+
+---
+
+## Phase V - Views and demo
+
+**Status:** Not started
+**Done when:** each role has its dashboard, Reports is its own menu item scoped by role, and the demo script in `docs/gap-analysis.md` section 4 runs start to finish on freshly reset data
+
+**Tasks**
+
+- [ ] V.1 Marketing Manager dashboard (submit a brief, jobs by stage, information requests); My requests with search
+- [ ] V.2 Traffic Manager dashboard (incoming, awaiting allocation, deadlines and overdue, not booked, capacity)
+- [ ] V.3 Head of Design dashboard (approval queue with actions, in progress, amendments, overdue, workloads, completed)
+- [ ] V.4 Designer dashboard, from My work (today, upcoming, in progress, awaiting approval, changes required, completed, calendar, workload)
+- [ ] V.5 Head of Marketing dashboard (totals, by brand, Marketing Manager and designer, capacity, turnaround, revision volumes; brand and period filters)
+- [ ] V.6 Reports menu item; the briefs report moved and scoped by role (all, own activity, own requests)
+- [ ] V.7 Board text search (job ID, title, brand, campaign, Marketing Manager, designer); nav count badges
+- [ ] V.8 `docs/demo-brief.md` script and seed table, README, rehearsal on freshly reset data, screenshots
+
+**Acceptance criteria**
+
+- [ ] Each dashboard shows the items of section 5 for its role, with only the data that role may see
+- [ ] Reports is a menu item for every role, and each role sees only its scope
+- [ ] The demo script runs start to finish
+
+**Review gate**
+
+- [ ] Build passes with no warnings, lint passes, smoke tests pass
+- [ ] Acceptance criteria ticked
+- [ ] Committed, one commit per step
+- [ ] "Where we left off" and the phase status updated to Awaiting review
+- [ ] **STOP** for review
+- [ ] Approved by user
+
 ## Later
 
 **Future development:** Ideas captured during the demo build. Prioritise with the Head of Design after the demo; do not build without approval.
@@ -834,6 +976,22 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - Azure deployment
 - Multiple assignees per task
 - Integrations, AI assistant, CSV export, mobile layout
+- **Deferred from the client's requirements to the MVP** (2026-11-01, `docs/gap-analysis.md` section 4):
+  - File uploads: working files, artwork files, preview and download (the demo uses artwork links, D72)
+  - Notifications (section 8), email and in-app, beyond the nav counts
+  - Comment threads on jobs: replies, tags, attachments
+  - An organisation-wide audit screen and export (each job's own history is in the demo)
+  - Reopening a closed job, and a new job linked to the original (section 4)
+  - Head of Marketing administrative overrides (section 10 "\*"): submit on behalf, allocate, close
+  - User and permission management screen
+  - Configurable naming convention (11.2)
+  - Designers flagging blockers, and the "Internal Review" designer status (3.3)
+  - The rest of section 9 reporting: time per stage, reasons for delays, designer performance
+  - Advanced search with date ranges
+  - External calendar, and deadlines on the calendar (11.6)
+  - Marketing Managers seeing their brands' jobs (CD5 open question)
+  - Bookings by time of day
+  - Rejecting or cancelling a brief
 
 ## Progress log
 
@@ -884,3 +1042,4 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - 2026-10-31: Two additions to Phase C, one commit each. C.12 briefs report (D56): `/t/:teamId/briefs` for team admins with a brand filter over briefs completed vs in progress, capacity by designer and briefs received over 9 months, aggregated in `Features/Reports`; the seed adds 53 earlier briefs over the 8 months before this one. C.13 booked indicator (D57): "Booked Nh" or "Not booked" (amber when due within 7 days) on open board cards, a "Not booked" board filter, the chip opens the schedule at the booking's week; booked hours come with the board's tasks in two queries. Build with no warnings, lint, 78 API tests and 125 web tests pass; both checked in Chromium at 1440. Demo data reset. Phase C still awaiting review.
 - 2026-10-31: Review fix: dropdowns near the right edge of the screen open lined up with the trigger's right edge instead of running off it. 126 web tests pass, lint clean.
 - 2026-11-01: Phase C review round, one commit each. C.14 requester model (D58, replaces D55): no "Requested by" or Requester role, `LoggedByUserId` and `User.DepartmentId` dropped, brand managers as Studio Members managing one or more brands, the board filtered to their brands, Approve and Request changes on Awaiting approval. C.15 drawer schedule actions (D59). C.16 schedule People filter (D60). C.17 brand colours with a brand key on Board and Schedule (D61). Build with no warnings, lint, 80 API tests and 137 web tests pass; each item checked in Chromium at 1440 against the API on 5268. Demo data reset. Awaiting review.
+- 2026-11-01: Phase R: the client's functional requirements (`docs/requirements.md`) became the source of truth. Wrote `docs/gap-analysis.md` (gaps per area, the job data model and status map, the permission matrix, the demo slice, pending items, phases, open questions). Recorded the client decisions (D62 to D67) and the proposed decisions (D68 to D73: a card is a job, standard statuses, five roles, job number counter, approval and revision records, the 18-user seed); planned Phases J, W and V; folded Phase C's C.18 into this review. No code changed. Awaiting review.

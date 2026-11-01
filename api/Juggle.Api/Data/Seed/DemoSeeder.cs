@@ -12,12 +12,17 @@ namespace Juggle.Api.Data.Seed;
 /// </summary>
 public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogger<DemoSeeder> logger)
 {
-    /// <summary>The group's brands and their job code prefixes (D52).</summary>
-    private static readonly (string Name, string Prefix)[] Brands =
+    /// <summary>
+    /// The group's brands, their job code prefixes (D52) and colours (D61). 14 brands share 8 hues, so each board's
+    /// brands differ: the Studio's nine repeat only amber, on Mobile in Africa and Reloved (whose work is all done),
+    /// and the Marketing four (CORE, GoPro, CGA, Pure Electric) are all different.
+    /// </summary>
+    private static readonly (string Name, string Prefix, string Colour)[] Brands =
     [
-        ("CGA", "CGA"), ("DJI", "DJI"), ("ARP", "ARP"), ("Bambu Lab", "BAMBU"), ("InRetail", "INRETAIL"),
-        ("Reloved", "RELOVED"), ("MS Surface", "MSS"), ("GoPro", "GOPRO"), ("CVM", "CVM"), ("CCB", "CCB"),
-        ("CORE", "CORE"), ("Pure Electric", "PURE"), ("Mobile in Africa", "MIA"), ("Ultra Human", "ULTRA"),
+        ("CGA", "CGA", "#d9a441"), ("DJI", "DJI", "#5b8def"), ("ARP", "ARP", "#7b8ea8"), ("Bambu Lab", "BAMBU", "#6aa36f"),
+        ("InRetail", "INRETAIL", "#7b8ea8"), ("Reloved", "RELOVED", "#d9a441"), ("MS Surface", "MSS", "#8a78d6"),
+        ("GoPro", "GOPRO", "#3fa7a0"), ("CVM", "CVM", "#d16b8f"), ("CCB", "CCB", "#6aa36f"), ("CORE", "CORE", "#8a78d6"),
+        ("Pure Electric", "PURE", "#e07a5f"), ("Mobile in Africa", "MIA", "#d9a441"), ("Ultra Human", "ULTRA", "#d16b8f"),
     ];
 
     /// <summary>
@@ -136,7 +141,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
 
         var brands = Brands.ToDictionary(
             b => b.Name,
-            b => new Department { OrgId = org.Id, Name = b.Name, JobCodePrefix = b.Prefix });
+            b => new Department { OrgId = org.Id, Name = b.Name, JobCodePrefix = b.Prefix, Colour = b.Colour });
         db.Departments.AddRange(brands.Values);
 
         // Colours are hues from the project palette under "Design" in CLAUDE.md.
@@ -258,7 +263,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             return date;
         }
 
-        Project AddBrief(Team team, string brand, int number, string jobName, string colour, int dueDays)
+        Project AddBrief(Team team, string brand, int number, string jobName, int dueDays)
         {
             var due = Due(dueDays);
             var project = new Project
@@ -267,27 +272,26 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 TeamId = team.Id,
                 DepartmentId = brands[brand].Id,
                 Name = JobCodes.Name(brands[brand].JobCodePrefix!, number, due, FinancialYearStartMonth, jobName),
-                Colour = colour,
                 DueDate = due,
             };
             db.Projects.Add(project);
             return project;
         }
 
-        var blackFriday = AddBrief(studio, "DJI", 141, "Black Friday", "#d9a441", 21);
-        var brandStore = AddBrief(studio, "DJI", 142, "Amazon Brand Store", "#5b8def", 35);
-        var festiveBundles = AddBrief(studio, "GoPro", 213, "Festive Bundles", "#3fa7a0", 28);
-        var giftGuide = AddBrief(studio, "Bambu Lab", 57, "Holiday Gift Guide", "#6aa36f", 24);
-        var summer = AddBrief(studio, "Pure Electric", 34, "Summer Campaign", "#e07a5f", 42);
-        var backToSchool = AddBrief(studio, "MS Surface", 98, "Back to School", "#8a78d6", 70);
-        var retailLaunch = AddBrief(studio, "Ultra Human", 22, "Retail Launch", "#d16b8f", 30);
-        var storeRefresh = AddBrief(studio, "InRetail", 102, "Store Refresh", "#7b8ea8", 40);
-        var popUp = AddBrief(studio, "Reloved", 15, "Festive Pop-up", "#d9a441", -5);
-        var summit = AddBrief(studio, "Mobile in Africa", 29, "Summit Presentation", "#5b8def", 25);
-        var newsletter = AddBrief(marketing, "CORE", 12, "Group Newsletter", "#3fa7a0", 25);
-        var socialCalendar = AddBrief(marketing, "GoPro", 214, "Social Calendar", "#5b8def", 30);
-        var caseStudies = AddBrief(marketing, "CGA", 61, "Dealer Case Studies", "#6aa36f", 35);
-        var riderStories = AddBrief(marketing, "Pure Electric", 35, "Rider Stories", "#3fa7a0", 40);
+        var blackFriday = AddBrief(studio, "DJI", 141, "Black Friday", 21);
+        var brandStore = AddBrief(studio, "DJI", 142, "Amazon Brand Store", 35);
+        var festiveBundles = AddBrief(studio, "GoPro", 213, "Festive Bundles", 28);
+        var giftGuide = AddBrief(studio, "Bambu Lab", 57, "Holiday Gift Guide", 24);
+        var summer = AddBrief(studio, "Pure Electric", 34, "Summer Campaign", 42);
+        var backToSchool = AddBrief(studio, "MS Surface", 98, "Back to School", 70);
+        var retailLaunch = AddBrief(studio, "Ultra Human", 22, "Retail Launch", 30);
+        var storeRefresh = AddBrief(studio, "InRetail", 102, "Store Refresh", 40);
+        var popUp = AddBrief(studio, "Reloved", 15, "Festive Pop-up", -5);
+        var summit = AddBrief(studio, "Mobile in Africa", 29, "Summit Presentation", 25);
+        var newsletter = AddBrief(marketing, "CORE", 12, "Group Newsletter", 25);
+        var socialCalendar = AddBrief(marketing, "GoPro", 214, "Social Calendar", 30);
+        var caseStudies = AddBrief(marketing, "CGA", 61, "Dealer Case Studies", 35);
+        var riderStories = AddBrief(marketing, "Pure Electric", 35, "Rider Stories", 40);
 
         // Tasks: the briefs' deliverables
 
@@ -565,14 +569,13 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
 
         // Briefs from the eight months before this one, delivered, so the briefs report shows nine months of work (D56).
         // Each is a project with its job code, one Done card per deliverable and the request it came from. Job numbers
-        // stay below the open briefs' and colours repeat the brand's own, so the next job code and colour are unchanged.
+        // stay below the open briefs', so the next job code is unchanged.
         Person[] designers = [lerato, ethan, sipho, priya, amahle, lerato, ruben, jason, ethan, naledi, sipho, lerato];
         Person[] marketers = [thabo, chloe, megan];
         var assigned = 0;
         var thisMonth = new DateOnly(today.Year, today.Month, 1);
         foreach (var past in PastBriefs.OrderBy(b => b.MonthsAgo).ThenByDescending(b => b.Day))
         {
-            var brand = brands[past.Brand];
             var sent = thisMonth.AddMonths(-past.MonthsAgo).AddDays(past.Day - 1);
             var ageHours = (now - new DateTimeOffset(sent.ToDateTime(new TimeOnly(9, 0)), TimeSpan.FromHours(2))).TotalHours;
             var dueDays = sent.DayNumber - today.DayNumber + 14;
@@ -580,8 +583,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             TaskItem? first = null;
             if (past.RejectionReason is null)
             {
-                var project = AddBrief(team, past.Brand, past.Number, past.JobName,
-                    db.Projects.Local.First(p => p.DepartmentId == brand.Id).Colour, dueDays);
+                var project = AddBrief(team, past.Brand, past.Number, past.JobName, dueDays);
                 foreach (var deliverable in past.Deliverables)
                 {
                     var assignee = past.Marketing ? marketers[assigned++ % marketers.Length] : designers[assigned++ % designers.Length];

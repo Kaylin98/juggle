@@ -51,7 +51,7 @@ public sealed class TeamsService(JuggleDbContext db, CurrentUser currentUser, Te
 
         return await query
             .OrderBy(p => p.Name)
-            .Select(p => new ProjectDto(p.Id, p.Name, p.Colour, p.DepartmentId, p.Department.Name))
+            .Select(p => new ProjectDto(p.Id, p.Name, p.Department.Colour, p.DepartmentId, p.Department.Name))
             .ToListAsync(ct);
     }
 

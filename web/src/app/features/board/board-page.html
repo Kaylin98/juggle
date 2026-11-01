@@ -1,5 +1,5 @@
 <div class="flex h-full flex-col">
-  <div class="flex flex-wrap items-end justify-between gap-4 px-8 pt-2 pb-6">
+  <div class="flex flex-wrap items-end justify-between gap-4 px-8 pt-2 pb-4">
     <div>
       <h1 class="page-title">Board</h1>
       @if (teamContext.team(); as team) {
@@ -22,6 +22,7 @@
       </div>
     }
   </div>
+  <app-brand-legend class="block min-h-4 px-8 pb-6" [brands]="brands()" [departmentLabel]="auth.departmentLabel()" />
 
   @if (board.error()) {
     <p class="empty-state mx-8 text-over-700">The board could not be loaded. Refresh the page to try again.</p>

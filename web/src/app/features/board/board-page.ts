@@ -3,6 +3,7 @@ import { Component, ElementRef, computed, effect, inject, input, linkedSignal, r
 import { AuthService } from '../../core/auth.service';
 import { Task, WorkflowStatus } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
+import { BrandLegend, legendBrands } from '../../shared/brand-legend';
 import { Drawer } from '../../shared/drawer';
 import { ToastService } from '../../shared/toast.service';
 import { BoardColumn } from './board-column';
@@ -18,7 +19,7 @@ import { TaskDrawer } from './task-drawer';
 
 @Component({
   selector: 'app-board-page',
-  imports: [CdkDropListGroup, BoardColumn, BoardFilters, Drawer, NewTaskDrawer, RequestChangesDialog, TaskDrawer],
+  imports: [CdkDropListGroup, BoardColumn, BoardFilters, BrandLegend, Drawer, NewTaskDrawer, RequestChangesDialog, TaskDrawer],
   templateUrl: './board-page.html',
 })
 export class BoardPage {
@@ -160,6 +161,14 @@ export class BoardPage {
   /** Columns a filter leaves empty; they collapse first so the matching cards stay in view. */
   private readonly emptyWhileFiltered = computed(
     () => new Set(this.filtered() ? this.columns().filter((c) => c.cards.length === 0).map((c) => c.status.id) : []),
+  );
+
+  /** The brands of the cards shown, for the colour key (D61). */
+  protected readonly brands = computed(() =>
+    legendBrands(
+      this.columns().flatMap((c) => c.cards),
+      (card) => ({ name: card.project.department, colour: card.project.colour }),
+    ),
   );
 
   protected readonly filtered = computed(

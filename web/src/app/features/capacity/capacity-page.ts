@@ -4,6 +4,7 @@ import { AllocationsService } from '../../core/allocations.service';
 import { AuthService } from '../../core/auth.service';
 import { Allocation, SaveAllocation, Schedule } from '../../core/models';
 import { ALL_TEAMS, TeamContextService } from '../../core/team-context.service';
+import { BrandLegend, legendBrands } from '../../shared/brand-legend';
 import { isIsoDate, startOfWeek, today } from '../../shared/dates';
 import { ToastService } from '../../shared/toast.service';
 import { AllocationPopover, BookingDetails, BookingDraft } from './allocation-popover';
@@ -25,13 +26,13 @@ const POPOVER_POSITIONS: ConnectedPosition[] = [
 
 @Component({
   selector: 'app-capacity-page',
-  imports: [AllocationPopover, CapacityGrid, CdkConnectedOverlay, ClashDialog, GridToolbar, PeopleFilter],
+  imports: [AllocationPopover, BrandLegend, CapacityGrid, CdkConnectedOverlay, ClashDialog, GridToolbar, PeopleFilter],
   templateUrl: './capacity-page.html',
 })
 export class CapacityPage {
   private readonly capacityService = inject(CapacityService);
   private readonly allocations = inject(AllocationsService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly prefs = inject(SchedulePrefsService);
   private readonly toast = inject(ToastService);
   protected readonly teamContext = inject(TeamContextService);
@@ -81,6 +82,14 @@ export class CapacityPage {
       allocations: data.allocations.filter((a) => !hidden.has(a.personId)),
     };
   });
+
+  /** The brands of the team's own bookings shown, for the colour key; other teams' bookings are greyed (D61). */
+  protected readonly brands = computed(() =>
+    legendBrands(
+      (this.shown()?.allocations ?? []).filter((a) => !a.otherTeam),
+      (a) => ({ name: a.projectDepartment, colour: a.projectColour }),
+    ),
+  );
 
   protected setHiddenPeople(hidden: ReadonlySet<string>): void {
     this.hiddenPeople.set(hidden);

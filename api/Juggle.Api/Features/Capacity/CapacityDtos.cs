@@ -43,7 +43,7 @@ public sealed record AllocationDto(
         a.PersonId,
         a.ProjectId,
         a.Project.Name,
-        a.Project.Colour,
+        a.Project.Department.Colour,
         a.Project.Department.Name,
         teamName,
         a.TaskId,

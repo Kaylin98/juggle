@@ -100,12 +100,12 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
 
     /// <summary>
     /// What accepting as a new brief proposes: the next job code for the request's department, from its studio deadline
-    /// (today without one), and the department's next unused colour (D51, D52).
+    /// (today without one), and the department's colour, which its cards will take (D51, D52, D61).
     /// </summary>
     public async Task<NewBriefDto> GetNewBriefAsync(Guid id, CancellationToken ct)
     {
         var request = await FindNewAsync(id, ct);
-        var colour = await NextColourAsync(request.DepartmentId, ct);
+        var colour = request.Department.Colour;
         if (request.Department.JobCodePrefix is not { } prefix)
         {
             return new NewBriefDto(null, colour);
@@ -172,7 +172,6 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
                 TeamId = request.TeamId,
                 DepartmentId = request.DepartmentId,
                 Name = accept.NewProjectName!.Trim(),
-                Colour = await NextColourAsync(request.DepartmentId, ct),
                 DueDate = request.RequestedDueDate,
             };
             db.Projects.Add(project);
@@ -188,9 +187,6 @@ public sealed class RequestService(JuggleDbContext db, CurrentUser currentUser, 
         await db.SaveChangesAsync(ct);
         return await ToDtoAsync(request, ct);
     }
-
-    private async Task<string> NextColourAsync(Guid departmentId, CancellationToken ct) =>
-        JobCodes.NextColour(await db.Projects.Where(p => p.DepartmentId == departmentId).Select(p => p.Colour).ToListAsync(ct));
 
     public async Task<RequestDto> RejectAsync(Guid id, RejectRequestRequest reject, CancellationToken ct)
     {

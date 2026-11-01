@@ -83,10 +83,10 @@ public sealed class RequestsTests(ApiFactory api)
             .Single(p => p.Name == "Priya Naidoo");
         var brief = await naledi.GetFromJsonAsync<NewBriefDto>($"/api/requests/{request.Id}/new-brief", ApiFactory.Json, _ct);
 
-        // Bambu Lab's last job is BAMBU0057 in sage, so the next is 0058 in the first unused hue; the demo org's
-        // financial year starts in October.
+        // Bambu Lab's last job is BAMBU0057, so the next is 0058, in Bambu Lab's sage (D61); the demo org's financial
+        // year starts in October.
         var code = JobCodes.Name("BAMBU", 58, _today.AddDays(14), 10, "Launch kit");
-        Assert.Equal((code, "#5b8def"), (brief!.ProjectName, brief.Colour));
+        Assert.Equal((code, "#6aa36f"), (brief!.ProjectName, brief.Colour));
 
         var neither = new AcceptRequestRequest(null, null, priya.Id, 16, _today.AddDays(10));
         Assert.Equal(HttpStatusCode.BadRequest, (await naledi.PostAsJsonAsync($"/api/requests/{request.Id}/accept", neither, ApiFactory.Json, _ct)).StatusCode);

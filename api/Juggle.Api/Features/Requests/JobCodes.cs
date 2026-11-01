@@ -10,10 +10,6 @@ namespace Juggle.Api.Features.Requests;
 /// </summary>
 public static class JobCodes
 {
-    /// <summary>The 8 project hues (the palette under "Design" in CLAUDE.md), in the order new briefs take them.</summary>
-    public static readonly IReadOnlyList<string> Palette =
-        ["#5b8def", "#3fa7a0", "#6aa36f", "#d9a441", "#e07a5f", "#d16b8f", "#8a78d6", "#7b8ea8"];
-
     public static string Name(string prefix, int number, DateOnly deadline, int financialYearStartMonth, string jobName)
     {
         var (quarter, year) = FinancialQuarter(deadline, financialYearStartMonth);
@@ -41,12 +37,5 @@ public static class JobCodes
             .Select(match => int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture))
             .DefaultIfEmpty(0)
             .Max() + 1;
-    }
-
-    /// <summary>The first palette hue not in use; the first hue again once all are.</summary>
-    public static string NextColour(IEnumerable<string> usedColours)
-    {
-        var used = usedColours.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        return Palette.FirstOrDefault(colour => !used.Contains(colour)) ?? Palette[0];
     }
 }

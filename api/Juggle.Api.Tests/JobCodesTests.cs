@@ -37,11 +37,4 @@ public sealed class JobCodesTests
         Assert.Equal(143, JobCodes.NextNumber("DJI", names));
         Assert.Equal(1, JobCodes.NextNumber("PURE", names));
     }
-
-    [Fact]
-    public void Next_colour_is_the_first_unused_hue_then_starts_again()
-    {
-        Assert.Equal("#3fa7a0", JobCodes.NextColour(["#5B8DEF", "#6aa36f"]));
-        Assert.Equal(JobCodes.Palette[0], JobCodes.NextColour(JobCodes.Palette));
-    }
 }

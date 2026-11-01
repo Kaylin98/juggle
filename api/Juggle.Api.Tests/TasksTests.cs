@@ -100,6 +100,23 @@ public sealed class TasksTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task Projects_and_bookings_take_their_brands_colour()
+    {
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var studioId = await GetTeamIdAsync(naledi, "Studio");
+        var projects = await GetProjectsAsync(naledi, studioId);
+        var start = new OrgClock(TimeProvider.System).Today.StartOfWeek();
+        var schedule = (await naledi.GetFromJsonAsync<CapacityDto>($"/api/capacity?teamId={studioId}&start={start:yyyy-MM-dd}&weeks=4", ApiFactory.Json, _ct))!;
+
+        // One colour per brand (D61): every DJI brief is DJI's blue, on the board and on the schedule.
+        Assert.All(projects.GroupBy(p => p.Department), brand => Assert.Single(brand.Select(p => p.Colour).Distinct()));
+        Assert.All(projects.Where(p => p.Department == "DJI"), p => Assert.Equal("#5b8def", p.Colour));
+        Assert.NotEmpty(schedule.Allocations);
+        Assert.All(schedule.Allocations.Where(a => !a.OtherTeam),
+            a => Assert.Equal(projects.Single(p => p.Id == a.ProjectId).Colour, a.ProjectColour));
+    }
+
+    [Fact]
     public async Task Only_the_brands_manager_approves()
     {
         var naledi = await api.SignInAsAsync("Naledi Khumalo");

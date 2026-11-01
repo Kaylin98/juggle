@@ -106,18 +106,19 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 **2. Schedule**
 
 - [ ] Rows = people in the current team; columns = weekdays (weekends shown as narrow shaded columns); view 1, 2, 4 or 8 weeks; previous/next/today
-- [ ] Allocation bars show project colour, name and hours/day; one person can have several bars per day
+- [ ] Allocation bars show their brand's colour (D61), name and hours/day; one person can have several bars per day
 - [ ] Each person shows utilisation for the period in load colour (green under 80%, amber 80 to 100%, red over 100%); a day over capacity is tinted red with the hours over
 - [ ] Drag on empty cells to create an allocation (pick project, hours/day); drag a bar to move it; drag its edge to resize
 - [ ] Saving an allocation that pushes a day over capacity shows a clash warning, but still allows it
 - [ ] Time off and public holidays show as hatched blocks and reduce capacity
 - [ ] Load includes allocations from other teams (shown greyed)
+- [ ] A small brand key above the schedule and the board names each brand colour shown (D61)
 - [ ] A "People" filter picks who the schedule shows (checkboxes, search, Select all / Clear, "Showing N of M"), remembered per user (D60)
 
 **3. Board**
 
 - [ ] Columns come from the current team's workflow statuses (Design and Marketing differ)
-- [ ] Cards show title, project colour, assignee avatar, due date (red if overdue), review cycle
+- [ ] Cards show title, their brand's colour (D61), assignee avatar, due date (red if overdue), review cycle
 - [ ] Drag between and within columns persists order and status
 - [ ] Filter by assignee and project
 - [ ] Clicking a card opens a drawer: edit title, description, assignee, estimate, due date, link; "Book on schedule" creates an allocation for the assignee; once booked, "View on schedule" and "Add booking" (hidden when the bookings cover the estimate) (D59)
@@ -158,10 +159,10 @@ Realistic, fictional data that tells the story; dates are relative to the curren
 | Teams | Studio (8 people), Marketing (4 people); 1 designer is also a Marketing member |
 | Users | 1 Org Admin who is also Head of Studio (Studio Team Admin), 1 Marketing Team Admin, members, 5 brand marketing managers (Studio Members without a schedule row; Zanele Mthembu covers DJI and Pure Electric) |
 | People | Mix of 8 h/day and one part-time Artworker at 5 h/day; job titles (Senior Designer, Digital Designer, Motion Designer, Artworker, Content Marketer...) |
-| Brands | CGA, DJI, ARP, Bambu Lab, InRetail, Reloved, MS Surface, GoPro, CVM, CCB, CORE, Pure Electric, Mobile in Africa, Ultra Human, each with a job code prefix (DJI, GOPRO, BAMBU, PURE, MSS...) |
+| Brands | CGA, DJI, ARP, Bambu Lab, InRetail, Reloved, MS Surface, GoPro, CVM, CCB, CORE, Pure Electric, Mobile in Africa, Ultra Human, each with a job code prefix (DJI, GOPRO, BAMBU, PURE, MSS...) and one of the 8 palette colours, which its tasks and bookings take; on each board the brands differ in colour, except Reloved (only done work) sharing amber with Mobile in Africa |
 | Studio statuses | Triage, Briefed in, Working on it, Feedback needed, Awaiting approval, Done |
 | Marketing statuses | Triage, Planned, Writing, Review, Scheduled, Published |
-| Projects | Briefs named with job codes, 10 in Studio and 4 in Marketing across 9 brands, coloured from the palette (e.g. `DJI0141_Q1'27_Black Friday`, `DJI0142_Q1'27_Amazon Brand Store`, `GOPRO0213_Q1'27_Festive Bundles`); plus 51 delivered briefs from the 8 months before, in their brand's colour and with lower job numbers |
+| Projects | Briefs named with job codes, 10 in Studio and 4 in Marketing across 9 brands (e.g. `DJI0141_Q1'27_Black Friday`, `DJI0142_Q1'27_Amazon Brand Store`, `GOPRO0213_Q1'27_Festive Bundles`); plus 51 delivered briefs from the 8 months before, with lower job numbers |
 | Tasks | About 50 open deliverables, plus a Done card per deliverable of the delivered briefs (about 80) (Black Friday: Takealot banners, iStore banners, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP); 6 in Awaiting approval; 4 in Feedback needed, each on round 2 or 3 with the manager's comment; 4 overdue |
 | Allocations | Last week to 5 weeks ahead; one designer (Lerato) at 11h on seven days this week and next; one under-loaded (Priya, 50% next week); the rest 60 to 90% |
 | Time off | Approved leave for 2 Studio people in the next 2 weeks; 1 Marketing person on sick leave this week ("Unavailable" to everyone but them and their admins); 1 pending request in Studio for the demo |
@@ -199,7 +200,7 @@ About 10 minutes, told as The Core Group's studio (Phase C): the pain points the
 1. **Dashboard, as Naledi Khumalo (Head of Studio).** Lerato Mokoena is "Over capacity this week" and tops utilisation, while others have room: one designer carries far more than the rest. "Awaiting review" shows the approval backlog, and "Overdue tasks" the deadlines already missed. Then **Briefs report**, their Monday report without the spreadsheet: about 70% of briefs done, Lerato's column carries the most open work, and briefs received month by month over the last 9 months. Pick DJI in the Brand filter and all three widgets show DJI only
 2. **Schedule:** Lerato's red days this week and next, Priya Naidoo clearly available, Amahle on leave next week. Bookings read as job codes, so every brand's work is in one view. The People filter narrows it to whoever matters for a decision (say Lerato and Priya: "Showing 2 of 8"), and it is remembered next time
 3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), studio deadline in 2 weeks. It goes in as from Zanele: whoever is signed in sends the brief, so there is no "Requested by" field
-4. **Triage, as a new brief:** switch back to Naledi; the triage badge shows it. Accept: "New brief" proposes `DJI0143_Q<n>'<YY>_Summer Holiday Sale` (editable); assign Priya, estimate 16 h, keep the committed date. The board shows a new DJI project, in its own colour, with three cards in Briefed in
+4. **Triage, as a new brief:** switch back to Naledi; the triage badge shows it. Accept: "New brief" proposes `DJI0143_Q<n>'<YY>_Summer Holiday Sale` (editable); assign Priya, estimate 16 h, keep the committed date. The board shows a new DJI project with three cards in Briefed in, in DJI's blue like every DJI card (the Brands key above the board names each colour)
 5. **Book it:** on the board, set Booking to "Not booked": everything nobody is booked for yet, amber where it is due within 7 days, and the three new cards among it. Clear the filter, open the Takealot banners card (it carries the 16 h) and "Book on schedule" for 4 h/day over 4 days: the card now reads "Booked 16h", and its tooltip says who and when, and the drawer offers "View on schedule" in place of "Book on schedule" (no "Add booking", as the 16 h estimate is booked). Click "View on schedule": the schedule opens at that week, and on the 1-week view Priya goes from green to amber
 6. **Show a clash:** drag a booking onto Ethan Pillay's full day next week; the clash dialog appears
 7. **Approval loop, as the brand's manager:** switch to Zanele; she lands on the Studio board, showing only DJI and Pure Electric, read-only. On "A4 insert: Incredible Connection" in Awaiting approval, "Request changes" with a comment ("Move the price above the fold"): it goes to Feedback needed and shows R2, so rounds of feedback are counted, and the designer sees the comment when they open the card. "Approve" on "A4 insert: Cameraland": it goes to Done. The manager clears the approval backlog on the board itself

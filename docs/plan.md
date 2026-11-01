@@ -2,17 +2,17 @@
 
 Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
-**Source of truth (from 2026-11-01):** `docs/requirements.md`, the client's functional requirements. Its "Client decisions" section overrides the rest of that document and `docs/demo-brief.md` where they conflict. The gap analysis, proposed data model, permission matrix and demo slice are in `docs/gap-analysis.md`; decisions D62 to D73 below record them.
+**Source of truth (from 2026-11-01):** `docs/requirements.md`, the client's functional requirements. Its "Client decisions" section overrides the rest of that document and `docs/demo-brief.md` where they conflict. The gap analysis, proposed data model, permission matrix and demo slice are in `docs/gap-analysis.md`; decisions D62 to D76 below record them.
 
 ## Where we left off
 
 | | |
 | --- | --- |
-| Current phase | R - Requirements and gap analysis |
-| Phase status | Awaiting review |
-| Last completed task | R.2 Plan updated with the client decisions (D62 to D67), the proposed decisions (D68 to D73) and Phases J, W and V |
-| Next task | User review of `docs/gap-analysis.md` (proposed decisions D68 to D73, and the open questions in its section 7); then Phase J. Phase C's C.18 is folded into this review (see Phase C) |
-| Blockers / open questions | 12 client questions and 1 for the user in `docs/gap-analysis.md` section 7; the demo goes ahead on the defaults stated there |
+| Current phase | J - Roles and jobs |
+| Phase status | In progress |
+| Last completed task | Phase R approved (D62 to D73, plus D74 to D76) |
+| Next task | J.1 Five roles |
+| Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; list them in the Phase J review summary for the client |
 | Last updated | 2026-11-01 |
 
 ## Phase overview
@@ -30,9 +30,9 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | P | Fri | Post-Phase 5 round | Done |
 | 6 | Fri | Dashboard, roles, polish, rehearsal | Done |
 | S | Sat | Stretch: My work, time off | Done |
-| C | - | Client demo for The Core Group | Awaiting review (folded into R) |
-| R | - | Requirements and gap analysis | Awaiting review |
-| J | - | Roles and jobs | Not started |
+| C | - | Client demo for The Core Group | Done (folded into R) |
+| R | - | Requirements and gap analysis | Done |
+| J | - | Roles and jobs | In progress |
 | W | - | Workflow | Not started |
 | V | - | Views and demo | Not started |
 
@@ -690,7 +690,7 @@ Built after demo-v1 (approved 2026-10-31), one commit per item.
 
 ## Phase C - Client demo for The Core Group
 
-**Status:** Awaiting review (plan approved 2026-10-31, built 2026-10-31; briefs report and booked indicator added 2026-10-31). Folded into the Phase R review on 2026-11-01: the client's requirements replace this phase's job model, so C.14 to C.17 are reviewed against `docs/gap-analysis.md` section 5, and the C.18 rehearsal is replaced by the Phase V script. Proposed: mark Done when Phase R is approved
+**Status:** Done (plan approved 2026-10-31, built 2026-10-31; briefs report and booked indicator added 2026-10-31). Folded into the Phase R review on 2026-11-01: the client's requirements replace this phase's job model, so C.14 to C.17 were reviewed against `docs/gap-analysis.md` section 5, and the C.18 rehearsal is replaced by the Phase V script. Marked Done with Phase R (2026-11-01)
 **Done when:** the demo data and wording mirror The Core Group's studio process (today on Monday.com), a brief can be accepted as a new job, and the rewritten demo script runs start to finish
 
 **Context.** The Core Group's creative studio serves internal brand teams (DJI, GoPro, Bambu Lab, Pure Electric, MS Surface, Ultra Human, Reloved, CGA, ARP, InRetail, Mobile in Africa). Each brief has a job code such as `DJI0141_Q1'27_Black Friday` and many deliverables (Takealot banners, iStore, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP). Their statuses: Briefed in, Working on it, Feedback needed, Awaiting approval, Done. Their brief template: date briefed in, marketing manager, studio deadline, main goal, deliverables. Pain points the demo makes visible: one designer carries far more work than the others, work stuck in "Awaiting approval", overdue deadlines, briefs arriving as free text.
@@ -806,14 +806,14 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - [ ] Acceptance criteria ticked (all but the full rehearsal)
 - [x] Committed as `Phase C: ...`, one commit per step
 - [x] "Where we left off" and the phase status updated to Awaiting review
-- [ ] **STOP** for review, with the screenshots
-- [ ] Approved by user
+- [x] **STOP** for review, with the screenshots (folded into the Phase R review)
+- [x] Approved by user (2026-11-01, with Phase R; the open acceptance criterion and the rehearsal move to Phase V)
 
 ---
 
 ## Phase R - Requirements and gap analysis
 
-**Status:** Awaiting review
+**Status:** Done (approved 2026-11-01)
 **Done when:** `docs/gap-analysis.md` covers every requirement area, the data model, the permission matrix, the demo slice, the pending items, phases and open questions, and this plan records the client decisions
 
 **Context.** On 2026-11-01 the client's functional requirements (`docs/requirements.md`) became the source of truth. They describe a five-role creative studio workflow (Marketing Manager brief, Traffic Manager review and allocation, Designer, Head of Design approval, Marketing Manager approval with any business approval, closure) with standard statuses, approval records and revisions routed through the Traffic Manager. Juggle's general team model (Org Admin, Team Admin, Member; configurable columns; a card per deliverable) conflicts with it in the middle, so Phases J, W and V rebuild the job model and the workflow on top of the existing schedule, time off and design system.
@@ -827,14 +827,21 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - D66 (CD5) Marketing Manager access. Sees only the jobs they submitted (status, designer, expected completion, comments, artwork, full history); reports on their own requests only. Does: submit briefs, answer requests for information, review artwork only after Head of Design approval, approve, request changes (routed to the Traffic Manager), record business approval, close, request a reopen or a linked new job. Cannot see the board, schedule, workloads or other managers' jobs; cannot allocate, upload artwork or approve design quality. Nav: My dashboard, My requests, Reports. Open: whether they also see others' jobs for the brands they manage (until answered, no)
 - D67 (CD6) The requester is always the signed-in Marketing Manager; no "Requested by" field (already so since D58). Submitting on someone's behalf is a Head of Marketing override, deferred
 
-**Proposed decisions (2026-11-01, for approval at this review; details in `docs/gap-analysis.md` section 2)**
+**Decisions (proposed 2026-11-01, approved at the Phase R review; details in `docs/gap-analysis.md` section 2)**
 
 - D68 A board card is a Job (confirmed by the user). The `Requests` table becomes `Jobs`, with the brief (sections A to F), one designer, estimate, planned start, expected completion and close fields; `Projects` and `Tasks` are dropped; deliverables become `JobDeliverable` rows (type, description, specs, deadline); supporting and reference links are `JobLink`; `Allocation.JobId` replaces `ProjectId` and `TaskId`. The Traffic Manager's "Allocate and schedule" sets the designer and dates and makes the booking in one step (replacing triage accept and "Book on schedule")
-- D69 Statuses are the 16 of section 6 as a `JobStatus` enum in code, each mapped to one of the five columns (table in `docs/gap-analysis.md`), replacing `WorkflowStatus` rows. Cards move only through workflow actions (one `JobWorkflow` class, unit tested); no drag between columns. Marketing Changes Required is recorded on the approval, and the job moves straight to Awaiting Revision Scheduling (open question 3)
+- D69 Statuses are the 16 of section 6, plus Cancelled (D75), as a `JobStatus` enum in code, each mapped to one of the five columns (table in `docs/gap-analysis.md`, with D76), replacing `WorkflowStatus` rows. Cards move through workflow actions (one `JobWorkflow` class, unit tested); dragging between columns only as D74 allows. Marketing Changes Required is recorded on the approval, and the job moves straight to Awaiting Revision Scheduling (open question 3)
 - D70 Five roles (`User.Role`: Head of Marketing, Head of Design, Traffic Manager, Designer, Marketing Manager) replace Org Admin, Team Admin and Member. Job visibility and every action are checked on the server by role (`JobAccess`), as in the permission matrix in `docs/gap-analysis.md` section 3; section 10's administrative overrides are deferred. Each role lands on its own dashboard; Reports is its own menu item. One team, "Design Studio", stays as the container; only the 6 designers are on the schedule. Time off is approved by the Traffic Manager (open question 6)
 - D71 The job number comes from a per-brand counter, `Department.LastJobNumber`, incremented atomically when the brief is submitted, with a unique index on brand and number. The code is fixed at submission and never changes, including through revisions. Replaces reading the highest number from project names at triage (D52's format and quarter rule stay)
 - D72 Approvals, revisions and history are records: `JobApproval` (design, marketing and business stages, with the artwork version reviewed), `JobRevision` (linked to the job, same job ID), `JobEvent` (every action, with the information request and answer text). Artwork versions are links in the demo (`JobArtwork`); file uploads come in the MVP. Each job page shows its own history; an organisation-wide audit screen is deferred
 - D73 Seed (replaces D54). The Core Group, its 14 brands unchanged, one team "Design Studio", 18 users: Head of Marketing Megan Botha, Head of Design Naledi Khumalo, Traffic Manager Chloe Adams, 6 designers (Ethan, Lerato, Amahle, Ruben at 5h/day, Priya, Sipho), 9 Marketing Managers (Zanele: DJI and Pure Electric; Pieter: GoPro; Ayesha: Bambu Lab; Nicole: MS Surface; Bongani: Ultra Human; Thabo: CORE and CGA; Lindiwe Khoza: InRetail and Reloved; Werner Steyn: ARP and CVM; Fatima Patel: Mobile in Africa and CCB). The Marketing team and Jason are removed. About 30 open jobs over every status; earlier briefs become closed jobs with approvals and events; DJI's next number is 0143; the load story (Lerato over, Priya at 50% next week, leave) stays
+
+**Decisions at the Phase R review (2026-11-01)**
+
+- D74 Dragging a card between columns is allowed only when the drop maps to exactly one workflow action the signed-in role may take from the card's status (for example a Designer dragging from In Design to In Review is Submit for approval). The drop then runs that action (opening its form when it needs input, such as the artwork link). Any other drop is refused and the card goes back, with a short hint naming the action to use (for example "Use Allocate and schedule in the job"). The rule lives in `JobWorkflow`, so the board asks it which action a drop means; the server checks the action itself as for a button. Built with the actions in Phase W; until then cards cannot be dragged between columns
+- D75 Cancelled (answers open question 2). The Traffic Manager can reject or cancel a brief from any open status, with a required reason (1000); the Marketing Manager sees the reason on the job. The job is kept with status Cancelled, in the Done column, and is left out of completed counts in dashboards and reports. A `JobEvent` records it. Bookings from the next working day on are removed (built with the action, W.1)
+- D76 Scheduled sits in In Design (answers open question 5). Incoming is the Traffic Manager's queue only: New Request, Awaiting Traffic Review, Awaiting Information, Awaiting Allocation, and Awaiting Revision Scheduling (a revision waiting for the Traffic Manager, so also their queue). Cards in Scheduled show "Starts <date>" (the planned start)
+- The other open questions (1, 3, 4, 6 to 12) stay on their stated defaults; the Phase J review summary lists them for the user to confirm with the client
 
 **Tasks**
 
@@ -846,14 +853,14 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - [x] Docs only: no build or test change
 - [x] Committed, one commit per step
 - [x] "Where we left off" and the phase status updated to Awaiting review
-- [ ] **STOP** for review
-- [ ] Approved by user (D68 to D73 confirmed or changed; open questions answered or left on their defaults)
+- [x] **STOP** for review
+- [x] Approved by user (2026-11-01: D62 to D73 approved; D74 to D76 added; `docs/design-reference.png` restored, `CLAUDE.md` unchanged)
 
 ---
 
 ## Phase J - Roles and jobs
 
-**Status:** Not started
+**Status:** In progress
 **Done when:** the five roles sign in to their own landing page and nav, the board shows jobs in the five columns with their detailed status, and a submitted brief gets its job ID at once
 
 **Tasks**
@@ -889,12 +896,13 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 
 **Tasks**
 
-- [ ] W.1 Traffic Manager: Incoming (replaces Triage), Brief complete, Allocate and schedule (makes the booking; clash, leave and deadline warnings), View on schedule, Add booking (hidden at or above the estimate), reassign and reschedule
+- [ ] W.1 Traffic Manager: Incoming (replaces Triage), Brief complete, Allocate and schedule (makes the booking; clash, leave and deadline warnings), View on schedule, Add booking (hidden at or above the estimate), reassign and reschedule, Cancel with a reason (D75)
 - [ ] W.2 Request information and the Marketing Manager's answer (Awaiting Information, Awaiting Traffic Review)
 - [ ] W.3 Designer: Start, Submit artwork link (`JobArtwork` versions); no Schedule in the nav
 - [ ] W.4 Head of Design: approval queue, Approve and Send back with a comment (`JobApproval`)
 - [ ] W.5 Marketing Manager: Approve, Needs business approval, Record business approval (stakeholder, date, outcome, note, link), Close
 - [ ] W.6 Revisions: Request changes creates a `JobRevision` that goes to the Traffic Manager and is scheduled, worked and approved; revision badge on the card; the job page lists versions, approvals, revisions and history
+- [ ] W.7 Drag between columns (D74): a drop that maps to exactly one action for the role runs it; any other drop is refused with a hint naming the action
 
 **Acceptance criteria**
 
@@ -991,7 +999,6 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
   - External calendar, and deadlines on the calendar (11.6)
   - Marketing Managers seeing their brands' jobs (CD5 open question)
   - Bookings by time of day
-  - Rejecting or cancelling a brief
 
 ## Progress log
 

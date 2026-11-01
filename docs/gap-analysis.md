@@ -101,6 +101,9 @@ Each table has `OrgId` and the global query filter.
 | With Marketing | Marketing Changes Required (open question 3; in the demo it is recorded on the approval and the job moves straight to Awaiting Revision Scheduling) | Marketing Manager |
 | With Marketing | Approved / Ready to Close | Marketing Manager |
 | Done | Closed / Completed | - |
+| Done | Cancelled (D75: rejected or cancelled by the Traffic Manager with a reason; left out of completed counts) | - |
+
+Approved at the Phase R review: Scheduled sits in In Design, and Incoming is the Traffic Manager's queue only; cards in Scheduled show "Starts <date>" (D76).
 
 ### Transitions
 
@@ -123,6 +126,9 @@ One `JobWorkflow` class holds every transition as (from status, action, role) to
 | Record business approval: approved | Marketing Manager | Awaiting Business Approval | Approved / Ready to Close |
 | Request changes, or business approval with changes (new revision) | Marketing Manager | Awaiting Marketing Approval, Awaiting Business Approval, Approved / Ready to Close | Awaiting Revision Scheduling |
 | Close | Marketing Manager | Approved / Ready to Close | Closed / Completed |
+| Cancel, with a required reason (D75) | Traffic Manager | Any open status | Cancelled |
+
+Approved at the Phase R review: dragging a card between columns runs an action only when the drop maps to exactly one action the role may take; any other drop is refused with a hint naming the action (D74).
 
 ### Migration impact
 
@@ -219,7 +225,6 @@ Replaces D54. Org "The Core Group" with its 14 brands, prefixes and colours unch
 - External calendar, and deadlines on the calendar (11.6)
 - Marketing Managers seeing their brands' jobs (open question 1)
 - Bookings by time of day
-- Rejecting or cancelling a brief (open question 2)
 
 ## 5. Pending items
 
@@ -275,10 +280,10 @@ One commit per step. Each phase ends with a stop for review.
 For the client unless noted.
 
 1. CD5: may a Marketing Manager see jobs submitted by others for the brands they manage, for example when covering leave? The demo says no
-2. Can the Traffic Manager reject or cancel a brief? The requirements have no reject; today's triage has one (D9)
+2. Can the Traffic Manager reject or cancel a brief? Answered: yes, with a required reason; the job is kept as Cancelled (D75)
 3. Is Marketing Changes Required a status a job rests in, or only the decision recorded on the approval (the demo's approach)?
 4. Job ID quarter: from the required completion date (today's rule, D52) or the date briefed? Either way the ID never changes after submission
-5. Does Scheduled belong in In Design (proposed) or Incoming?
+5. Does Scheduled belong in In Design (proposed) or Incoming? Answered: In Design (D76)
 6. Who approves designer leave: the Traffic Manager (demo), the Head of Design, or both?
 7. Do the Head of Design or Traffic Manager do design work, and so need capacity on the schedule? The demo says no
 8. What are the job categories (3.1A, 9.1 "Jobs by category")?
@@ -286,4 +291,4 @@ For the client unless noted.
 10. What is each brand's current last job number, to set `LastJobNumber` at go-live?
 11. Calendar integration: in-app only, or Outlook or ICS?
 12. Deliverable deadlines: does the job's required date drive the schedule, with deliverable dates for information only?
-13. For the user: `docs/design-reference.png` is deleted in the working tree but `CLAUDE.md` still points to it. Restore it, or update `CLAUDE.md`?
+13. For the user: `docs/design-reference.png` is deleted in the working tree but `CLAUDE.md` still points to it. Answered: restored

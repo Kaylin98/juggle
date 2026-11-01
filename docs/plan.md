@@ -2,7 +2,7 @@
 
 Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 
-**Source of truth (from 2026-11-01):** `docs/requirements.md`, the client's functional requirements. Its "Client decisions" section overrides the rest of that document and `docs/demo-brief.md` where they conflict. The gap analysis, proposed data model, permission matrix and demo slice are in `docs/gap-analysis.md`; decisions D62 to D76 below record them.
+**Source of truth (from 2026-11-01):** `docs/requirements.md`, the client's functional requirements. Its "Client decisions" section overrides the rest of that document and `docs/demo-brief.md` where they conflict. The gap analysis, proposed data model, permission matrix and demo slice are in `docs/gap-analysis.md`; decisions D62 to D77 below record them.
 
 ## Where we left off
 
@@ -11,7 +11,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | Current phase | J - Roles and jobs |
 | Phase status | In progress |
 | Last completed task | Phase R approved (D62 to D73, plus D74 to D76) |
-| Next task | J.1 Five roles |
+| Next task | J.1 Roles as org data (D77) |
 | Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; list them in the Phase J review summary for the client |
 | Last updated | 2026-11-01 |
 
@@ -830,8 +830,8 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 **Decisions (proposed 2026-11-01, approved at the Phase R review; details in `docs/gap-analysis.md` section 2)**
 
 - D68 A board card is a Job (confirmed by the user). The `Requests` table becomes `Jobs`, with the brief (sections A to F), one designer, estimate, planned start, expected completion and close fields; `Projects` and `Tasks` are dropped; deliverables become `JobDeliverable` rows (type, description, specs, deadline); supporting and reference links are `JobLink`; `Allocation.JobId` replaces `ProjectId` and `TaskId`. The Traffic Manager's "Allocate and schedule" sets the designer and dates and makes the booking in one step (replacing triage accept and "Book on schedule")
-- D69 Statuses are the 16 of section 6, plus Cancelled (D75), as a `JobStatus` enum in code, each mapped to one of the five columns (table in `docs/gap-analysis.md`, with D76), replacing `WorkflowStatus` rows. Cards move through workflow actions (one `JobWorkflow` class, unit tested); dragging between columns only as D74 allows. Marketing Changes Required is recorded on the approval, and the job moves straight to Awaiting Revision Scheduling (open question 3)
-- D70 Five roles (`User.Role`: Head of Marketing, Head of Design, Traffic Manager, Designer, Marketing Manager) replace Org Admin, Team Admin and Member. Job visibility and every action are checked on the server by role (`JobAccess`), as in the permission matrix in `docs/gap-analysis.md` section 3; section 10's administrative overrides are deferred. Each role lands on its own dashboard; Reports is its own menu item. One team, "Design Studio", stays as the container; only the 6 designers are on the schedule. Time off is approved by the Traffic Manager (open question 6)
+- D69 (changed by D77) The Core Group's statuses are the 16 of section 6, plus Cancelled (D75), each in one of the five columns (table in `docs/gap-analysis.md`, with D76). They are stored per organisation as data (`JobStatus` and `BoardColumn` rows), not as an enum, and replace `WorkflowStatus` rows. Cards move through workflow actions (one `JobWorkflow` class that reads the org's workflow, unit tested); dragging between columns only as D74 allows. Marketing Changes Required is recorded on the approval, and the job moves straight to Awaiting Revision Scheduling (open question 3)
+- D70 (changed by D77) The Core Group's five roles (Head of Marketing, Head of Design, Traffic Manager, Designer, Marketing Manager) replace Org Admin, Team Admin and Member. Roles are stored per organisation as data (`Role`, with its capabilities; `User.RoleId`). Job visibility and every action are checked on the server by capability (`JobAccess`), never by role name; The Core Group's roles get the capabilities in `docs/gap-analysis.md` section 3. Section 10's administrative overrides are deferred. Each role lands on its own dashboard; Reports is its own menu item. One team, "Design Studio", stays as the container; only the 6 designers are on the schedule. Time off is approved by the Traffic Manager (open question 6)
 - D71 The job number comes from a per-brand counter, `Department.LastJobNumber`, incremented atomically when the brief is submitted, with a unique index on brand and number. The code is fixed at submission and never changes, including through revisions. Replaces reading the highest number from project names at triage (D52's format and quarter rule stay)
 - D72 Approvals, revisions and history are records: `JobApproval` (design, marketing and business stages, with the artwork version reviewed), `JobRevision` (linked to the job, same job ID), `JobEvent` (every action, with the information request and answer text). Artwork versions are links in the demo (`JobArtwork`); file uploads come in the MVP. Each job page shows its own history; an organisation-wide audit screen is deferred
 - D73 Seed (replaces D54). The Core Group, its 14 brands unchanged, one team "Design Studio", 18 users: Head of Marketing Megan Botha, Head of Design Naledi Khumalo, Traffic Manager Chloe Adams, 6 designers (Ethan, Lerato, Amahle, Ruben at 5h/day, Priya, Sipho), 9 Marketing Managers (Zanele: DJI and Pure Electric; Pieter: GoPro; Ayesha: Bambu Lab; Nicole: MS Surface; Bongani: Ultra Human; Thabo: CORE and CGA; Lindiwe Khoza: InRetail and Reloved; Werner Steyn: ARP and CVM; Fatima Patel: Mobile in Africa and CCB). The Marketing team and Jason are removed. About 30 open jobs over every status; earlier briefs become closed jobs with approvals and events; DJI's next number is 0143; the load story (Lerato over, Priya at 50% next week, leave) stays
@@ -842,6 +842,16 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - D75 Cancelled (answers open question 2). The Traffic Manager can reject or cancel a brief from any open status, with a required reason (1000); the Marketing Manager sees the reason on the job. The job is kept with status Cancelled, in the Done column, and is left out of completed counts in dashboards and reports. A `JobEvent` records it. Bookings from the next working day on are removed (built with the action, W.1)
 - D76 Scheduled sits in In Design (answers open question 5). Incoming is the Traffic Manager's queue only: New Request, Awaiting Traffic Review, Awaiting Information, Awaiting Allocation, and Awaiting Revision Scheduling (a revision waiting for the Traffic Manager, so also their queue). Cards in Scheduled show "Starts <date>" (the planned start)
 - The other open questions (1, 3, 4, 6 to 12) stay on their stated defaults; the Phase J review summary lists them for the user to confirm with the client
+
+**Decision during Phase J (2026-11-01, before J.1 code)**
+
+- D77 Juggle is configurable per organisation. The Core Group is the first organisation's configuration, not behaviour in code. Changes D69 and D70.
+  - **Fixed in code:** the workflow actions (Submit, Request information, Answer, Mark ready, Cancel, Allocate and schedule, Start, Submit for approval, Approve design, Send back, Approve marketing, Needs business approval, Record business approval, Request changes, Close); what each does besides changing the status (makes a booking, a revision, an approval record, a close date); who on the job may take it (anyone with the capability, or only the job's requester or its designer); and the capabilities that gate them (`Capability`: SubmitBrief, TriageBriefs, Allocate, ViewSchedule, WorkOnJobs, ApproveDesign, ApproveMarketing, CloseJob, ViewAllJobs, ViewBoard, ViewReports, ApproveTimeOff, ManageUsers). Mark ready (brief complete, to Awaiting Allocation) is kept from the approved W.1, since nothing else reaches that status
+  - **Stored per organisation as data:** roles and their capabilities (`Role`); board columns, and statuses with their column, order, colour (one of the 8 palette hues) and kind (open, done or cancelled, so reports know what counts as completed) (`BoardColumn`, `JobStatus`); the workflow (`WorkflowTransition`: action, from status, to status, and the approval stage it records, so an org can leave a stage out); terms (`Organisation`: the department, brief and job words; role names are the roles' names); the job ID format; financial year start month, default working hours per day and holiday country. The working week (Monday to Friday) stays in code
+  - **No checks on role or status names in code.** `JobAccess` and `JobWorkflow` read the org's configuration. Cards show "Starts <date>" (D76) in the statuses the Allocate and schedule action leads to, worked out from the workflow, not from a status name
+  - **Seed:** The Core Group's five roles and their capabilities, 17 statuses in five columns, its workflow, terms ("Brand", "Brief", "Job") and job ID format
+  - **No settings screens yet** (Later)
+  - **Tenancy:** one shared database with `OrgId` on every table and global query filters stays the default. It stays possible to move one org to its own database or deployment: no cross-org queries outside admin tooling (today only the demo login list and the seeder bypass the filters). Org by subdomain is under Later
 
 **Tasks**
 
@@ -865,14 +875,15 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 
 **Tasks**
 
-- [ ] J.1 Five roles (D70): `User.Role` replaces `OrgRole` and `TeamMembership.Role`; role-based access on the server; login grouped by role; nav and landing per role; seed of the 18 users in one studio (D73); migration `Roles`; tests
-- [ ] J.2 Jobs replace requests, projects and tasks (D68, D69, D72): `Job`, `JobStatus` and the column map, `JobEvent`, `Allocation.JobId`; board in five columns with status chips, brand colours, booked chip and filters, no drag between columns; server visibility by role; seed as jobs, including the closed history; dashboard and briefs report moved onto jobs; migration `Jobs`; tests
-- [ ] J.3 Job number from `Department.LastJobNumber` at submission, code fixed (D71); migration `JobNumbers`; tests for the counter and the code
+- [ ] J.1 Roles as org data (D70, D77): the `Capability` enum in code; `Role` per org with its capabilities, and `User.RoleId`, replacing `OrgRole` and `TeamMembership.Role`; access checked by capability on the server (`Permissions`); org settings for terms, default working hours and holiday country, sent with `/api/auth/me`; login grouped by the org's roles; nav and landing from capabilities; seed of The Core Group's five roles and 18 users in one studio (D73); migration `Roles`; tests, including that no code checks a role name
+- [ ] J.2 Jobs replace requests, projects and tasks (D68, D69, D72, D77): `Job`, `JobEvent`, `Allocation.JobId`; `BoardColumn`, `JobStatus` and `WorkflowTransition` as org data, with the `WorkflowAction` and `ApprovalStage` enums in code; `JobWorkflow` reading the org's workflow (Submit gives the first status); board columns and status chips from the data, with brand colours, the booked chip and filters, no drag between columns; job visibility by capability; seed of The Core Group's statuses, columns and workflow, and of its jobs, including the closed history; dashboard and briefs report moved onto jobs; migration `Jobs`; tests
+- [ ] J.3 Job ID from the org's format (`Organisation.JobCodeFormat`) and the per-brand `Department.LastJobNumber` at submission, code fixed (D71, D77); migration `JobNumbers`; tests for the counter, the format and the code
 - [ ] J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; the job page for the Marketing Manager; migration `BriefSections`; tests
 
 **Acceptance criteria**
 
 - [ ] Each of the five roles lands on its page and sees only its nav items; the API refuses what the matrix does not allow (403)
+- [ ] Roles, statuses, columns, the workflow, terms and the job ID format come from The Core Group's seeded configuration; no code checks a role or status name (D77)
 - [ ] The board shows Incoming, In Design, In Review, With Marketing and Done, each card with its detailed status, job ID, brand colour and designer
 - [ ] Marketing Managers have no board or schedule; designers see only their own jobs
 - [ ] A submitted brief gets the next number for its brand (DJI0143 in the seed) and its code never changes
@@ -984,6 +995,7 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - Azure deployment
 - Multiple assignees per task
 - Integrations, AI assistant, CSV export, mobile layout
+- **Per-organisation configuration** (D77, 2026-11-01): settings screens for roles and capabilities, statuses and columns, the workflow and terms; custom brief form fields per organisation; workflow templates for new organisations; a configurable working week; organisation by subdomain
 - **Deferred from the client's requirements to the MVP** (2026-11-01, `docs/gap-analysis.md` section 4):
   - File uploads: working files, artwork files, preview and download (the demo uses artwork links, D72)
   - Notifications (section 8), email and in-app, beyond the nav counts

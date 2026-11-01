@@ -37,13 +37,26 @@ Juggle today is a general team planner: three roles (Org Admin, Team Admin, Memb
 
 ## 2. Proposed data model changes
 
+### Organisation configuration (D77)
+
+Juggle is configurable per organisation; The Core Group is the first organisation's configuration, not behaviour in code. No code checks a role or status name.
+
+| Fixed in code | Stored per organisation as data |
+| --- | --- |
+| The workflow actions: Submit, Request information, Answer, Mark ready, Cancel, Allocate and schedule, Start, Submit for approval, Approve design, Send back, Approve marketing, Needs business approval, Record business approval, Request changes, Close | Roles and their capabilities (`Role`; `User.RoleId`) |
+| What each action does besides changing the status (makes a booking, a revision, an approval record, a close date), and who on the job may take it (anyone with the capability, or only the job's requester or its designer) | Board columns (`BoardColumn`: name, order) and statuses (`JobStatus`: name, column, order, colour from the 8 palette hues, kind: open, done or cancelled) |
+| The capabilities that gate the actions and pages (`Capability`): SubmitBrief, TriageBriefs, Allocate, ViewSchedule, WorkOnJobs, ApproveDesign, ApproveMarketing, CloseJob, ViewAllJobs, ViewBoard, ViewReports, ApproveTimeOff, ManageUsers | The workflow (`WorkflowTransition`: action, from status, to status, the approval stage it records), so an org can leave a stage out |
+| The working week (Monday to Friday) | Terms (the department, brief and job words; role names), the job ID format, the financial year start month, default working hours per day, holiday country |
+
+Tenancy: one shared database with `OrgId` on every table and global query filters stays the default. No cross-org queries outside admin tooling (today only the demo login list and the seeder), so one org can later move to its own database or deployment. Org by subdomain is under Later in `docs/plan.md`.
+
 ### Roles
 
-- `User.Role`, one of `HeadOfMarketing`, `HeadOfDesign`, `TrafficManager`, `Designer` or `MarketingManager`, replaces `User.OrgRole` and `TeamMembership.Role`
+- `Role` per organisation (name, order, capabilities) and `User.RoleId` replace `User.OrgRole` and `TeamMembership.Role`. The Core Group's roles are Head of Marketing, Head of Design, Traffic Manager, Designer and Marketing Manager, with the capabilities in section 3
 - `Team` stays, with one team, "Design Studio", so the `/t/:teamId` routes and Juggle's support for several teams survive. `TeamMembership` stays as the list of people on that studio's planner
 - Only the 6 designers have a `Person` (a row on the schedule)
 - `DepartmentManager` (a Marketing Manager's brands) stays: it sets the default brand on the brief form, and it is what open question 1 would need
-- `Auth/TeamAccess.cs` becomes role-based `JobAccess`: `VisibleJobs()` returns every job for the Head of Marketing, Head of Design and Traffic Manager, jobs assigned to them for a Designer, and jobs they submitted for a Marketing Manager (CD5). Role checks for each action live in one place
+- `Auth/TeamAccess.cs` becomes capability-based `JobAccess`: `VisibleJobs()` returns every job with ViewAllJobs, otherwise the jobs the user submitted or is the designer of (CD5). Capability checks for each action live in one place
 - Already done (D58): no Requester role, no "Requested by", `Request.LoggedByUserId` dropped. The requester is always the signed-in Marketing Manager (CD6)
 
 ### Job
@@ -57,7 +70,7 @@ The `Requests` table is renamed to `Jobs` and extended. `Projects`, `Tasks` and 
 | B. Objectives | `Purpose` (was `MainGoal`), `Objective`, `TargetAudience`, `KeyMessage`, `Channels`, `ExpectedOutcome` |
 | D. Creative guidelines | `CreativeDirection`, `BrandRequirements`, `ColoursAndTypography`, `DesignReferences`, `MandatoryMessaging`, `RequiredLogos`, `ProductImagery`, `LegalDisclaimers`, `CreativeInstructions` |
 | F. Additional | `AdditionalInformation` |
-| Workflow | `Status` (`JobStatus`, stored as a string), `DesignerPersonId`, `EstimateHours`, `PlannedStartDate`, `ExpectedCompletionDate`, `ClosedAt`, `ClosedByUserId` |
+| Workflow | `StatusId` (the org's `JobStatus`), `DesignerPersonId`, `EstimateHours`, `PlannedStartDate`, `ExpectedCompletionDate`, `ClosedAt`, `ClosedByUserId` |
 
 Dropped: `Request.Status`, `TaskId`, `RejectionReason`, `Deliverables` (text), and with the tasks `ReviewCycle`, `Feedback`, `SortOrder` and `Link`.
 
@@ -81,7 +94,7 @@ Each table has `OrgId` and the global query filter.
 
 ### Detailed status and board column
 
-`JobStatus` is fixed in code, and one static map in code gives each status its column. Permissions and reports depend on the status, so it cannot be a row someone can rename.
+The Core Group's statuses and columns, seeded as its configuration (D77). Permissions come from the workflow's actions and their capabilities, and reports from each status's kind, so nothing depends on a status's name.
 
 | Column | Status | Who acts next |
 | --- | --- | --- |
@@ -107,14 +120,14 @@ Approved at the Phase R review: Scheduled sits in In Design, and Incoming is the
 
 ### Transitions
 
-One `JobWorkflow` class holds every transition as (from status, action, role) to status, with unit tests. Cards move only through these actions. Cards are not dragged between columns, because each column holds several statuses.
+The Core Group's workflow, seeded as `WorkflowTransition` rows (D77). One `JobWorkflow` class reads them and answers which actions a user may take on a job (capability, plus requester or designer where the action needs it), with unit tests. Cards move only through these actions. The role named below is the one with the action's capability in The Core Group.
 
 | Action | Role | From | To |
 | --- | --- | --- | --- |
 | Submit brief | Marketing Manager | - | New Request |
 | Request information | Traffic Manager | New Request, Awaiting Traffic Review, Awaiting Allocation | Awaiting Information |
 | Answer | Marketing Manager | Awaiting Information | Awaiting Traffic Review |
-| Brief complete | Traffic Manager | New Request, Awaiting Traffic Review | Awaiting Allocation |
+| Mark ready (brief complete) | Traffic Manager | New Request, Awaiting Traffic Review | Awaiting Allocation |
 | Allocate and schedule (creates the booking) | Traffic Manager | New Request, Awaiting Traffic Review, Awaiting Allocation | Scheduled |
 | Schedule revision (creates the booking) | Traffic Manager | Awaiting Revision Scheduling | Revision Scheduled |
 | Start | Designer | Scheduled, Revision Scheduled | In Progress, Revision In Progress |
@@ -140,7 +153,29 @@ Approved at the Phase R review: dragging a card between columns runs an action o
 
 ## 3. Permission matrix as implemented
 
-Follows section 10, with CD1 and CD5. Rows marked "\*" in section 10 (administrative override) are "Override (MVP)": not in the demo. Enforced on the server in `JobAccess` and `JobWorkflow`. The nav hides what a role cannot use.
+Follows section 10, with CD1 and CD5. Rows marked "\*" in section 10 (administrative override) are "Override (MVP)": not in the demo. Enforced on the server in `JobAccess` and `JobWorkflow` by capability (D77). The nav hides what a role cannot use.
+
+The Core Group's roles and their capabilities (seeded data):
+
+| Capability | Head of Marketing | Head of Design | Traffic Manager | Designer | Marketing Manager |
+| --- | --- | --- | --- | --- | --- |
+| ViewAllJobs | Yes | Yes | Yes | - | - |
+| ViewBoard | Yes | Yes | Yes | Yes | - |
+| ViewSchedule | Yes | Yes | Yes | - | - |
+| ViewReports | Yes | Yes | Yes | Yes | Yes |
+| SubmitBrief | - | - | - | - | Yes |
+| TriageBriefs | - | - | Yes | - | - |
+| Allocate | - | - | Yes | - | - |
+| WorkOnJobs | - | - | - | Yes | - |
+| ApproveDesign | - | Yes | - | - | - |
+| ApproveMarketing | - | - | - | - | Yes |
+| CloseJob | - | - | - | - | Yes |
+| ApproveTimeOff | - | - | Yes | - | - |
+| ManageUsers | Yes | - | - | - | - |
+
+Without ViewAllJobs, a user sees the jobs they submitted or are the designer of. Answer, Approve marketing, Needs business approval, Record business approval, Request changes and Close are for the job's requester; Start and Submit for approval for its designer.
+
+What that gives each role:
 
 | Functionality | Head of Marketing | Head of Design | Traffic Manager | Designer | Marketing Manager |
 | --- | --- | --- | --- | --- | --- |
@@ -250,8 +285,8 @@ One commit per step. Each phase ends with a stop for review.
 
 **Phase J: Roles and jobs**
 
-- J.1 Five roles (`User.Role`), role-based access, login grouped by role, nav and landing page per role, seed of 18 users in one studio; migration `Roles`
-- J.2 Jobs replace requests, projects and tasks: `Job`, `JobStatus` and the column map, `JobEvent`, `Allocation.JobId`. Board in five columns with status chips, brand colours, booked chip and filters, with no drag between columns. Server visibility by role. Seed as jobs, including the closed history. Dashboard and report moved onto jobs. Migration `Jobs`
+- J.1 Roles as org data (D77): `Capability` in code, `Role` per org and `User.RoleId`; access by capability; org terms and settings; login grouped by the org's roles; nav and landing from capabilities; seed of The Core Group's five roles and 18 users in one studio; migration `Roles`
+- J.2 Jobs replace requests, projects and tasks: `Job`, `JobEvent`, `Allocation.JobId`; `BoardColumn`, `JobStatus` and `WorkflowTransition` as org data, read by `JobWorkflow`. Board columns and status chips from the data, with brand colours, booked chip and filters, and no drag between columns. Job visibility by capability. Seed of The Core Group's statuses, columns, workflow and jobs, including the closed history. Dashboard and report moved onto jobs. Migration `Jobs`
 - J.3 Job number from `Department.LastJobNumber` at submission; the code never changes; migration `JobNumbers`
 - J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; job page for the Marketing Manager; migration `BriefSections`
 

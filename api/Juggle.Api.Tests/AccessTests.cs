@@ -101,7 +101,7 @@ public sealed class AccessTests(ApiFactory api)
     private SaveAllocationRequest Booking(StudioData data) => new(data.PersonId, data.JobId, _monday, _monday.AddDays(1), 2, null);
 
     private static CreateJobRequest Brief(StudioData data) =>
-        new(data.TeamId, "Not allowed", null, null, data.DepartmentId, null, Priority.Medium);
+        Briefs.Minimal(data.TeamId, data.DepartmentId, "Not allowed");
 
     /// <summary>GETs each url and checks the status.</summary>
     private async Task AssertGetStatusAsync(HttpClient client, HttpStatusCode expected, params string[] urls)

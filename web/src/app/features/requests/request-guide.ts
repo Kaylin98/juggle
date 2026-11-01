@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-/** Beside the request form: what happens after sending, and what makes a request easy to triage. */
+/** Beside the brief form: what happens after sending, and what makes a brief easy to review. */
 @Component({
   selector: 'app-request-guide',
   template: `
@@ -19,7 +19,7 @@ import { Component } from '@angular/core';
     </section>
 
     <section class="panel mt-6 p-6" aria-labelledby="guide-tips">
-      <h2 id="guide-tips" class="font-display text-base font-semibold">Tips for a good request</h2>
+      <h2 id="guide-tips" class="font-display text-base font-semibold">Tips for a good brief</h2>
       <ul class="mt-4 space-y-2 text-sm text-ink-muted">
         @for (tip of tips; track tip) {
           <li class="flex gap-3">
@@ -39,9 +39,9 @@ export class RequestGuide {
   ];
 
   protected readonly tips = [
-    'A clear main goal: what the work is for and what a good result looks like.',
-    'Every deliverable on its own line, with sizes or formats, such as "A4 insert: Kloppers".',
-    'Links to references, examples or brand assets in the main goal.',
-    'A realistic studio deadline, with time for a round of feedback.',
+    'A clear purpose: what the artwork is for and what a good result looks like.',
+    'Each deliverable on its own row, with its sizes, format and deadline, such as "A4 insert: Kloppers".',
+    'Links to references, examples and brand assets under Supporting material.',
+    'A realistic completion date, with time for a round of feedback.',
   ];
 }

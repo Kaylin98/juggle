@@ -27,9 +27,9 @@ public sealed class OrganisationConfigTests(ApiFactory api)
             var bongani = await api.SignInAsAsync("Bongani Zulu");
             var options = (await bongani.GetFromJsonAsync<JobOptionsDto>("/api/jobs/options", ApiFactory.Json, _ct))!;
             var today = new OrgClock(TimeProvider.System).Today;
-            var brief = new CreateJobRequest(options.Teams[0].Id, "Renamed status brief", null, null, options.MyDepartmentId!.Value, today.AddDays(14), Priority.Low);
+            var brief = Briefs.Minimal(options.Teams[0].Id, options.MyDepartmentId!.Value, "Renamed status brief", today.AddDays(14));
             var response = await bongani.PostAsJsonAsync("/api/jobs", brief, ApiFactory.Json, _ct);
-            var submitted = (await response.Content.ReadFromJsonAsync<JobDto>(ApiFactory.Json, _ct))!;
+            var submitted = (await response.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job;
 
             var chloe = await api.SignInAsAsync("Chloe Adams");
             var teamId = (await chloe.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct))!.Single().Id;
@@ -58,8 +58,8 @@ public sealed class OrganisationConfigTests(ApiFactory api)
             var fatima = await api.SignInAsAsync("Fatima Patel");
             var options = (await fatima.GetFromJsonAsync<JobOptionsDto>("/api/jobs/options", ApiFactory.Json, _ct))!;
             var today = new OrgClock(TimeProvider.System).Today;
-            var brief = new CreateJobRequest(teamId, "Coffee menu", null, null, options.MyDepartmentId!.Value, today.AddDays(14), Priority.Low);
-            var submitted = (await (await fatima.PostAsJsonAsync("/api/jobs", brief, ApiFactory.Json, _ct)).Content.ReadFromJsonAsync<JobDto>(ApiFactory.Json, _ct))!;
+            var brief = Briefs.Minimal(teamId, options.MyDepartmentId!.Value, "Coffee menu", today.AddDays(14));
+            var submitted = (await (await fatima.PostAsJsonAsync("/api/jobs", brief, ApiFactory.Json, _ct)).Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job;
             var after = (await chloe.GetFromJsonAsync<List<JobDto>>($"/api/teams/{teamId}/jobs", ApiFactory.Json, _ct))!;
 
             Assert.Equal("CCB-1", submitted.Code);

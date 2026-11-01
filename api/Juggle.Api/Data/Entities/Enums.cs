@@ -50,6 +50,25 @@ public enum ApprovalStage { Design, Marketing, Business }
 /// <summary>Whether a job in a status is still open, done, or cancelled (left out of completed counts, D75).</summary>
 public enum JobStatusKind { Open, Done, Cancelled }
 
+/// <summary>The kind of job (section 3.1A). A placeholder list until the client gives theirs (open question 8).</summary>
+public enum JobCategory { Campaign, ProductLaunch, Promotion, RetailAndInStore, DigitalAndSocial, Event, Corporate, Other }
+
+/// <summary>The kinds of deliverable in section 3.1C of the requirements, and Other.</summary>
+public enum DeliverableType
+{
+    SocialMedia,
+    WebsiteBanner,
+    Email,
+    DigitalAdvertising,
+    Print,
+    InStore,
+    ProductArtwork,
+    KeyVisual,
+    Presentation,
+    Packaging,
+    Other,
+}
+
 public enum Priority { Low, Medium, High, Urgent }
 
 public enum TimeOffType { AnnualLeave, SickLeave, FamilyResponsibility, StudyLeave, Other, PublicHoliday }

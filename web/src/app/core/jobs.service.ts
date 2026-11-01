@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
-import { CreateJob, Job, JobOptions, Workflow } from './models';
+import { CreateJob, Job, JobDetail, JobOptions, Workflow } from './models';
 import { TeamContextService } from './team-context.service';
 
 /** Jobs (D68): the brief form and the user's own jobs, the organisation's workflow, and the incoming queue. */
@@ -30,8 +30,8 @@ export class JobsService {
     return firstValueFrom(this.http.get<JobOptions>('/api/jobs/options'));
   }
 
-  submit(brief: CreateJob): Promise<Job> {
-    return firstValueFrom(this.http.post<Job>('/api/jobs', brief));
+  submit(brief: CreateJob): Promise<JobDetail> {
+    return firstValueFrom(this.http.post<JobDetail>('/api/jobs', brief));
   }
 
   /** The jobs the signed-in user sent the brief for, newest first. */
@@ -39,8 +39,9 @@ export class JobsService {
     return firstValueFrom(this.http.get<Job[]>('/api/jobs/mine'));
   }
 
-  get(id: string): Promise<Job> {
-    return firstValueFrom(this.http.get<Job>(`/api/jobs/${id}`));
+  /** A job with its whole brief. */
+  get(id: string): Promise<JobDetail> {
+    return firstValueFrom(this.http.get<JobDetail>(`/api/jobs/${id}`));
   }
 
   /** The team's jobs the user may see: all of them with ViewAllJobs, otherwise their own (D70). */

@@ -288,7 +288,7 @@ One commit per step. Each phase ends with a stop for review.
 - J.1 Roles as org data (D77): `Capability` in code, `Role` per org and `User.RoleId`; access by capability; org terms and settings; login grouped by the org's roles; nav and landing from capabilities; seed of The Core Group's five roles and 18 users in one studio; migration `Roles`. **Done.**
 - J.2 Jobs replace requests, projects and tasks: `Job`, `JobEvent`, `Allocation.JobId`; `BoardColumn`, `JobStatus` and `WorkflowTransition` as org data, read by `JobWorkflow`. Board columns and status chips from the data, with brand colours, booked chip and filters, and no drag between columns. Job visibility by capability. Seed of The Core Group's statuses, columns, workflow and jobs, including the closed history. Dashboard and report moved onto jobs. Migration `Jobs`. **Done.**
 - J.3 Job number from `Department.LastJobNumber` at submission, in the org's format (`Organisation.JobCodeFormat`); the code never changes; migration `JobNumbers`. **Done.**
-- J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; job page for the Marketing Manager; migration `BriefSections`
+- J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; job page for the Marketing Manager; migration `BriefSections` **Done.**
 
 **Phase W: Workflow**
 

@@ -41,16 +41,38 @@ public sealed class JobsTests(ApiFactory api)
         var zanele = await api.SignInAsAsync("Zanele Mthembu");
 
         var response = await zanele.PostAsJsonAsync("/api/jobs", await NewBriefAsync(zanele, "Roadshow deck"), ApiFactory.Json, _ct);
-        var created = (await response.Content.ReadFromJsonAsync<JobDto>(ApiFactory.Json, _ct))!;
-        var fetched = await zanele.GetFromJsonAsync<JobDto>($"/api/jobs/{created.Id}", ApiFactory.Json, _ct);
+        var created = (await response.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        var fetched = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{created.Job.Id}", ApiFactory.Json, _ct))!.Job;
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         // DJI, the first of the brands she manages, is her default brand. Its seeded jobs end at 0142.
-        Assert.Equal(("New Request", "Design Studio", "DJI", "Zanele Mthembu"), (fetched!.StatusName, fetched.TeamName, fetched.Department, fetched.RequesterName));
+        Assert.Equal(("New Request", "Design Studio", "DJI", "Zanele Mthembu"), (fetched.StatusName, fetched.TeamName, fetched.Department, fetched.RequesterName));
         Assert.Matches(@"^DJI0\d{3}_Q\d'\d{2}_Roadshow deck$", fetched.Code);
         Assert.True(int.Parse(fetched.Code[3..7], CultureInfo.InvariantCulture) >= 143);
-        Assert.Equal(("For the demo.", "#5b8def"), (fetched.MainGoal, fetched.Colour));
-        Assert.Equal(["Key visual", "Social tiles x6"], fetched.Deliverables);
+        Assert.Equal(("Gift ideas for travellers.", "#5b8def"), (fetched.Purpose, fetched.Colour));
+    }
+
+    [Fact]
+    public async Task The_brief_keeps_every_section_of_the_template()
+    {
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        var sent = await NewBriefAsync(zanele, "Summer Holiday Sale");
+
+        var response = await zanele.PostAsJsonAsync("/api/jobs", sent, ApiFactory.Json, _ct);
+        var id = (await response.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job.Id;
+        var (job, brief) = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{id}", ApiFactory.Json, _ct))!;
+
+        // A. Job information, with the text trimmed.
+        Assert.Equal(("Summer Holiday Sale", "Summer 2027", JobCategory.Promotion, "DJI0141_Q1'27_Black Friday", _today.AddDays(14), Priority.High),
+            (job.Title, brief.Campaign, brief.Category, brief.RevisesJobCode, job.RequiredDate, job.Priority));
+        // B, D and F.
+        Assert.Equal(sent.Objectives, brief.Objectives);
+        Assert.Equal(sent.Guidelines with { CreativeInstructions = null }, brief.Guidelines);
+        Assert.Equal("Call before you start.", brief.AdditionalInformation);
+        // C. Several deliverables, each with its type, specifications and deadline, in order.
+        Assert.Equal(sent.Deliverables, job.Deliverables);
+        // E. Supporting links, in order.
+        Assert.Equal(sent.Links, brief.Links);
     }
 
     [Fact]
@@ -73,7 +95,7 @@ public sealed class JobsTests(ApiFactory api)
         var brief = await NewBriefAsync(werner, "Parallel brief");
 
         var responses = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => werner.PostAsJsonAsync("/api/jobs", brief, ApiFactory.Json, _ct)));
-        var codes = await Task.WhenAll(responses.Select(async r => (await r.Content.ReadFromJsonAsync<JobDto>(ApiFactory.Json, _ct))!.Code));
+        var codes = await Task.WhenAll(responses.Select(async r => (await r.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job.Code));
 
         Assert.All(responses, r => Assert.Equal(HttpStatusCode.Created, r.StatusCode));
         Assert.Equal(["ARP0001", "ARP0002", "ARP0003", "ARP0004", "ARP0005", "ARP0006"], codes.Select(c => c[..7]).Order());
@@ -223,13 +245,20 @@ public sealed class JobsTests(ApiFactory api)
         var zanele = await api.SignInAsAsync("Zanele Mthembu");
         var valid = await NewBriefAsync(zanele, "Valid");
 
+        var deliverable = valid.Deliverables[0];
         CreateJobRequest[] invalids =
         [
             valid with { Title = "" },
             valid with { RequiredDate = _today.AddDays(-1) },
             valid with { TeamId = Guid.Empty },
             valid with { DepartmentId = Guid.Empty },
-            valid with { Deliverables = "Banner\n" + new string('x', 201) },
+            valid with { Deliverables = [deliverable with { Description = "" }] },
+            valid with { Deliverables = [deliverable with { Description = new string('x', 201) }] },
+            valid with { Deliverables = [deliverable with { DueDate = _today.AddDays(-1) }] },
+            valid with { Deliverables = [.. Enumerable.Repeat(deliverable, 21)] },
+            valid with { Objectives = valid.Objectives with { Objective = new string('x', 1001) } },
+            valid with { Guidelines = valid.Guidelines with { LegalDisclaimers = new string('x', 1001) } },
+            valid with { Links = [new BriefLink("not a link", null)] },
         ];
         foreach (var invalid in invalids)
         {
@@ -248,13 +277,27 @@ public sealed class JobsTests(ApiFactory api)
         Assert.All(options!.Teams, team => Assert.Matches("^#[0-9a-f]{6}$", team.Colour));
     }
 
+    /// <summary>A brief with every section of the template filled in, to the user's first brand (DJI for anyone else).</summary>
     private async Task<CreateJobRequest> NewBriefAsync(HttpClient client, string title)
     {
         var options = await client.GetFromJsonAsync<JobOptionsDto>("/api/jobs/options", ApiFactory.Json, _ct);
         var studio = options!.Teams.Single(t => t.Name == "Design Studio").Id;
-        // The first brand the user manages; DJI for everyone else.
         var brand = options.MyDepartmentId ?? options.Departments.Single(d => d.Name == "DJI").Id;
-        return new CreateJobRequest(studio, title, "For the demo.", "Key visual\n- Social tiles x6\n\n", brand, _today.AddDays(14), Priority.High);
+        return new CreateJobRequest(
+            studio, brand, title, " Summer 2027 ", JobCategory.Promotion, "DJI0141_Q1'27_Black Friday", _today.AddDays(14), Priority.High,
+            new BriefObjectives(
+                "Gift ideas for travellers.", "Grow summer sales by 20%.", "Families planning a trip.", "Capture the whole holiday.",
+                "Takealot, Instagram, in store", "Sell-out of the summer bundles."),
+            [
+                new BriefDeliverable(DeliverableType.WebsiteBanner, "Takealot banners", "1200 x 628 and 300 x 250, JPG", _today.AddDays(10)),
+                new BriefDeliverable(DeliverableType.SocialMedia, "Instagram stories", "1080 x 1920, 3 frames", null),
+                new BriefDeliverable(DeliverableType.InStore, "Shelf wobblers", null, _today.AddDays(12)),
+            ],
+            new CreativeGuidelines(
+                "Bright and sunny.", "DJI CI 2026", "Brand blue, Space Grotesk", "Last year's summer look", "From R4 999",
+                "DJI and Takealot", "Mini 4 Pro and Osmo Pocket 3", "While stocks last", "   "),
+            [new BriefLink("https://example.sharepoint.com/summer", "Brief folder"), new BriefLink("https://example.com/guidelines.pdf", null)],
+            "Call before you start.");
     }
 
     private async Task<JobDto> SubmitAsync(string requester, string title)
@@ -262,7 +305,7 @@ public sealed class JobsTests(ApiFactory api)
         var client = await api.SignInAsAsync(requester);
         var response = await client.PostAsJsonAsync("/api/jobs", await NewBriefAsync(client, title), ApiFactory.Json, _ct);
         response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<JobDto>(ApiFactory.Json, _ct))!;
+        return (await response.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job;
     }
 
     private async Task<WorkflowDto> GetWorkflowAsync(HttpClient client) =>

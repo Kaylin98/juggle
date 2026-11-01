@@ -4,13 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Juggle.Api.Features.Jobs;
 
-/// <summary>A job on the board, in My requests and on its own page (D68).</summary>
+/// <summary>A job on the board, in My requests and in lists (D68). Its full brief is in <see cref="JobDetailDto"/>.</summary>
 /// <param name="Code">The job ID, fixed when the brief was sent (D63).</param>
 /// <param name="Colour">The brand's colour, which its cards and bookings take (D61).</param>
 /// <param name="ColumnId">The board column its status is in.</param>
 /// <param name="StatusKind">Whether its status is open, done or cancelled.</param>
-/// <param name="Deliverables">One per line as typed, without empty lines or bullets.</param>
 /// <param name="CreatedAt">When the brief was sent: the date briefed.</param>
+/// <param name="Purpose">What the artwork is for (section 3.1B).</param>
+/// <param name="Deliverables">Section 3.1C, in the order given.</param>
 /// <param name="IsOverdue">Open and the required date has passed (D21).</param>
 /// <param name="IsDueSoon">Open and required within the next 7 days, or overdue (D57).</param>
 /// <param name="Bookings">Its bookings, earliest first.</param>
@@ -32,8 +33,8 @@ public sealed record JobDto(
     Priority Priority,
     DateOnly? RequiredDate,
     DateTimeOffset CreatedAt,
-    string? MainGoal,
-    IReadOnlyList<string> Deliverables,
+    string? Purpose,
+    IReadOnlyList<BriefDeliverable> Deliverables,
     Guid? DesignerPersonId,
     string? DesignerName,
     decimal? EstimateHours,
@@ -53,9 +54,11 @@ public sealed record JobDto(
         .Include(j => j.Requester)
         .Include(j => j.Status)
         .Include(j => j.Designer).ThenInclude(p => p!.User)
+        .Include(j => j.Deliverables.OrderBy(d => d.SortOrder))
+        .AsSplitQuery()
         .AsNoTracking();
 
-    /// <summary>Maps a job loaded with its team, brand, requester, status and designer's user.</summary>
+    /// <summary>Maps a job read with <see cref="Load"/>.</summary>
     public static JobDto From(Job job, DateOnly today, IEnumerable<JobBookingDto> bookings)
     {
         var open = job.Status.Kind == JobStatusKind.Open;
@@ -78,8 +81,8 @@ public sealed record JobDto(
             job.Priority,
             job.RequiredDate,
             job.CreatedAt,
-            job.MainGoal,
-            Jobs.Deliverables.Parse(job.Deliverables),
+            job.Purpose,
+            job.Deliverables.Select(d => new BriefDeliverable(d.Type, d.Description, d.Specifications, d.DueDate)).ToList(),
             job.DesignerPersonId,
             job.Designer?.User.Name,
             job.EstimateHours,
@@ -90,6 +93,33 @@ public sealed record JobDto(
             linked.Sum(b => b.Hours),
             linked);
     }
+}
+
+/// <summary>A job and its whole brief, for its own page.</summary>
+public sealed record JobDetailDto(JobDto Job, BriefDto Brief);
+
+/// <summary>The parts of the brief (section 3.1) that are not on <see cref="JobDto"/>.</summary>
+/// <param name="RevisesJobCode">The job ID of the job this brief revises; null for a new job.</param>
+public sealed record BriefDto(
+    string? Campaign,
+    JobCategory? Category,
+    string? RevisesJobCode,
+    BriefObjectives Objectives,
+    CreativeGuidelines Guidelines,
+    IReadOnlyList<BriefLink> Links,
+    string? AdditionalInformation)
+{
+    /// <summary>Maps a job read with its links.</summary>
+    public static BriefDto From(Job job) => new(
+        job.Campaign,
+        job.Category,
+        job.RevisesJobCode,
+        new BriefObjectives(job.Purpose, job.Objective, job.TargetAudience, job.KeyMessage, job.Channels, job.ExpectedOutcome),
+        new CreativeGuidelines(
+            job.CreativeDirection, job.BrandRequirements, job.ColoursAndTypography, job.DesignReferences, job.MandatoryMessaging,
+            job.RequiredLogos, job.ProductImagery, job.LegalDisclaimers, job.CreativeInstructions),
+        job.Links.Select(l => new BriefLink(l.Url, l.Label)).ToList(),
+        job.AdditionalInformation);
 }
 
 /// <param name="Hours">Hours per day on each of the person's working days from the start to the end date.</param>
@@ -105,14 +135,63 @@ public sealed record JobOptionsDto(
     IReadOnlyList<TeamOptionDto> Teams,
     IReadOnlyList<OptionDto> Departments,
     IReadOnlyList<Priority> Priorities,
+    IReadOnlyList<JobCategory> Categories,
+    IReadOnlyList<DeliverableType> DeliverableTypes,
     Guid? MyDepartmentId);
 
-/// <summary>A brief in the studio's template (D50). The signed-in user sends it (D67).</summary>
+/// <summary>
+/// A brief in the client's template, sections A to F of 3.1 (D50, J.4). The signed-in user sends it (D67); the date
+/// briefed is when it arrives.
+/// </summary>
+/// <param name="RevisesJobCode">For a revision of an existing job, that job's ID; null for a new job.</param>
 public sealed record CreateJobRequest(
     Guid TeamId,
-    [Required, MaxLength(200)] string Title,
-    [MaxLength(2000)] string? MainGoal,
-    [MaxLength(4000)] string? Deliverables,
     Guid DepartmentId,
+    [Required, MaxLength(200)] string Title,
+    [MaxLength(200)] string? Campaign,
+    JobCategory? Category,
+    [MaxLength(300)] string? RevisesJobCode,
     DateOnly? RequiredDate,
-    Priority Priority);
+    Priority Priority,
+    BriefObjectives Objectives,
+    [MaxLength(20)] IReadOnlyList<BriefDeliverable> Deliverables,
+    CreativeGuidelines Guidelines,
+    [MaxLength(20)] IReadOnlyList<BriefLink> Links,
+    [MaxLength(2000)] string? AdditionalInformation);
+
+/// <summary>B. Brief objectives.</summary>
+/// <param name="Purpose">What the artwork is for.</param>
+/// <param name="Objective">The campaign or communication objective.</param>
+/// <param name="Channels">The platforms or channels it will run on.</param>
+public sealed record BriefObjectives(
+    [MaxLength(2000)] string? Purpose,
+    [MaxLength(1000)] string? Objective,
+    [MaxLength(1000)] string? TargetAudience,
+    [MaxLength(1000)] string? KeyMessage,
+    [MaxLength(1000)] string? Channels,
+    [MaxLength(1000)] string? ExpectedOutcome);
+
+/// <summary>C. One required deliverable, with its own specifications and deadline.</summary>
+/// <param name="Specifications">Dimensions and specifications, such as "1080 x 1350, PNG".</param>
+public sealed record BriefDeliverable(
+    DeliverableType Type,
+    [Required, MaxLength(200)] string Description,
+    [MaxLength(500)] string? Specifications,
+    DateOnly? DueDate);
+
+/// <summary>D. Creative guidelines.</summary>
+/// <param name="BrandRequirements">Brand identity and CI requirements.</param>
+/// <param name="CreativeInstructions">Any other creative instructions.</param>
+public sealed record CreativeGuidelines(
+    [MaxLength(1000)] string? CreativeDirection,
+    [MaxLength(1000)] string? BrandRequirements,
+    [MaxLength(1000)] string? ColoursAndTypography,
+    [MaxLength(1000)] string? DesignReferences,
+    [MaxLength(1000)] string? MandatoryMessaging,
+    [MaxLength(1000)] string? RequiredLogos,
+    [MaxLength(1000)] string? ProductImagery,
+    [MaxLength(1000)] string? LegalDisclaimers,
+    [MaxLength(1000)] string? CreativeInstructions);
+
+/// <summary>E. Supporting material: a link to existing artwork, guidelines, images or a cloud folder, with a label.</summary>
+public sealed record BriefLink([Required, MaxLength(1000), Url] string Url, [MaxLength(200)] string? Label);

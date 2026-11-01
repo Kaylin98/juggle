@@ -20,14 +20,43 @@ public class Job
     /// <summary>The job ID, set when the brief is sent and never changed (D63), such as DJI0143_Q1'27_Summer Holiday Sale.</summary>
     public required string Code { get; set; }
 
-    public required string Title { get; set; }
-    public string? MainGoal { get; set; }
+    // A. Job information (section 3.1 of the requirements)
 
-    /// <summary>One deliverable per line, as typed.</summary>
-    public string? Deliverables { get; set; }
+    public required string Title { get; set; }
+    public string? Campaign { get; set; }
+    public JobCategory? Category { get; set; }
+
+    /// <summary>The job ID of the job this brief revises, as the marketing manager gave it; null for a new job.</summary>
+    public string? RevisesJobCode { get; set; }
 
     public DateOnly? RequiredDate { get; set; }
     public Priority Priority { get; set; }
+
+    // B. Brief objectives
+
+    /// <summary>What the artwork is for.</summary>
+    public string? Purpose { get; set; }
+    public string? Objective { get; set; }
+    public string? TargetAudience { get; set; }
+    public string? KeyMessage { get; set; }
+    public string? Channels { get; set; }
+    public string? ExpectedOutcome { get; set; }
+
+    // D. Creative guidelines
+
+    public string? CreativeDirection { get; set; }
+    public string? BrandRequirements { get; set; }
+    public string? ColoursAndTypography { get; set; }
+    public string? DesignReferences { get; set; }
+    public string? MandatoryMessaging { get; set; }
+    public string? RequiredLogos { get; set; }
+    public string? ProductImagery { get; set; }
+    public string? LegalDisclaimers { get; set; }
+    public string? CreativeInstructions { get; set; }
+
+    // F. Additional information
+
+    public string? AdditionalInformation { get; set; }
 
     /// <summary>When the brief was sent: the date briefed.</summary>
     public DateTimeOffset CreatedAt { get; set; }
@@ -45,6 +74,39 @@ public class Job
     public User Requester { get; set; } = null!;
     public JobStatus Status { get; set; } = null!;
     public Person? Designer { get; set; }
+
+    /// <summary>C. Required deliverables, in the order given.</summary>
+    public List<JobDeliverable> Deliverables { get; set; } = [];
+
+    /// <summary>E. Supporting material, as links, in the order given.</summary>
+    public List<JobLink> Links { get; set; } = [];
+}
+
+/// <summary>One of a brief's deliverables (section 3.1C), with its own specifications and deadline.</summary>
+public class JobDeliverable
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid OrgId { get; set; }
+    public Guid JobId { get; set; }
+    public int SortOrder { get; set; }
+    public DeliverableType Type { get; set; }
+    public required string Description { get; set; }
+
+    /// <summary>Dimensions and specifications, such as "1080 x 1350, PNG".</summary>
+    public string? Specifications { get; set; }
+
+    public DateOnly? DueDate { get; set; }
+}
+
+/// <summary>Supporting material for a brief (section 3.1E): a link, such as a SharePoint folder, with a label.</summary>
+public class JobLink
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid OrgId { get; set; }
+    public Guid JobId { get; set; }
+    public int SortOrder { get; set; }
+    public required string Url { get; set; }
+    public string? Label { get; set; }
 }
 
 /// <summary>Something done to a job, by whom and when (D72): the audit trail, written by every workflow action.</summary>

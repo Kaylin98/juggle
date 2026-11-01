@@ -6,6 +6,7 @@ import { TeamContextService } from '../../core/team-context.service';
 import { startOfWeek } from '../../shared/dates';
 import { Drawer } from '../../shared/drawer';
 import { StatusChip } from '../../shared/status-chip';
+import { DELIVERABLE_LABELS } from '../requests/brief-fields';
 import { BookOnSchedule } from './book-on-schedule';
 import { BoardCard } from './job-card';
 
@@ -98,16 +99,27 @@ import { BoardCard } from './job-card';
 
         <div class="space-y-4 border-t border-line pt-6 text-sm">
           <div>
-            <h4 class="label-caps">Main goal</h4>
-            <p class="mt-1 whitespace-pre-line" [class.text-ink-muted]="!job.mainGoal">{{ job.mainGoal ?? 'No main goal given.' }}</p>
+            <h4 class="label-caps">Purpose</h4>
+            <p class="mt-1 whitespace-pre-line" [class.text-ink-muted]="!job.purpose">{{ job.purpose ?? 'No purpose given.' }}</p>
           </div>
           <div>
             <h4 class="label-caps">Deliverables</h4>
-            <ul class="mt-1 list-disc space-y-1 pl-5">
+            <ul class="mt-1 space-y-2">
               @for (deliverable of job.deliverables; track $index) {
-                <li>{{ deliverable }}</li>
+                <li>
+                  <span class="font-semibold">{{ deliverable.description }}</span>
+                  <span class="block text-ink-muted">
+                    {{ deliverableLabels[deliverable.type] }}
+                    @if (deliverable.specifications) {
+                      &middot; {{ deliverable.specifications }}
+                    }
+                    @if (deliverable.dueDate) {
+                      &middot; by {{ deliverable.dueDate | date: 'd MMM' }}
+                    }
+                  </span>
+                </li>
               } @empty {
-                <li class="-ml-5 list-none text-ink-muted">No deliverables listed.</li>
+                <li class="text-ink-muted">No deliverables listed.</li>
               }
             </ul>
           </div>
@@ -126,6 +138,8 @@ export class JobDrawer {
   readonly closed = output<void>();
   /** A booking was made from here, so the job's booked hours changed. */
   readonly booked = output<void>();
+
+  protected readonly deliverableLabels = DELIVERABLE_LABELS;
 
   /** The week of the first booking, where "View on schedule" opens the schedule (as the card's chip does). */
   protected readonly bookedWeek = computed(() => startOfWeek(this.card().job.bookings[0].startDate));

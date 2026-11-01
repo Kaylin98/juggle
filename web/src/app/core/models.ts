@@ -111,9 +111,10 @@ export interface Job {
   requiredDate: string | null;
   /** When the brief was sent: the date briefed. */
   createdAt: string;
-  mainGoal: string | null;
-  /** One per line as typed, without empty lines or bullets. */
-  deliverables: string[];
+  /** What the artwork is for (section 3.1B). */
+  purpose: string | null;
+  /** Section 3.1C, in the order given. */
+  deliverables: BriefDeliverable[];
   designerPersonId: string | null;
   designerName: string | null;
   estimateHours: number | null;
@@ -218,20 +219,107 @@ export interface JobOptions {
   teams: TeamOption[];
   departments: Option[];
   priorities: Priority[];
+  categories: JobCategory[];
+  deliverableTypes: DeliverableType[];
   myDepartmentId: string | null;
 }
 
-/** A brief in the studio's template (D50). The signed-in user sends it (D67). */
+/** The kind of job (section 3.1A); a placeholder list until the client gives theirs (open question 8). */
+export type JobCategory =
+  | 'Campaign'
+  | 'ProductLaunch'
+  | 'Promotion'
+  | 'RetailAndInStore'
+  | 'DigitalAndSocial'
+  | 'Event'
+  | 'Corporate'
+  | 'Other';
+
+/** The kinds of deliverable in section 3.1C, and Other. */
+export type DeliverableType =
+  | 'SocialMedia'
+  | 'WebsiteBanner'
+  | 'Email'
+  | 'DigitalAdvertising'
+  | 'Print'
+  | 'InStore'
+  | 'ProductArtwork'
+  | 'KeyVisual'
+  | 'Presentation'
+  | 'Packaging'
+  | 'Other';
+
+/** B. Brief objectives. */
+export interface BriefObjectives {
+  purpose: string | null;
+  objective: string | null;
+  targetAudience: string | null;
+  keyMessage: string | null;
+  channels: string | null;
+  expectedOutcome: string | null;
+}
+
+/** C. One required deliverable, with its own specifications and deadline. */
+export interface BriefDeliverable {
+  type: DeliverableType;
+  description: string;
+  specifications: string | null;
+  dueDate: string | null;
+}
+
+/** D. Creative guidelines. */
+export interface CreativeGuidelines {
+  creativeDirection: string | null;
+  brandRequirements: string | null;
+  coloursAndTypography: string | null;
+  designReferences: string | null;
+  mandatoryMessaging: string | null;
+  requiredLogos: string | null;
+  productImagery: string | null;
+  legalDisclaimers: string | null;
+  creativeInstructions: string | null;
+}
+
+/** E. Supporting material: a link with a label. */
+export interface BriefLink {
+  url: string;
+  label: string | null;
+}
+
+/** The parts of the brief (section 3.1) that are not on the job itself. */
+export interface Brief {
+  campaign: string | null;
+  category: JobCategory | null;
+  /** The job ID of the job this brief revises; null for a new job. */
+  revisesJobCode: string | null;
+  objectives: BriefObjectives;
+  guidelines: CreativeGuidelines;
+  links: BriefLink[];
+  additionalInformation: string | null;
+}
+
+/** A job and its whole brief, for its own page. */
+export interface JobDetail {
+  job: Job;
+  brief: Brief;
+}
+
+/** A brief in the client's template, sections A to F (J.4). The signed-in user sends it (D67). */
 export interface CreateJob {
   teamId: string;
+  departmentId: string;
   /** The job name. */
   title: string;
-  mainGoal: string | null;
-  /** One per line. */
-  deliverables: string | null;
-  departmentId: string;
+  campaign: string | null;
+  category: JobCategory | null;
+  revisesJobCode: string | null;
   requiredDate: string | null;
   priority: Priority;
+  objectives: BriefObjectives;
+  deliverables: BriefDeliverable[];
+  guidelines: CreativeGuidelines;
+  links: BriefLink[];
+  additionalInformation: string | null;
 }
 
 /** Booked and available hours over a period; capacity is 0 when the person has no working days in it. */

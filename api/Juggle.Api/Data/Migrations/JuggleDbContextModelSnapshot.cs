@@ -146,6 +146,26 @@ namespace Juggle.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AdditionalInformation")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("BrandRequirements")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Campaign")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Channels")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTimeOffset?>("ClosedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -157,15 +177,27 @@ namespace Juggle.Api.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
+                    b.Property<string>("ColoursAndTypography")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Deliverables")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                    b.Property<string>("CreativeDirection")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("CreativeInstructions")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("DesignReferences")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid?>("DesignerPersonId")
                         .HasColumnType("uuid");
@@ -177,12 +209,28 @@ namespace Juggle.Api.Data.Migrations
                     b.Property<DateOnly?>("ExpectedCompletionDate")
                         .HasColumnType("date");
 
-                    b.Property<string>("MainGoal")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                    b.Property<string>("ExpectedOutcome")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("KeyMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("LegalDisclaimers")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("MandatoryMessaging")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<int>("Number")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Objective")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid>("OrgId")
                         .HasColumnType("uuid");
@@ -195,14 +243,34 @@ namespace Juggle.Api.Data.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<string>("ProductImagery")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<Guid>("RequesterUserId")
                         .HasColumnType("uuid");
 
                     b.Property<DateOnly?>("RequiredDate")
                         .HasColumnType("date");
 
+                    b.Property<string>("RequiredLogos")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RevisesJobCode")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<Guid>("StatusId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("TargetAudience")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid");
@@ -231,6 +299,47 @@ namespace Juggle.Api.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Jobs");
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobDeliverable", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Specifications")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId");
+
+                    b.HasIndex("OrgId");
+
+                    b.ToTable("JobDeliverables");
                 });
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobEvent", b =>
@@ -279,6 +388,39 @@ namespace Juggle.Api.Data.Migrations
                     b.HasIndex("JobId", "At");
 
                     b.ToTable("JobEvents");
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId");
+
+                    b.HasIndex("OrgId");
+
+                    b.ToTable("JobLinks");
                 });
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobStatus", b =>
@@ -726,6 +868,21 @@ namespace Juggle.Api.Data.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobDeliverable", b =>
+                {
+                    b.HasOne("Juggle.Api.Data.Entities.Job", null)
+                        .WithMany("Deliverables")
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobEvent", b =>
                 {
                     b.HasOne("Juggle.Api.Data.Entities.JobStatus", null)
@@ -755,6 +912,21 @@ namespace Juggle.Api.Data.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobLink", b =>
+                {
+                    b.HasOne("Juggle.Api.Data.Entities.Job", null)
+                        .WithMany("Links")
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -883,6 +1055,13 @@ namespace Juggle.Api.Data.Migrations
                         .HasForeignKey("ToStatusId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.Job", b =>
+                {
+                    b.Navigation("Deliverables");
+
+                    b.Navigation("Links");
                 });
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.Team", b =>

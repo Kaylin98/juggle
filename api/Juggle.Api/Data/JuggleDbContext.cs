@@ -21,6 +21,8 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
     public DbSet<JobStatus> JobStatuses => Set<JobStatus>();
     public DbSet<WorkflowTransition> WorkflowTransitions => Set<WorkflowTransition>();
     public DbSet<Job> Jobs => Set<Job>();
+    public DbSet<JobDeliverable> JobDeliverables => Set<JobDeliverable>();
+    public DbSet<JobLink> JobLinks => Set<JobLink>();
     public DbSet<JobEvent> JobEvents => Set<JobEvent>();
     public DbSet<Allocation> Allocations => Set<Allocation>();
     public DbSet<TimeOff> TimeOff => Set<TimeOff>();
@@ -111,12 +113,41 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.HasIndex(j => new { j.OrgId, j.Code }).IsUnique();
             // Guards the counter: a brand never gives the same number twice (D71).
             e.HasIndex(j => new { j.DepartmentId, j.Number }).IsUnique();
-            e.Property(j => j.MainGoal).HasMaxLength(2000);
-            e.Property(j => j.Deliverables).HasMaxLength(4000);
+            e.Property(j => j.RevisesJobCode).HasMaxLength(300);
+            e.Property(j => j.Purpose).HasMaxLength(2000);
+            e.Property(j => j.Objective).HasMaxLength(1000);
+            e.Property(j => j.TargetAudience).HasMaxLength(1000);
+            e.Property(j => j.KeyMessage).HasMaxLength(1000);
+            e.Property(j => j.Channels).HasMaxLength(1000);
+            e.Property(j => j.ExpectedOutcome).HasMaxLength(1000);
+            e.Property(j => j.CreativeDirection).HasMaxLength(1000);
+            e.Property(j => j.BrandRequirements).HasMaxLength(1000);
+            e.Property(j => j.ColoursAndTypography).HasMaxLength(1000);
+            e.Property(j => j.DesignReferences).HasMaxLength(1000);
+            e.Property(j => j.MandatoryMessaging).HasMaxLength(1000);
+            e.Property(j => j.RequiredLogos).HasMaxLength(1000);
+            e.Property(j => j.ProductImagery).HasMaxLength(1000);
+            e.Property(j => j.LegalDisclaimers).HasMaxLength(1000);
+            e.Property(j => j.CreativeInstructions).HasMaxLength(1000);
+            e.Property(j => j.AdditionalInformation).HasMaxLength(2000);
+            e.HasMany(j => j.Deliverables).WithOne().HasForeignKey(d => d.JobId);
+            e.HasMany(j => j.Links).WithOne().HasForeignKey(l => l.JobId);
             e.HasOne(j => j.Requester).WithMany().HasForeignKey(j => j.RequesterUserId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(j => j.Status).WithMany().HasForeignKey(j => j.StatusId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(j => j.Designer).WithMany().HasForeignKey(j => j.DesignerPersonId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<User>().WithMany().HasForeignKey(j => j.ClosedByUserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<JobDeliverable>(e =>
+        {
+            e.HasQueryFilter(d => d.OrgId == OrgId);
+            e.Property(d => d.Specifications).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<JobLink>(e =>
+        {
+            e.HasQueryFilter(l => l.OrgId == OrgId);
+            e.Property(l => l.Url).HasMaxLength(1000);
         });
 
         modelBuilder.Entity<JobEvent>(e =>

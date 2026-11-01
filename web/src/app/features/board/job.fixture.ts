@@ -20,7 +20,7 @@ export function job(changes: Partial<Job> = {}): Job {
     priority: 'High',
     requiredDate: null,
     createdAt: '2026-11-01T09:00:00Z',
-    mainGoal: null,
+    purpose: null,
     deliverables: [],
     designerPersonId: 'p1',
     designerName: 'Priya Naidoo',

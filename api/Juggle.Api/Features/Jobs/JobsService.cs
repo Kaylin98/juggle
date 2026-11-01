@@ -29,7 +29,8 @@ public sealed class JobsService(
             .OrderBy(m => m.Department.Name)
             .Select(m => (Guid?)m.DepartmentId)
             .FirstOrDefaultAsync(ct);
-        return new JobOptionsDto(teams, departments, Enum.GetValues<Priority>(), myDepartmentId);
+        return new JobOptionsDto(
+            teams, departments, Enum.GetValues<Priority>(), Enum.GetValues<JobCategory>(), Enum.GetValues<DeliverableType>(), myDepartmentId);
     }
 
     /// <summary>
@@ -37,7 +38,7 @@ public sealed class JobsService(
     /// and the quarter of the required date (today without one), and starts where the organisation's Submit step leads.
     /// The ID never changes afterwards (D71).
     /// </summary>
-    public async Task<JobDto> SubmitAsync(CreateJobRequest request, CancellationToken ct)
+    public async Task<JobDetailDto> SubmitAsync(CreateJobRequest request, CancellationToken ct)
     {
         await permissions.EnsureAsync(Capability.SubmitBrief, ct);
         if (!await db.Teams.AnyAsync(t => t.Id == request.TeamId, ct))
@@ -47,14 +48,12 @@ public sealed class JobsService(
         var organisation = await db.Organisations.FirstAsync(ct);
         var department = await db.Departments.FirstOrDefaultAsync(d => d.Id == request.DepartmentId, ct)
             ?? throw new BadRequestException($"Choose a {organisation.DepartmentLabel.ToLowerInvariant()}.");
-        if (Deliverables.Parse(request.Deliverables).Any(d => d.Length > Deliverables.MaxLength))
+        if (request.RequiredDate < clock.Today || request.Deliverables.Any(d => d.DueDate < clock.Today))
         {
-            throw new BadRequestException($"Keep each deliverable under {Deliverables.MaxLength} characters.");
+            throw new BadRequestException("A deadline can't be in the past.");
         }
-        if (request.RequiredDate < clock.Today)
-        {
-            throw new BadRequestException("The deadline can't be in the past.");
-        }
+
+        var (objectives, guidelines) = (request.Objectives, request.Guidelines);
 
         // The number is taken in the same transaction as the job, so a failed save does not use one up.
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
@@ -71,13 +70,40 @@ public sealed class JobsService(
                 organisation.JobCodeFormat, department.JobCodePrefix ?? "", number, request.RequiredDate ?? clock.Today,
                 organisation.FinancialYearStartMonth, title),
             Title = title,
-            MainGoal = string.IsNullOrWhiteSpace(request.MainGoal) ? null : request.MainGoal.Trim(),
-            Deliverables = string.IsNullOrWhiteSpace(request.Deliverables) ? null : request.Deliverables.Trim(),
+            Campaign = Clean(request.Campaign),
+            Category = request.Category,
+            RevisesJobCode = Clean(request.RevisesJobCode),
             RequiredDate = request.RequiredDate,
             Priority = request.Priority,
+            Purpose = Clean(objectives.Purpose),
+            Objective = Clean(objectives.Objective),
+            TargetAudience = Clean(objectives.TargetAudience),
+            KeyMessage = Clean(objectives.KeyMessage),
+            Channels = Clean(objectives.Channels),
+            ExpectedOutcome = Clean(objectives.ExpectedOutcome),
+            CreativeDirection = Clean(guidelines.CreativeDirection),
+            BrandRequirements = Clean(guidelines.BrandRequirements),
+            ColoursAndTypography = Clean(guidelines.ColoursAndTypography),
+            DesignReferences = Clean(guidelines.DesignReferences),
+            MandatoryMessaging = Clean(guidelines.MandatoryMessaging),
+            RequiredLogos = Clean(guidelines.RequiredLogos),
+            ProductImagery = Clean(guidelines.ProductImagery),
+            LegalDisclaimers = Clean(guidelines.LegalDisclaimers),
+            CreativeInstructions = Clean(guidelines.CreativeInstructions),
+            AdditionalInformation = Clean(request.AdditionalInformation),
             StatusId = await workflow.FirstStatusIdAsync(ct),
             CreatedAt = clock.Now,
         };
+        job.Deliverables.AddRange(request.Deliverables.Select((d, i) => new JobDeliverable
+        {
+            OrgId = job.OrgId,
+            SortOrder = i,
+            Type = d.Type,
+            Description = d.Description.Trim(),
+            Specifications = Clean(d.Specifications),
+            DueDate = d.DueDate,
+        }));
+        job.Links.AddRange(request.Links.Select((l, i) => new JobLink { OrgId = job.OrgId, SortOrder = i, Url = l.Url.Trim(), Label = Clean(l.Label) }));
         db.Jobs.Add(job);
         db.JobEvents.Add(new JobEvent
         {
@@ -107,12 +133,15 @@ public sealed class JobsService(
             .ToListAsync(ct))
         .Single();
 
-    public async Task<JobDto> GetAsync(Guid id, CancellationToken ct)
+    private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
+    /// <summary>A job with its whole brief, for anyone who may see it.</summary>
+    public async Task<JobDetailDto> GetAsync(Guid id, CancellationToken ct)
     {
-        var job = await JobDto.Load(db.Jobs).FirstOrDefaultAsync(j => j.Id == id, ct)
+        var job = await JobDto.Load(db.Jobs).Include(j => j.Links.OrderBy(l => l.SortOrder)).FirstOrDefaultAsync(j => j.Id == id, ct)
             ?? throw new NotFoundException("Job not found.");
         await jobAccess.EnsureCanSeeAsync(job, ct);
-        return (await ToDtosAsync([job], ct))[0];
+        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job));
     }
 
     /// <summary>The jobs the signed-in user sent the brief for, newest first, in every team.</summary>

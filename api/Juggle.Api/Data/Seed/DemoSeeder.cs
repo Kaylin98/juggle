@@ -344,7 +344,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 FromStatusId = from?.Id, ToStatusId = to.Id, Message = message,
             });
 
-        Job AddJob(string brand, int number, string title, JobStatus status, int dueDays, double ageHours, string mainGoal,
+        Job AddJob(string brand, int number, string title, JobStatus status, int dueDays, double ageHours, string purpose,
             string deliverables, Person? designerPerson = null, decimal? estimate = null, Priority priority = Priority.Medium)
         {
             var required = Due(dueDays);
@@ -357,8 +357,11 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
                 Number = number,
                 Code = JobCodes.Format(org.JobCodeFormat, brands[brand].JobCodePrefix!, number, required, FinancialYearStartMonth, title),
                 Title = title,
-                MainGoal = mainGoal,
-                Deliverables = deliverables,
+                Purpose = purpose,
+                Deliverables =
+                [
+                    .. deliverables.Split('\n').Select((d, i) => new JobDeliverable { OrgId = org.Id, SortOrder = i, Type = TypeOf(d), Description = d }),
+                ],
                 RequiredDate = required,
                 Priority = priority,
                 CreatedAt = now.AddHours(-ageHours),
@@ -592,6 +595,26 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
 
         await db.SaveChangesAsync();
         LogSeeded(logger, weekStart);
+    }
+
+    /// <summary>A seeded deliverable's type, from its words; the first rule that matches wins.</summary>
+    private static DeliverableType TypeOf(string deliverable)
+    {
+        (DeliverableType Type, string[] Words)[] rules =
+        [
+            (DeliverableType.Packaging, ["packaging", "unboxing"]),
+            (DeliverableType.ProductArtwork, ["packshot", "render", "product tile"]),
+            (DeliverableType.KeyVisual, ["key visual", "hero visual", "concept board"]),
+            (DeliverableType.Presentation, ["presentation", "deck", "slide", "template"]),
+            (DeliverableType.Email, ["email"]),
+            (DeliverableType.InStore, ["in-store", "store poster", "wobbler", "shelf", "pop-up", "window", "signage", "till", "swing", "pull-up", "banner stand", "booth", "retail"]),
+            (DeliverableType.SocialMedia, ["social", "instagram", "stories", "tiles", "carousel", "influencer"]),
+            (DeliverableType.WebsiteBanner, ["banner", "web hero", "website", "landing page", "a+ content"]),
+            (DeliverableType.DigitalAdvertising, ["video"]),
+            (DeliverableType.Print, ["insert", "leaflet", "brochure", "flyer", "print", "billboard", "spec sheet", "bellyband", "poster", "layout", "one-pager"]),
+        ];
+        var text = deliverable.ToLowerInvariant();
+        return rules.FirstOrDefault(r => r.Words.Any(text.Contains), (DeliverableType.Other, [])).Type;
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Demo data already present, skipping seed")]

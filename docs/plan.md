@@ -9,10 +9,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | J - Roles and jobs |
-| Phase status | In progress |
-| Last completed task | J.3 Job ID from the org's format and a per-brand counter |
-| Next task | J.4 Brief form sections A to F and the job page |
-| Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; list them in the Phase J review summary for the client |
+| Phase status | Awaiting review |
+| Last completed task | J.4 Brief form sections A to F and the job page |
+| Next task | Phase J review; then W.1 once approved |
+| Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; question 8 (job categories) has a placeholder list in code until the client answers. Listed in the Phase J review summary for the client |
 | Last updated | 2026-11-01 |
 
 ## Phase overview
@@ -32,7 +32,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | S | Sat | Stretch: My work, time off | Done |
 | C | - | Client demo for The Core Group | Done (folded into R) |
 | R | - | Requirements and gap analysis | Done |
-| J | - | Roles and jobs | In progress |
+| J | - | Roles and jobs | Awaiting review |
 | W | - | Workflow | Not started |
 | V | - | Views and demo | Not started |
 
@@ -870,7 +870,7 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 
 ## Phase J - Roles and jobs
 
-**Status:** In progress
+**Status:** Awaiting review
 **Done when:** the five roles sign in to their own landing page and nav, the board shows jobs in the five columns with their detailed status, and a submitted brief gets its job ID at once
 
 **Tasks**
@@ -878,16 +878,16 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - [x] J.1 Roles as org data (D70, D77): the `Capability` enum in code; `Role` per org with its capabilities, and `User.RoleId`, replacing `OrgRole` and `TeamMembership.Role`; access checked by capability on the server (`Permissions`); org settings for terms, default working hours and holiday country, sent with `/api/auth/me`; login grouped by the org's roles; nav and landing from capabilities; seed of The Core Group's five roles and 18 users in one studio (D73); migration `Roles`; tests, including that no code checks a role name
 - [x] J.2 Jobs replace requests, projects and tasks (D68, D69, D72, D77): `Job`, `JobEvent`, `Allocation.JobId`; `BoardColumn`, `JobStatus` and `WorkflowTransition` as org data, with the `WorkflowAction` and `ApprovalStage` enums in code; `JobWorkflow` reading the org's workflow (Submit gives the first status); board columns and status chips from the data, with brand colours, the booked chip and filters, no drag between columns; job visibility by capability; seed of The Core Group's statuses, columns and workflow, and of its jobs, including the closed history; dashboard and briefs report moved onto jobs; migration `Jobs`; tests
 - [x] J.3 Job ID from the org's format (`Organisation.JobCodeFormat`) and the per-brand `Department.LastJobNumber` at submission, code fixed (D71, D77); migration `JobNumbers`; tests for the counter, the format and the code
-- [ ] J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; the job page for the Marketing Manager; migration `BriefSections`; tests
+- [x] J.4 Brief form sections A to F, deliverables with type, specs and deadline, supporting links; the job page for the Marketing Manager; migration `BriefSections`; tests
 
 **Acceptance criteria**
 
-- [ ] Each of the five roles lands on its page and sees only its nav items; the API refuses what the matrix does not allow (403)
-- [ ] Roles, statuses, columns, the workflow, terms and the job ID format come from The Core Group's seeded configuration; no code checks a role or status name (D77)
-- [ ] The board shows Incoming, In Design, In Review, With Marketing and Done, each card with its detailed status, job ID, brand colour and designer
-- [ ] Marketing Managers have no board or schedule; designers see only their own jobs
+- [x] Each of the five roles lands on its page and sees only its nav items; the API refuses what the matrix does not allow (403)
+- [x] Roles, statuses, columns, the workflow, terms and the job ID format come from The Core Group's seeded configuration; no code checks a role or status name (D77)
+- [x] The board shows Incoming, In Design, In Review, With Marketing and Done, each card with its detailed status, job ID, brand colour and designer
+- [x] Marketing Managers have no board or schedule; designers see only their own jobs
 - [x] A submitted brief gets the next number for its brand (DJI0143 in the seed) and its code never changes
-- [ ] The brief form has every field of section 3.1, with several deliverables and links
+- [x] The brief form has every field of section 3.1, with several deliverables and links
 
 **Notes and deviations**
 
@@ -908,14 +908,20 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - J.3: the `JobNumbers` migration adds a unique index on brand and number, which existing jobs (all number 0) would break, so a database with data needs `--reset-demo`
 - J.3: found while checking: since J.1 marketing managers are in no team (D73), so the brief form started with no team and refused to send. It now starts on the only team when the user has no current team
 - J.3 checked in Chromium at 1440 against the API on 5268 with freshly reset data: Zanele sends a brief with no required date and gets `DJI0143_Q1'27_Summer Holiday Sale` at once (toast, her job page, My requests), and it tops Chloe's queue with the same ID. No console errors. Tests: 76 API (new: the format, the next number per brand, six briefs sent at once get 1 to 6, a new format applies to new jobs only; `WorkflowConfigTests` renamed `OrganisationConfigTests`), 127 web
+- J.4: the brief follows section 3.1 A to F. A: team, brand, job title, campaign or project, category, required completion date, priority, and new job or revision (a revision takes the existing job's ID as text; linking the jobs is deferred, section 4). B: purpose (was the main goal), objective, target audience, key message, platforms or channels, expected outcome. C: `JobDeliverable` rows (type from the 10 kinds in 3.1C plus Other, description, dimensions and specifications, deadline), up to 20. D: the nine creative guidelines. E: `JobLink` rows (link and label), up to 20; files come in the MVP. F: additional information. The requester and the date briefed are recorded automatically. Only the team, brand and title are required, so the Traffic Manager can ask for what is missing (W.2)
+- J.4: categories are a placeholder list in code (Campaign, Product launch, Promotion, Retail and in-store, Digital and social, Event, Corporate, Other) until the client answers open question 8. The seeded jobs have no category; their deliverables became rows, typed from their words by a seed-only helper
+- J.4: `GET /api/jobs/{id}` and `POST /api/jobs` return the job with its whole brief (`JobDetailDto`); the board, lists and drawer keep the lighter `JobDto` with the purpose and deliverables. The form, the job page and the drawer read the brief's wording from one place (`features/requests/brief-fields.ts`). The job page shows sections A to F, listing in B and D only what was filled in
+- J.4: the `BriefSections` migration renames `MainGoal` to `Purpose` and drops the deliverables text, so a database with data needs `--reset-demo`
+- J.4 checked in Chromium at 1440 against the API on 5268 with freshly reset data: as Zanele, every section of the form filled in, with three deliverables (each with its type, specifications or deadline) and a link, sent as `DJI0143_Q1'27_Summer Holiday Sale`; the job page shows sections A to F as sent; as Chloe, the board's drawer lists the purpose and the three deliverables. No page overflow, no console errors. Tests: 77 API (new: the brief keeps every section, and 400 for each invalid section: a blank or long deliverable, a past deadline, 21 deliverables, long objectives or guidelines, a bad link), 129 web (new: the form's sections, sending deliverables and links, the revision ID, row validation)
+- Phase J review summary for the client: open questions 1 (Marketing Managers see only their own jobs), 3 (Marketing Changes Required is recorded on the approval; the status exists with no step into it), 4 (the job ID's quarter comes from the required date, or today without one), 6 (the Traffic Manager approves leave), 7 (only the designers are on the schedule), 8 (the job categories: a placeholder list), 9 (a business approval with changes starts a revision), 10 (each brand's real last job number for go-live; today the seed's), 11 (calendar: in-app only), 12 (the job's required date drives the schedule; deliverable deadlines are for information) stay on their defaults
 
 **Review gate**
 
-- [ ] Build passes with no warnings, lint passes, smoke tests pass
-- [ ] Acceptance criteria ticked
-- [ ] Committed, one commit per step
-- [ ] "Where we left off" and the phase status updated to Awaiting review
-- [ ] **STOP** for review
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Acceptance criteria ticked
+- [x] Committed, one commit per step
+- [x] "Where we left off" and the phase status updated to Awaiting review
+- [x] **STOP** for review
 - [ ] Approved by user
 
 ---
@@ -1086,3 +1092,4 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - 2026-11-01: D77 recorded fully in `docs/plan.md` and `docs/gap-analysis.md`. J.2 pre-work: `Features/Workflow/JobWorkflow.cs`, `WorkflowController.cs` and `WorkflowDtos.cs` scaffolded (untracked). Session ended at the CLI limit before `Auth/JobAccess.cs` was written. Docs updated.
 - 2026-11-01: The previous session left more of J.2 uncommitted than the log said: besides the workflow files, the `Job` and workflow entities, `Features/Jobs` and the removal of requests, projects and tasks were in the working tree. J.2 finished: jobs on the board in the org's columns, job visibility by capability, the incoming queue, My work and My requests on jobs, the dashboard and report on jobs, the seed of the workflow and jobs, migration `Jobs`. Build with no warnings, lint, 69 API tests and 126 web tests pass; checked in Chromium at 1440. Demo data reset.
 - 2026-11-01: J.3 built: job IDs from the org's format and an atomic per-brand counter at submission, never changed; migration `JobNumbers`; the brief form starts on the only team for marketing managers. Build with no warnings, lint, 76 API tests and 127 web tests pass; DJI0143 checked in Chromium at 1440.
+- 2026-11-01: J.4 built: the brief form in the client's template, sections A to F, with deliverable rows (type, specifications, deadline) and supporting links; the job page shows the whole brief; migration `BriefSections`. Build with no warnings, lint, 77 API tests and 129 web tests pass; checked in Chromium at 1440. Demo data reset. Phase J awaiting review.

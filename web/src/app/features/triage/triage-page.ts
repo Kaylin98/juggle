@@ -57,13 +57,13 @@ const PRIORITY_PILL: Record<Priority, string> = {
                   &middot; {{ designer }}
                 }
               </p>
-              @if (job.mainGoal) {
-                <p class="mt-3 line-clamp-2 text-sm">{{ job.mainGoal }}</p>
+              @if (job.purpose) {
+                <p class="mt-3 line-clamp-2 text-sm">{{ job.purpose }}</p>
               }
               @if (job.deliverables.length) {
                 <ul class="mt-3 flex flex-wrap gap-2" aria-label="Deliverables">
                   @for (deliverable of job.deliverables; track $index) {
-                    <li class="rounded-full bg-surface-muted px-3 py-1 text-xs">{{ deliverable }}</li>
+                    <li class="rounded-full bg-surface-muted px-3 py-1 text-xs">{{ deliverable.description }}</li>
                   }
                 </ul>
               }

@@ -15,9 +15,14 @@ public sealed class AuthTests(ApiFactory api)
     {
         var users = await api.CreateClient().GetFromJsonAsync<List<DemoUserDto>>("/api/auth/demo-users", ApiFactory.Json, _ct);
 
-        Assert.Equal(17, users!.Count);
+        Assert.Equal(16, users!.Count);
         Assert.Equal("Org Admin", users[0].Role);
-        Assert.Equal(6, users.Count(u => u.Role == "Requester"));
+        Assert.Equal(["Org Admin", "Team Admin", "Member"], users.Select(u => u.Role).Distinct());
+        // A brand's marketing manager is a Studio Member and can manage several brands (D58).
+        var zanele = users.Single(u => u.Name == "Zanele Mthembu");
+        Assert.Equal(("Member", null), (zanele.Role, zanele.JobTitle));
+        Assert.Equal(["DJI", "Pure Electric"], zanele.Departments);
+        Assert.Equal(["Studio"], zanele.Teams);
     }
 
     [Fact]
@@ -29,6 +34,7 @@ public sealed class AuthTests(ApiFactory api)
         var teams = await client.GetFromJsonAsync<List<TeamDto>>("/api/teams", ApiFactory.Json, _ct);
 
         Assert.Equal((OrgRole.OrgAdmin, "Brand"), (me!.OrgRole, me.DepartmentLabel));
+        Assert.Empty(me.ManagedDepartmentIds);
         // Their own team first, so they land on it; then the others by name.
         Assert.Equal(["Studio", "Marketing"], teams!.Select(t => t.Name));
         Assert.All(teams!, t => Assert.Equal(TeamRole.TeamAdmin, t.MyRole));

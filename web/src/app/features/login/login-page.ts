@@ -9,7 +9,6 @@ const GROUPS: { role: RoleLabel; heading: string }[] = [
   { role: 'Org Admin', heading: 'Org Admin' },
   { role: 'Team Admin', heading: 'Team Admins' },
   { role: 'Member', heading: 'Members' },
-  { role: 'Requester', heading: 'Requesters' },
 ];
 
 @Component({
@@ -33,8 +32,9 @@ export class LoginPage {
     })).filter((group) => group.users.length > 0),
   );
 
+  /** Job title, or the brands a marketing manager covers, then teams. */
   protected subtitle(user: DemoUser): string {
-    const detail = user.jobTitle ?? user.department;
+    const detail = user.jobTitle ?? (user.departments.length ? `Marketing manager, ${user.departments.join(' and ')}` : null);
     const teams = user.teams.join(', ');
     return [detail, teams].filter((part) => part).join(' · ');
   }

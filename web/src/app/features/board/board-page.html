@@ -16,7 +16,9 @@
           [(due)]="dueFilter"
           [(booking)]="bookingFilter"
         />
-        <button type="button" class="btn-primary" (click)="addingTo.set(columns()[0].status)">Add task</button>
+        @if (canAdd()) {
+          <button type="button" class="btn-primary" (click)="addingTo.set(columns()[0].status)">Add task</button>
+        }
       </div>
     }
   </div>
@@ -36,8 +38,11 @@
           [cards]="column.cards"
           [collapsed]="collapsed().has(column.status.id)"
           [filtered]="filtered()"
+          [canAdd]="canAdd()"
           (dropped)="drop($event)"
           (opened)="openTaskId.set($event.id)"
+          (approved)="approve($event)"
+          (changesRequested)="changesFor.set($event.id)"
           (toggled)="toggleColumn(column.status.id)"
           (added)="addingTo.set(column.status)"
         />
@@ -55,6 +60,12 @@
     [canReassign]="teamContext.isTeamAdmin()"
     [canBook]="teamContext.isTeamAdmin()"
     (closed)="openTaskId.set(null)" (saved)="onSaved($event)" (booked)="board.reload()" />
+}
+
+@if (changesCard(); as card) {
+  <app-drawer heading="Request changes" (closed)="changesFor.set(null)">
+    <app-request-changes-dialog [card]="card" (sent)="onChangesSent()" (closed)="changesFor.set(null)" />
+  </app-drawer>
 }
 
 @if (addingTo(); as status) {

@@ -36,4 +36,14 @@ export class BoardService {
   moveTask(id: string, statusId: string, index: number): Promise<Task> {
     return firstValueFrom(this.http.post<Task>(`/api/tasks/${id}/move`, { statusId, index }));
   }
+
+  /** The brand's manager approves a card awaiting approval; it moves to Done (D58). */
+  approve(id: string): Promise<Task> {
+    return firstValueFrom(this.http.post<Task>(`/api/tasks/${id}/approve`, {}));
+  }
+
+  /** The brand's manager sends a card awaiting approval back to Feedback needed with a comment (D58). */
+  requestChanges(id: string, comment: string): Promise<Task> {
+    return firstValueFrom(this.http.post<Task>(`/api/tasks/${id}/request-changes`, { comment }));
+  }
 }

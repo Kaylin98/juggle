@@ -14,6 +14,14 @@
       }
     </div>
 
+    <!-- What the brand's manager asked to change when they last sent it back from approval (D58). -->
+    @if (card().task.feedback; as feedback) {
+      <div class="rounded-control bg-warn-50 px-4 py-3">
+        <p class="label-caps text-warn-700">Changes requested</p>
+        <p class="mt-1 text-sm whitespace-pre-line">{{ feedback }}</p>
+      </div>
+    }
+
     @if (canBook() && assignee(); as assignee) {
       @if (booking()) {
         <app-book-on-schedule [task]="card().task" [assignee]="assignee" (closed)="booking.set(false)" (booked)="booked.emit()" />

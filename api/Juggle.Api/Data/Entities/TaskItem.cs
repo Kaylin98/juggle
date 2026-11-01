@@ -16,6 +16,9 @@ public class TaskItem
     public int SortOrder { get; set; }
     public string? Link { get; set; }
 
+    /// <summary>What the brand's manager asked to change when they last sent it back from approval (D58).</summary>
+    public string? Feedback { get; set; }
+
     public Project Project { get; set; } = null!;
     public WorkflowStatus Status { get; set; } = null!;
     public Person? Assignee { get; set; }

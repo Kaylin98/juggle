@@ -6,6 +6,7 @@ namespace Juggle.Api.Features.Tasks;
 /// <param name="IsDueSoon">Due within the next 7 days, or overdue, and not done (D57).</param>
 /// <param name="BookedHours">The hours of all its bookings.</param>
 /// <param name="Bookings">The bookings linked to it, earliest first.</param>
+/// <param name="Feedback">What the brand's manager asked to change when they last sent it back from approval (D58).</param>
 public sealed record TaskDto(
     Guid Id,
     Guid ProjectId,
@@ -21,7 +22,8 @@ public sealed record TaskDto(
     int SortOrder,
     string? Link,
     decimal BookedHours,
-    IReadOnlyList<TaskBookingDto> Bookings)
+    IReadOnlyList<TaskBookingDto> Bookings,
+    string? Feedback)
 {
     private const int DueSoonDays = 7;
 
@@ -45,7 +47,8 @@ public sealed record TaskDto(
             task.SortOrder,
             task.Link,
             linked.Sum(b => b.Hours),
-            linked);
+            linked,
+            task.Feedback);
     }
 }
 
@@ -72,3 +75,6 @@ public sealed record UpdateTaskRequest(
 
 /// <summary>Moves a task to a status, at a position (0-based) within that status's column.</summary>
 public sealed record MoveTaskRequest(Guid StatusId, [Range(0, int.MaxValue)] int Index);
+
+/// <summary>Sends a card awaiting approval back with what the brand's manager wants changed (D58).</summary>
+public sealed record RequestChangesRequest([Required, MaxLength(1000)] string Comment);

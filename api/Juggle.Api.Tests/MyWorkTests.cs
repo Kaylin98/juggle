@@ -63,7 +63,7 @@ public sealed class MyWorkTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Requesters_get_403()
+    public async Task Brand_managers_without_a_person_get_403()
     {
         var zanele = await api.SignInAsAsync("Zanele Mthembu");
 

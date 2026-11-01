@@ -16,12 +16,14 @@ export interface BoardCard {
   canEdit: boolean;
   /** In a Done-category column, so it shows no booking chip. */
   done: boolean;
+  /** Awaiting approval from the viewer, its brand's manager, who can approve it or ask for changes (D58). */
+  approvable: boolean;
 }
 
 /**
  * A board card. The whole card is one button that opens the task; it lies under the content, which lets clicks
- * through except on the parts with their own hint or link (due date, review round, booking chip), since a link
- * cannot sit inside a button.
+ * through except on the parts with their own hint, link or button (due date, review round, booking chip, approval),
+ * since a link or button cannot sit inside a button.
  */
 @Component({
   selector: 'app-task-card',
@@ -89,6 +91,20 @@ export interface BoardCard {
             <app-avatar class="ml-auto" size="sm" [name]="assignee.name" [colour]="assignee.avatarColour" />
           }
         </span>
+        @if (card().approvable) {
+          <span class="mt-3 flex gap-2">
+            <button type="button" class="btn-primary pointer-events-auto h-8 px-3 text-xs" (click)="approved.emit()">
+              Approve
+            </button>
+            <button
+              type="button"
+              class="btn-secondary pointer-events-auto h-8 flex-1 px-2 text-xs whitespace-nowrap"
+              (click)="changesRequested.emit()"
+            >
+              Request changes
+            </button>
+          </span>
+        }
       </div>
     </div>
   `,
@@ -105,6 +121,8 @@ export class TaskCard {
   /** The booking chip (D57), shown on the board. */
   readonly showBooking = input(false);
   readonly opened = output<void>();
+  readonly approved = output<void>();
+  readonly changesRequested = output<void>();
 
   protected readonly reviewRoundLabel = reviewRoundLabel;
 

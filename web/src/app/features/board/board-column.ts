@@ -45,7 +45,8 @@ const CHEVRON_RIGHT =
         <h2 class="mt-2 text-base font-semibold">{{ status().name }}</h2>
       </div>
       <div
-        class="scroll-quiet flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-2"
+        class="scroll-quiet flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2"
+        [class]="canAdd() ? 'pb-2' : 'pb-4'"
         cdkDropList
         [cdkDropListData]="status().id"
         (cdkDropListDropped)="dropped.emit($event)"
@@ -58,6 +59,8 @@ const CHEVRON_RIGHT =
             [card]="card"
             [showBooking]="true"
             (opened)="opened.emit(card.task)"
+            (approved)="approved.emit(card.task)"
+            (changesRequested)="changesRequested.emit(card.task)"
           />
         } @empty {
           <p
@@ -67,21 +70,23 @@ const CHEVRON_RIGHT =
           </p>
         }
       </div>
-      <div class="px-4 pb-4">
-        <button
-          type="button"
-          class="flex w-full items-center gap-2 rounded-control px-2 py-2 text-sm font-semibold text-ink-muted hover:bg-surface-muted hover:text-ink focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
-          (click)="added.emit()"
-        >
-          <!-- Heroicons plus (mini, MIT) -->
-          <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path
-              d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"
-            />
-          </svg>
-          Add task
-        </button>
-      </div>
+      @if (canAdd()) {
+        <div class="px-4 pb-4">
+          <button
+            type="button"
+            class="flex w-full items-center gap-2 rounded-control px-2 py-2 text-sm font-semibold text-ink-muted hover:bg-surface-muted hover:text-ink focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
+            (click)="added.emit()"
+          >
+            <!-- Heroicons plus (mini, MIT) -->
+            <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"
+              />
+            </svg>
+            Add task
+          </button>
+        </div>
+      }
     }
 
     <ng-template #toggle>
@@ -105,8 +110,12 @@ export class BoardColumn {
   readonly collapsed = input(false);
   /** A board filter is on, so an empty column has no matching cards rather than none at all. */
   readonly filtered = input(false);
+  /** The viewer can add tasks here; a brand's marketing manager cannot (D58). */
+  readonly canAdd = input(true);
   readonly dropped = output<CdkDragDrop<string, string, Task>>();
   readonly opened = output<Task>();
+  readonly approved = output<Task>();
+  readonly changesRequested = output<Task>();
   readonly toggled = output<void>();
   /** "Add task" at the bottom of the column. */
   readonly added = output<void>();

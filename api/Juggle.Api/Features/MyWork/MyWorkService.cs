@@ -66,6 +66,7 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, O
                     teamNames[t.TeamId],
                     t.Project.Name,
                     t.Project.Colour,
+                    t.Project.DepartmentId,
                     t.Project.Department.Name,
                     t.Status.Name,
                     t.Status.Category))

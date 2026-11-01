@@ -6,11 +6,9 @@ public class Request
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public Guid OrgId { get; set; }
     public Guid TeamId { get; set; }
+    /// <summary>Who sent it: always the user who was signed in (D58).</summary>
     public Guid RequesterUserId { get; set; }
     public Guid DepartmentId { get; set; }
-
-    /// <summary>Who entered it: the requester, or a member of the team asked logging it on their behalf (D55).</summary>
-    public Guid LoggedByUserId { get; set; }
 
     public required string Title { get; set; }
     public string? MainGoal { get; set; }
@@ -27,6 +25,5 @@ public class Request
 
     public Team Team { get; set; } = null!;
     public User Requester { get; set; } = null!;
-    public User LoggedBy { get; set; } = null!;
     public Department Department { get; set; } = null!;
 }

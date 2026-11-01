@@ -8,12 +8,17 @@ namespace Juggle.Api.Features.Tasks;
 
 public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, CurrentUser currentUser, OrgClock clock)
 {
+    /// <summary>The team's cards; a brand's marketing manager gets only the cards of the brands they manage (D58).</summary>
     public async Task<IReadOnlyList<TaskDto>> GetTeamTasksAsync(Guid teamId, CancellationToken ct)
     {
-        await teamAccess.EnsureCanViewAsync(teamId, ct);
-        var tasks = await db.Tasks
-            .Include(t => t.Status)
-            .Where(t => t.TeamId == teamId)
+        var departments = await teamAccess.VisibleDepartmentsAsync(teamId, ct);
+        var query = db.Tasks.Include(t => t.Status).Where(t => t.TeamId == teamId);
+        if (departments is not null)
+        {
+            query = query.Where(t => departments.Contains(t.Project.DepartmentId));
+        }
+
+        var tasks = await query
             .OrderBy(t => t.SortOrder)
             .AsNoTracking()
             .ToListAsync(ct);
@@ -89,17 +94,59 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
         return await ToDtoAsync(task, ct);
     }
 
-    /// <summary>
-    /// Puts the task at the index within the target column and renumbers that column.
-    /// Moving from a Review status to an In Progress status means it was sent back, so the review cycle goes up.
-    /// </summary>
     public async Task<TaskDto> MoveAsync(Guid id, MoveTaskRequest request, CancellationToken ct)
     {
         var task = await FindEditableAsync(id, ct);
         var target = await db.WorkflowStatuses.FirstOrDefaultAsync(s => s.Id == request.StatusId && s.TeamId == task.TeamId, ct)
             ?? throw new BadRequestException("The status is not in this task's team.");
 
-        if (task.Status.Category == StatusCategory.Review && target.Category == StatusCategory.InProgress)
+        await MoveToAsync(task, target, request.Index, ct);
+        await db.SaveChangesAsync(ct);
+        return await ToDtoAsync(task, ct);
+    }
+
+    /// <summary>The brand's manager approves a card awaiting approval: it goes to the top of the first Done column (D58).</summary>
+    public async Task<TaskDto> ApproveAsync(Guid id, CancellationToken ct)
+    {
+        var (task, statuses) = await FindAwaitingApprovalAsync(id, ct);
+        task.Feedback = null;
+        await MoveToAsync(task, statuses.First(s => s.Category == StatusCategory.Done), 0, ct);
+        await db.SaveChangesAsync(ct);
+        return await ToDtoAsync(task, ct);
+    }
+
+    /// <summary>
+    /// The brand's manager sends a card awaiting approval back to the top of the first review column (Feedback needed),
+    /// with what to change; leaving the approval column for it raises the review round (D58).
+    /// </summary>
+    public async Task<TaskDto> RequestChangesAsync(Guid id, RequestChangesRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Comment))
+        {
+            throw new BadRequestException("Say what needs to change.");
+        }
+
+        var (task, statuses) = await FindAwaitingApprovalAsync(id, ct);
+        task.Feedback = request.Comment.Trim();
+        await MoveToAsync(task, statuses.First(s => s.Category == StatusCategory.Review), 0, ct);
+        await db.SaveChangesAsync(ct);
+        return await ToDtoAsync(task, ct);
+    }
+
+    /// <summary>
+    /// Puts the task at the index within the target column and renumbers that column. Leaving the approval column (the
+    /// last Review status) for an earlier Review or In Progress status means it was sent back, so the review round goes
+    /// up (D58, replacing D20's Review to In Progress rule, so Feedback needed to Working on it does not count twice).
+    /// </summary>
+    private async Task MoveToAsync(TaskItem task, WorkflowStatus target, int index, CancellationToken ct)
+    {
+        var approval = await db.WorkflowStatuses
+            .Where(s => s.TeamId == task.TeamId && s.Category == StatusCategory.Review)
+            .OrderByDescending(s => s.Order)
+            .FirstOrDefaultAsync(ct);
+        if (task.Status.Id == approval?.Id
+            && target.Order < approval.Order
+            && target.Category is StatusCategory.Review or StatusCategory.InProgress)
         {
             task.ReviewCycle++;
         }
@@ -109,14 +156,34 @@ public sealed class TasksService(JuggleDbContext db, TeamAccess teamAccess, Curr
             .Where(t => t.StatusId == target.Id && t.Id != task.Id)
             .OrderBy(t => t.SortOrder)
             .ToListAsync(ct);
-        column.Insert(Math.Min(request.Index, column.Count), task);
+        column.Insert(Math.Min(index, column.Count), task);
         for (var i = 0; i < column.Count; i++)
         {
             column[i].SortOrder = i;
         }
+    }
 
-        await db.SaveChangesAsync(ct);
-        return await ToDtoAsync(task, ct);
+    /// <summary>
+    /// A card in its team's approval column (the last of two or more Review statuses, Awaiting approval for the Studio),
+    /// for a manager of its brand, with the team's statuses in order.
+    /// </summary>
+    private async Task<(TaskItem Task, List<WorkflowStatus> Statuses)> FindAwaitingApprovalAsync(Guid id, CancellationToken ct)
+    {
+        var task = await db.Tasks.Include(t => t.Status).Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == id, ct)
+            ?? throw new NotFoundException("Task not found.");
+        if (!await db.DepartmentManagers.AnyAsync(m => m.UserId == currentUser.UserId && m.DepartmentId == task.Project.DepartmentId, ct))
+        {
+            var label = await db.Organisations.Select(o => o.DepartmentLabel).FirstAsync(ct);
+            throw new ForbiddenException($"Only the {label.ToLowerInvariant()}'s manager can approve this.");
+        }
+
+        var statuses = await db.WorkflowStatuses.Where(s => s.TeamId == task.TeamId).OrderBy(s => s.Order).ToListAsync(ct);
+        var review = statuses.Where(s => s.Category == StatusCategory.Review).ToList();
+        if (review.Count < 2 || task.StatusId != review[^1].Id)
+        {
+            throw new BadRequestException("This card is not awaiting approval.");
+        }
+        return (task, statuses);
     }
 
     private async Task<TaskItem> FindEditableAsync(Guid id, CancellationToken ct)

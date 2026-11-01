@@ -17,4 +17,11 @@ public sealed class TasksController(TasksService tasks) : ControllerBase
 
     [HttpPost("api/tasks/{id:guid}/move")]
     public Task<TaskDto> Move(Guid id, MoveTaskRequest request, CancellationToken ct) => tasks.MoveAsync(id, request, ct);
+
+    [HttpPost("api/tasks/{id:guid}/approve")]
+    public Task<TaskDto> Approve(Guid id, CancellationToken ct) => tasks.ApproveAsync(id, ct);
+
+    [HttpPost("api/tasks/{id:guid}/request-changes")]
+    public Task<TaskDto> RequestChanges(Guid id, RequestChangesRequest request, CancellationToken ct) =>
+        tasks.RequestChangesAsync(id, request, ct);
 }

@@ -39,13 +39,19 @@ public sealed class TeamsService(JuggleDbContext db, CurrentUser currentUser, Te
             .ToListAsync(ct);
     }
 
+    /// <summary>The team's projects; a brand's marketing manager gets only the brands they manage, as on the board (D58).</summary>
     public async Task<IReadOnlyList<ProjectDto>> GetProjectsAsync(Guid teamId, CancellationToken ct)
     {
-        await teamAccess.EnsureCanViewAsync(teamId, ct);
-        return await db.Projects
-            .Where(p => p.TeamId == teamId)
+        var departments = await teamAccess.VisibleDepartmentsAsync(teamId, ct);
+        var query = db.Projects.Where(p => p.TeamId == teamId);
+        if (departments is not null)
+        {
+            query = query.Where(p => departments.Contains(p.DepartmentId));
+        }
+
+        return await query
             .OrderBy(p => p.Name)
-            .Select(p => new ProjectDto(p.Id, p.Name, p.Colour, p.Department.Name))
+            .Select(p => new ProjectDto(p.Id, p.Name, p.Colour, p.DepartmentId, p.Department.Name))
             .ToListAsync(ct);
     }
 

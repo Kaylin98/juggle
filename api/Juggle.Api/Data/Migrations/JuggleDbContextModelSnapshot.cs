@@ -93,6 +93,26 @@ namespace Juggle.Api.Data.Migrations
                     b.ToTable("Departments");
                 });
 
+            modelBuilder.Entity("Juggle.Api.Data.Entities.DepartmentManager", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("UserId", "DepartmentId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OrgId");
+
+                    b.ToTable("DepartmentManagers");
+                });
+
             modelBuilder.Entity("Juggle.Api.Data.Entities.Organisation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -212,9 +232,6 @@ namespace Juggle.Api.Data.Migrations
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("LoggedByUserId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("MainGoal")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
@@ -257,8 +274,6 @@ namespace Juggle.Api.Data.Migrations
 
                     b.HasIndex("DepartmentId");
 
-                    b.HasIndex("LoggedByUserId");
-
                     b.HasIndex("OrgId");
 
                     b.HasIndex("RequesterUserId");
@@ -289,6 +304,10 @@ namespace Juggle.Api.Data.Migrations
                     b.Property<decimal?>("EstimateHours")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
+
+                    b.Property<string>("Feedback")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Link")
                         .HasMaxLength(1000)
@@ -443,9 +462,6 @@ namespace Juggle.Api.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<Guid?>("DepartmentId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -465,8 +481,6 @@ namespace Juggle.Api.Data.Migrations
                         .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -548,6 +562,31 @@ namespace Juggle.Api.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Juggle.Api.Data.Entities.DepartmentManager", b =>
+                {
+                    b.HasOne("Juggle.Api.Data.Entities.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.User", "User")
+                        .WithMany("ManagedDepartments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Juggle.Api.Data.Entities.Person", b =>
                 {
                     b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
@@ -596,12 +635,6 @@ namespace Juggle.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Juggle.Api.Data.Entities.User", "LoggedBy")
-                        .WithMany()
-                        .HasForeignKey("LoggedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
                         .WithMany()
                         .HasForeignKey("OrgId")
@@ -625,8 +658,6 @@ namespace Juggle.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Department");
-
-                    b.Navigation("LoggedBy");
 
                     b.Navigation("Requester");
 
@@ -719,17 +750,11 @@ namespace Juggle.Api.Data.Migrations
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.User", b =>
                 {
-                    b.HasOne("Juggle.Api.Data.Entities.Department", "Department")
-                        .WithMany()
-                        .HasForeignKey("DepartmentId");
-
                     b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
                         .WithMany()
                         .HasForeignKey("OrgId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.WorkflowStatus", b =>
@@ -756,6 +781,8 @@ namespace Juggle.Api.Data.Migrations
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.User", b =>
                 {
+                    b.Navigation("ManagedDepartments");
+
                     b.Navigation("Memberships");
 
                     b.Navigation("Person");

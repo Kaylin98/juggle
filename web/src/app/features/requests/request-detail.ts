@@ -107,12 +107,7 @@ const NOTE: Record<RequestStatus, string> = {
             </div>
             <div>
               <dt class="label-caps">Briefed in</dt>
-              <dd class="mt-1">
-                {{ request.createdAt | date: 'EEE d MMM y, HH:mm' }}
-                @if (request.loggedByName; as loggedBy) {
-                  &middot; logged by {{ loggedBy }}
-                }
-              </dd>
+              <dd class="mt-1">{{ request.createdAt | date: 'EEE d MMM y, HH:mm' }}</dd>
             </div>
           </dl>
         </section>

@@ -27,6 +27,7 @@ function task(id: string, assigneePersonId: string | null, isOverdue: boolean, s
     link: null,
     bookedHours: bookings.reduce((sum, b) => sum + b.hours, 0),
     bookings,
+    feedback: null,
   };
 }
 

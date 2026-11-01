@@ -27,18 +27,29 @@ public sealed class AccessTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Requester_only_uses_requests()
+    public async Task Brand_manager_sees_only_their_brands_cards_and_cannot_triage_or_change_work()
     {
         var data = await DesignDataAsync();
         var zanele = await api.SignInAsAsync("Zanele Mthembu");
         var team = $"/api/teams/{data.TeamId}";
 
         await AssertGetStatusAsync(zanele, HttpStatusCode.Forbidden,
-            $"{team}/tasks", $"{team}/statuses", $"{team}/projects", $"{team}/people",
-            $"{team}/requests", $"/api/capacity?teamId={data.TeamId}&start={_monday:yyyy-MM-dd}",
-            $"/api/dashboard?teamId={data.TeamId}", $"/api/requests/{data.SomeoneElsesRequest}");
-        await AssertGetStatusAsync(zanele, HttpStatusCode.OK, "/api/requests/mine", "/api/requests/options");
-        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(zanele, $"{team}/tasks", new CreateTaskRequest("Mine", data.ProjectId, null, null, null, null, null)));
+            $"{team}/requests", $"/api/dashboard?teamId={data.TeamId}", $"/api/requests/{data.SomeoneElsesRequest}",
+            $"/api/teams/{data.TeamId}/reports/briefs", "/api/my-work");
+        await AssertGetStatusAsync(zanele, HttpStatusCode.OK,
+            "/api/requests/mine", "/api/requests/options", $"{team}/statuses", $"{team}/people");
+
+        // The board shows only the brands she manages (D58).
+        var projects = (await zanele.GetFromJsonAsync<List<ProjectDto>>($"{team}/projects", ApiFactory.Json, _ct))!;
+        var tasks = (await zanele.GetFromJsonAsync<List<TaskDto>>($"{team}/tasks", ApiFactory.Json, _ct))!;
+        Assert.Equal(["DJI", "Pure Electric"], projects.Select(p => p.Department).Distinct().Order());
+        Assert.NotEmpty(tasks);
+        Assert.All(tasks, t => Assert.Contains(projects, p => p.Id == t.ProjectId));
+
+        // Her cards are read-only, and she approves only her own brands' work.
+        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(zanele, $"{team}/tasks", new CreateTaskRequest("Mine", projects[0].Id, null, null, null, null, null)));
+        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(zanele, $"/api/tasks/{tasks[0].Id}/move", new MoveTaskRequest(tasks[0].StatusId, 0)));
+        Assert.Equal(HttpStatusCode.Forbidden, await PostAsync(zanele, $"/api/tasks/{data.OthersTask.Id}/approve", new { }));
     }
 
     [Fact]
@@ -79,7 +90,10 @@ public sealed class AccessTests(ApiFactory api)
 
     private sealed record DesignData(Guid TeamId, Guid ProjectId, Guid PersonId, TaskDto OthersTask, Guid NewRequest, Guid SomeoneElsesRequest);
 
-    /// <summary>Ids from the Design team, read as its admin. The task and request are not Ethan's or David's.</summary>
+    /// <summary>
+    /// Ids from the Studio, read as its admin. The task is Naledi's (not Ethan's, and not a brand Zanele manages); the
+    /// request is not Zanele's.
+    /// </summary>
     private async Task<DesignData> DesignDataAsync()
     {
         var naledi = await api.SignInAsAsync("Naledi Khumalo");

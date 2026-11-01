@@ -46,6 +46,21 @@ public sealed class TeamAccess(JuggleDbContext db, CurrentUser currentUser)
         : db.People.Where(p => p.User.Memberships.Any(m => db.TeamMemberships.Any(a =>
             a.TeamId == m.TeamId && a.UserId == currentUser.UserId && a.Role == TeamRole.TeamAdmin)));
 
+    /// <summary>
+    /// The brands whose cards the viewer sees on a team's board, or null for every card (D58). Team Admins and the
+    /// team's people see them all; other Members, the brands' marketing managers, only the brands they manage.
+    /// </summary>
+    public async Task<List<Guid>?> VisibleDepartmentsAsync(Guid teamId, CancellationToken ct)
+    {
+        var role = await GetRoleAsync(teamId, ct) ?? throw new ForbiddenException("You are not a member of this team.");
+        if (role == TeamRole.TeamAdmin || await db.People.AnyAsync(p => p.UserId == currentUser.UserId, ct))
+        {
+            return null;
+        }
+
+        return await db.DepartmentManagers.Where(m => m.UserId == currentUser.UserId).Select(m => m.DepartmentId).ToListAsync(ct);
+    }
+
     /// <summary>Team Admins edit any task in their team; Members only the tasks assigned to them.</summary>
     public async Task EnsureCanEditTaskAsync(TaskItem task, CancellationToken ct)
     {

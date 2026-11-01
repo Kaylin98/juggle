@@ -16,7 +16,6 @@ function request(id: string, title: string, status: WorkRequest['status']): Work
     deliverables: [],
     department: 'Sales',
     requesterName: 'David Cohen',
-    loggedByName: null,
     requestedDueDate: '2026-11-13',
     priority: 'High',
     status,

@@ -55,6 +55,64 @@ public sealed class TasksTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task Brand_manager_approves_a_card_to_the_top_of_done()
+    {
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        var statuses = await GetStatusesAsync(zanele, "Studio");
+        var card = (await GetTasksAsync(zanele, "Studio")).Single(t => t.Title == "A4 insert: Cameraland");
+
+        var response = await zanele.PostAsync($"/api/tasks/{card.Id}/approve", null, _ct);
+        var approved = await response.Content.ReadFromJsonAsync<TaskDto>(ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(("Done", 0, 1), (statuses.Single(s => s.Id == approved!.StatusId).Name, approved!.SortOrder, approved.ReviewCycle));
+        // Once approved it is no longer awaiting approval.
+        Assert.Equal(HttpStatusCode.BadRequest, (await zanele.PostAsync($"/api/tasks/{card.Id}/approve", null, _ct)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Requesting_changes_sends_the_card_to_feedback_needed_with_the_comment_and_the_next_round()
+    {
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        var statuses = await GetStatusesAsync(zanele, "Studio");
+        var tasks = await GetTasksAsync(zanele, "Studio");
+        var card = tasks.Single(t => t.Title == "Scooter spec sheets");
+        var url = $"/api/tasks/{card.Id}/request-changes";
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await zanele.PostAsJsonAsync(url, new RequestChangesRequest(" "), ApiFactory.Json, _ct)).StatusCode);
+        var notAwaiting = tasks.Single(t => t.Title == "iStore banners");
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await zanele.PostAsJsonAsync($"/api/tasks/{notAwaiting.Id}/request-changes", new RequestChangesRequest("No"), ApiFactory.Json, _ct)).StatusCode);
+
+        var response = await zanele.PostAsJsonAsync(url, new RequestChangesRequest(" Show the range in km. "), ApiFactory.Json, _ct);
+        var sentBack = await response.Content.ReadFromJsonAsync<TaskDto>(ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(("Feedback needed", 0, 2, "Show the range in km."),
+            (statuses.Single(s => s.Id == sentBack!.StatusId).Name, sentBack!.SortOrder, sentBack.ReviewCycle, sentBack.Feedback));
+
+        // Picking the changes up does not count the round twice; only leaving Awaiting approval raises it.
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var workingOnIt = statuses.Single(s => s.Name == "Working on it");
+        var moved = await (await naledi.PostAsJsonAsync($"/api/tasks/{card.Id}/move", new MoveTaskRequest(workingOnIt.Id, 0), ApiFactory.Json, _ct))
+            .Content.ReadFromJsonAsync<TaskDto>(ApiFactory.Json, _ct);
+        Assert.Equal(2, moved!.ReviewCycle);
+    }
+
+    [Fact]
+    public async Task Only_the_brands_manager_approves()
+    {
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var goPro = (await GetTasksAsync(naledi, "Studio")).Single(t => t.Title == "Bundle packshots");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+
+        // An Org Admin who does not manage the brand, and another brand's manager.
+        Assert.Equal(HttpStatusCode.Forbidden, (await naledi.PostAsync($"/api/tasks/{goPro.Id}/approve", null, _ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await zanele.PostAsJsonAsync($"/api/tasks/{goPro.Id}/request-changes", new RequestChangesRequest("No"), ApiFactory.Json, _ct)).StatusCode);
+    }
+
+    [Fact]
     public async Task Member_can_edit_their_own_task_but_not_someone_elses()
     {
         var client = await api.SignInAsAsync("Jason van Wyk");

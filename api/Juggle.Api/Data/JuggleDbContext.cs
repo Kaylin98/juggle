@@ -15,6 +15,7 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
     public DbSet<TeamMembership> TeamMemberships => Set<TeamMembership>();
     public DbSet<Person> People => Set<Person>();
     public DbSet<Department> Departments => Set<Department>();
+    public DbSet<DepartmentManager> DepartmentManagers => Set<DepartmentManager>();
     public DbSet<WorkflowStatus> WorkflowStatuses => Set<WorkflowStatus>();
     public DbSet<Request> Requests => Set<Request>();
     public DbSet<Project> Projects => Set<Project>();
@@ -60,6 +61,13 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.HasQueryFilter(m => m.OrgId == OrgId);
         });
 
+        modelBuilder.Entity<DepartmentManager>(e =>
+        {
+            e.HasKey(m => new { m.UserId, m.DepartmentId });
+            e.HasQueryFilter(m => m.OrgId == OrgId);
+            e.HasOne(m => m.User).WithMany(u => u.ManagedDepartments).HasForeignKey(m => m.UserId);
+        });
+
         modelBuilder.Entity<Person>().HasIndex(p => p.UserId).IsUnique();
 
         modelBuilder.Entity<Request>(e =>
@@ -69,7 +77,6 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.Property(r => r.Deliverables).HasMaxLength(4000);
             e.Property(r => r.RejectionReason).HasMaxLength(1000);
             e.HasOne(r => r.Requester).WithMany().HasForeignKey(r => r.RequesterUserId);
-            e.HasOne(r => r.LoggedBy).WithMany().HasForeignKey(r => r.LoggedByUserId);
             e.HasOne<TaskItem>().WithMany().HasForeignKey(r => r.TaskId);
         });
 
@@ -79,6 +86,7 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.HasQueryFilter(t => t.OrgId == OrgId);
             e.Property(t => t.Description).HasMaxLength(4000);
             e.Property(t => t.Link).HasMaxLength(1000);
+            e.Property(t => t.Feedback).HasMaxLength(1000);
             e.HasOne(t => t.Assignee).WithMany().HasForeignKey(t => t.AssigneePersonId);
             e.HasOne<Team>().WithMany().HasForeignKey(t => t.TeamId);
         });

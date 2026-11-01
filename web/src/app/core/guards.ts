@@ -31,7 +31,7 @@ export const teamAdminGuard: CanActivateFn = async (route) => {
   return auth.roleIn(teamId) === 'TeamAdmin' || router.parseUrl(`/t/${teamId}/board`);
 };
 
-/** My work is for people on a team's schedule; requesters have no Person record (D10). */
+/** My work is for people on a team's schedule; the brands' marketing managers have no Person record (D10, D58). */
 export const personGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);

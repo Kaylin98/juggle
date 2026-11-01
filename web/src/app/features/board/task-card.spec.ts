@@ -25,9 +25,10 @@ function card(changes: Partial<Task>, done = false): BoardCard {
     link: null,
     bookedHours: 0,
     bookings: [],
+    feedback: null,
     ...changes,
   };
-  return { task, project: { id: 'p', name: 'DJI0143', colour: '#3fa7a0', department: 'DJI' }, assignee: null, canEdit: true, done };
+  return { task, project: { id: 'p', name: 'DJI0143', colour: '#3fa7a0', departmentId: 'dji', department: 'DJI' }, assignee: null, canEdit: true, done, approvable: false };
 }
 
 describe('TaskCard booking chip', () => {
@@ -64,5 +65,30 @@ describe('TaskCard booking chip', () => {
     expect((await render(card({}, true))).textContent).not.toContain('booked');
     TestBed.resetTestingModule();
     expect((await render(card({}), false)).textContent).not.toContain('booked');
+  });
+});
+
+describe('TaskCard approval', () => {
+  it("offers the brand's manager Approve and Request changes, and no one else", async () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: TeamContextService, useValue: { teamId: () => 'studio' } }],
+    });
+    const fixture = TestBed.createComponent(TaskCard);
+    fixture.componentRef.setInput('card', card({}));
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    // The first button is the card itself, under its content.
+    const buttons = () => [...element.querySelectorAll('button')].map((b) => b.textContent!.trim());
+    expect(buttons()).toEqual(['Takealot banners, DJI0143']);
+
+    const events: string[] = [];
+    fixture.componentInstance.approved.subscribe(() => events.push('approved'));
+    fixture.componentInstance.changesRequested.subscribe(() => events.push('changes'));
+    fixture.componentRef.setInput('card', { ...card({}), approvable: true });
+    await fixture.whenStable();
+    expect(buttons()).toEqual(['Takealot banners, DJI0143', 'Approve', 'Request changes']);
+    element.querySelectorAll<HTMLButtonElement>('button')[1].click();
+    element.querySelectorAll<HTMLButtonElement>('button')[2].click();
+    expect(events).toEqual(['approved', 'changes']);
   });
 });

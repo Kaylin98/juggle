@@ -4,7 +4,7 @@ import { BoardService } from './board.service';
 import { NewTaskDrawer } from './new-task-drawer';
 
 const status: WorkflowStatus = { id: 'todo', name: 'To Do', order: 1, category: 'Todo' };
-const projects: Project[] = [{ id: 'deck', name: 'Sales Deck', colour: '#3fa7a0', department: 'Sales' }];
+const projects: Project[] = [{ id: 'deck', name: 'Sales Deck', colour: '#3fa7a0', departmentId: 'sales', department: 'Sales' }];
 const people: Person[] = [
   { id: 'p1', name: 'Priya Naidoo', avatarColour: '#5b8def', jobTitle: 'Junior Designer', hoursPerDay: 8 },
   { id: 'p2', name: 'Ethan Pillay', avatarColour: '#3fa7a0', jobTitle: 'Senior UI Designer', hoursPerDay: 8 },

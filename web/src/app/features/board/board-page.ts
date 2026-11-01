@@ -3,6 +3,7 @@ import { Component, ElementRef, computed, effect, inject, input, linkedSignal, r
 import { AuthService } from '../../core/auth.service';
 import { Task, WorkflowStatus } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
+import { Drawer } from '../../shared/drawer';
 import { ToastService } from '../../shared/toast.service';
 import { BoardColumn } from './board-column';
 import { BoardFilters, matchesFilters } from './board-filters';
@@ -12,11 +13,12 @@ import { collapsedColumns, expandOnDrop, toggleColumn } from './column-collapse'
 import { columnWithout, moveTask, toColumnIndex } from './move-task';
 import { BoardCard } from './task-card';
 import { NewTaskDrawer } from './new-task-drawer';
+import { RequestChangesDialog } from './request-changes-dialog';
 import { TaskDrawer } from './task-drawer';
 
 @Component({
   selector: 'app-board-page',
-  imports: [CdkDropListGroup, BoardColumn, BoardFilters, NewTaskDrawer, TaskDrawer],
+  imports: [CdkDropListGroup, BoardColumn, BoardFilters, Drawer, NewTaskDrawer, RequestChangesDialog, TaskDrawer],
   templateUrl: './board-page.html',
 })
 export class BoardPage {
@@ -56,9 +58,17 @@ export class BoardPage {
 
   /**
    * The column a new task is being added to, or null. Everyone who can see a board is in its team (Org Admins act
-   * as Team Admins), so everyone here can add tasks; Members only for themselves.
+   * as Team Admins); Members add tasks only for themselves, so a brand's marketing manager, who has no Person, cannot.
    */
   protected readonly addingTo = linkedSignal<string, WorkflowStatus | null>({
+    source: this.teamId,
+    computation: () => null,
+  });
+
+  protected readonly canAdd = computed(() => this.teamContext.isTeamAdmin() || this.auth.me()?.personId != null);
+
+  /** The card its brand's manager is sending back for changes, or null (D58). */
+  protected readonly changesFor = linkedSignal<string, string | null>({
     source: this.teamId,
     computation: () => null,
   });
@@ -98,18 +108,32 @@ export class BoardPage {
     () => new Set((this.data()?.statuses ?? []).filter((s) => s.category === 'Done').map((s) => s.id)),
   );
 
+  /**
+   * The approval column: the last of two or more review columns (Awaiting approval for the Studio), where the
+   * brand's manager approves or sends back a card (D58). Null on a board without one.
+   */
+  private readonly approvalStatusId = computed(() => {
+    const review = (this.data()?.statuses ?? []).filter((s) => s.category === 'Review');
+    return review.length >= 2 ? review[review.length - 1].id : null;
+  });
+
   private readonly cards = computed<BoardCard[]>(() => {
     const data = this.data();
     if (!data) return [];
     const projects = new Map(data.projects.map((p) => [p.id, p]));
     const people = new Map(data.people.map((p) => [p.id, p]));
-    return this.tasks().map((task) => ({
-      task,
-      project: projects.get(task.projectId)!,
-      assignee: task.assigneePersonId ? (people.get(task.assigneePersonId) ?? null) : null,
-      canEdit: this.canEdit(task),
-      done: this.doneStatusIds().has(task.statusId),
-    }));
+    const managed = this.auth.managedDepartmentIds();
+    return this.tasks().map((task) => {
+      const project = projects.get(task.projectId)!;
+      return {
+        task,
+        project,
+        assignee: task.assigneePersonId ? (people.get(task.assigneePersonId) ?? null) : null,
+        canEdit: this.canEdit(task),
+        done: this.doneStatusIds().has(task.statusId),
+        approvable: task.statusId === this.approvalStatusId() && managed.has(project.departmentId),
+      };
+    });
   });
 
   /** Every status except the first, Triage, which is handled in the triage inbox (D18). */
@@ -145,6 +169,27 @@ export class BoardPage {
   protected readonly openCard = computed(
     () => this.cards().find((card) => card.task.id === this.openTaskId()) ?? null,
   );
+
+  protected readonly changesCard = computed(
+    () => this.cards().find((card) => card.task.id === this.changesFor()) ?? null,
+  );
+
+  /** Approved cards go to the top of Done; the board reloads for the new order. */
+  protected async approve(task: Task): Promise<void> {
+    try {
+      await this.boardService.approve(task.id);
+      this.toast.show('Approved.', 'success');
+    } catch (error) {
+      this.toast.error(error);
+    }
+    this.board.reload();
+  }
+
+  protected onChangesSent(): void {
+    this.changesFor.set(null);
+    this.toast.show('Sent back for changes.', 'success');
+    this.board.reload();
+  }
 
   protected async drop(event: CdkDragDrop<string, string, Task>): Promise<void> {
     const task = event.item.data;

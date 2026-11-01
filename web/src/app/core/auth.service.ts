@@ -19,12 +19,14 @@ export class AuthService {
   /** Team Admins of any team, and Org Admins, approve the time off of the people in their teams (D47). */
   readonly isApprover = computed(() => this.isOrgAdmin() || this.teams().some((t) => t.myRole === 'TeamAdmin'));
 
+  /** There is no separate requester role: the brands' marketing managers are Members (D58). */
   readonly roleLabel = computed<RoleLabel>(() => {
-    const teams = this.teams();
     if (this.isOrgAdmin()) return 'Org Admin';
-    if (teams.some((t) => t.myRole === 'TeamAdmin')) return 'Team Admin';
-    return teams.length > 0 ? 'Member' : 'Requester';
+    return this.teams().some((t) => t.myRole === 'TeamAdmin') ? 'Team Admin' : 'Member';
   });
+
+  /** The brands the user manages, whose cards awaiting approval they approve or send back (D58). */
+  readonly managedDepartmentIds = computed(() => new Set(this.me()?.managedDepartmentIds ?? []));
 
   demoUsers(): Promise<DemoUser[]> {
     return firstValueFrom(this.http.get<DemoUser[]>('/api/auth/demo-users'));
@@ -53,7 +55,10 @@ export class AuthService {
     return this.teams().find((t) => t.id === teamId)?.myRole ?? null;
   }
 
-  /** Admins land on the dashboard, members on My work, requesters on their requests (D26). */
+  /**
+   * Admins land on the dashboard, members on My work, and members without a Person (the brands' marketing managers)
+   * on the board (D26, D58). Someone in no team goes to their requests.
+   */
   landingUrl(): string {
     const team = this.teams()[0];
     if (!team) return '/requests';

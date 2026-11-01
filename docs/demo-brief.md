@@ -124,7 +124,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 
 **4. Request form**
 
-- [ ] Any user can submit a brief in the studio's template: team, brand (department), job name, main goal, deliverables (one per line), studio deadline, priority, and "Requested by" (a brand's marketing manager) for members of the team asked and Org Admins (Phase C; was team, type, title, description, department, requested due date, priority)
+- [ ] Any user can submit a brief in the studio's template: team, brand (department), job name, main goal, deliverables (one per line), studio deadline, priority (Phase C; was team, type, title, description, department, requested due date, priority). The signed-in user is always the requester; there is no "Requested by" (D58)
 - [ ] On submit, show a confirmation and the request's status
 
 **5. Triage inbox (Team Admin)**
@@ -145,6 +145,7 @@ Six screens inside one app shell: a left nav, and a header with the team switche
 
 - [ ] Members can't see Triage or Dashboard, and can only edit their own tasks
 - [ ] Org Admin sees a team switcher option "All teams" on the schedule
+- [ ] A brand's marketing manager is a normal Member who manages one or more brands: they see the Studio board filtered to their brands (read-only cards) and their briefs in My requests; on their brands' cards in Awaiting approval they Approve (to Done) or Request changes (to Feedback needed with a comment, on the next review round) (D58)
 
 ## Seed data
 
@@ -154,13 +155,13 @@ Realistic, fictional data that tells the story; dates are relative to the curren
 | --- | --- |
 | Organisation | "The Core Group", the client; departments are shown as "Brand"; financial year starts in October |
 | Teams | Studio (8 people), Marketing (4 people); 1 designer is also a Marketing member |
-| Users | 1 Org Admin who is also Head of Studio (Studio Team Admin), 1 Marketing Team Admin, members, 6 brand marketing managers (requesters) |
+| Users | 1 Org Admin who is also Head of Studio (Studio Team Admin), 1 Marketing Team Admin, members, 5 brand marketing managers (Studio Members without a schedule row; Zanele Mthembu covers DJI and Pure Electric) |
 | People | Mix of 8 h/day and one part-time Artworker at 5 h/day; job titles (Senior Designer, Digital Designer, Motion Designer, Artworker, Content Marketer...) |
 | Brands | CGA, DJI, ARP, Bambu Lab, InRetail, Reloved, MS Surface, GoPro, CVM, CCB, CORE, Pure Electric, Mobile in Africa, Ultra Human, each with a job code prefix (DJI, GOPRO, BAMBU, PURE, MSS...) |
 | Studio statuses | Triage, Briefed in, Working on it, Feedback needed, Awaiting approval, Done |
 | Marketing statuses | Triage, Planned, Writing, Review, Scheduled, Published |
 | Projects | Briefs named with job codes, 10 in Studio and 4 in Marketing across 9 brands, coloured from the palette (e.g. `DJI0141_Q1'27_Black Friday`, `DJI0142_Q1'27_Amazon Brand Store`, `GOPRO0213_Q1'27_Festive Bundles`); plus 51 delivered briefs from the 8 months before, in their brand's colour and with lower job numbers |
-| Tasks | About 50 open deliverables, plus a Done card per deliverable of the delivered briefs (about 80) (Black Friday: Takealot banners, iStore banners, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP); 6 in Awaiting approval; 4 overdue; some on round 2 or 3 |
+| Tasks | About 50 open deliverables, plus a Done card per deliverable of the delivered briefs (about 80) (Black Friday: Takealot banners, iStore banners, Bellyband, Cameraland video, Generic assets, A4 inserts for Incredible Connection, Cameraland, Kloppers and ODP); 6 in Awaiting approval; 4 in Feedback needed, each on round 2 or 3 with the manager's comment; 4 overdue |
 | Allocations | Last week to 5 weeks ahead; one designer (Lerato) at 11h on seven days this week and next; one under-loaded (Priya, 50% next week); the rest 60 to 90% |
 | Time off | Approved leave for 2 Studio people in the next 2 weeks; 1 Marketing person on sick leave this week ("Unavailable" to everyone but them and their admins); 1 pending request in Studio for the demo |
 | Public holidays | South African public holidays for the current and next year |
@@ -196,11 +197,11 @@ About 10 minutes, told as The Core Group's studio (Phase C): the pain points the
 
 1. **Dashboard, as Naledi Khumalo (Head of Studio).** Lerato Mokoena is "Over capacity this week" and tops utilisation, while others have room: one designer carries far more than the rest. "Awaiting review" shows the approval backlog, and "Overdue tasks" the deadlines already missed. Then **Briefs report**, their Monday report without the spreadsheet: about 70% of briefs done, Lerato's column carries the most open work, and briefs received month by month over the last 9 months. Pick DJI in the Brand filter and all three widgets show DJI only
 2. **Schedule:** Lerato's red days this week and next, Priya Naidoo clearly available, Amahle on leave next week. Bookings read as job codes, so every brand's work is in one view
-3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), studio deadline in 2 weeks. It goes in as from Zanele, with no "Requested by" field; Studio members would see "Requested by" to log a brief for a manager
+3. **A DJI marketing manager briefs the studio:** switch to Zanele Mthembu (DJI). New request in their own template, no more free-text briefs: team Studio, brand DJI, job name "Summer Holiday Sale", a main goal, three deliverables (Takealot banners, Social tiles x6, Email header), studio deadline in 2 weeks. It goes in as from Zanele: whoever is signed in sends the brief, so there is no "Requested by" field
 4. **Triage, as a new brief:** switch back to Naledi; the triage badge shows it. Accept: "New brief" proposes `DJI0143_Q<n>'<YY>_Summer Holiday Sale` (editable); assign Priya, estimate 16 h, keep the committed date. The board shows a new DJI project, in its own colour, with three cards in Briefed in
 5. **Book it:** on the board, set Booking to "Not booked": everything nobody is booked for yet, amber where it is due within 7 days, and the three new cards among it. Clear the filter, open the Takealot banners card (it carries the 16 h) and "Book on schedule" for 4 h/day over 4 days: the card now reads "Booked 16h", and its tooltip says who and when. Click the chip: the schedule opens at that week, and on the 1-week view Priya goes from green to amber
 6. **Show a clash:** drag a booking onto Ethan Pillay's full day next week; the clash dialog appears
-7. **Approval loop on the board:** drag a card from Awaiting approval back to Working on it; it shows R2, so rounds of feedback are counted
+7. **Approval loop, as the brand's manager:** switch to Zanele; she lands on the Studio board, showing only DJI and Pure Electric, read-only. On "A4 insert: Incredible Connection" in Awaiting approval, "Request changes" with a comment ("Move the price above the fold"): it goes to Feedback needed and shows R2, so rounds of feedback are counted, and the designer sees the comment when they open the card. "Approve" on "A4 insert: Cameraland": it goes to Done. The manager clears the approval backlog on the board itself
 8. **Time off:** switch to a designer; My work opens. "Request time off" for Monday and Tuesday of the week after next: the schedule shows a hatched "Pending" block, and their hours still count. Switch back to Naledi and approve it under Requests > Time off: the schedule shows the solid leave block and those days come off their capacity
 9. **Switch team to Marketing:** different columns, different people. Jason van Wyk's load includes his Studio work
 10. **Close:** "One place for every brand: who is busy, who is free and what is waiting." Then ask the discovery questions

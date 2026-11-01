@@ -6,6 +6,6 @@ public sealed record TeamDto(Guid Id, string Name, string Colour, TeamRole MyRol
 
 public sealed record StatusDto(Guid Id, string Name, int Order, StatusCategory Category);
 
-public sealed record ProjectDto(Guid Id, string Name, string Colour, string Department);
+public sealed record ProjectDto(Guid Id, string Name, string Colour, Guid DepartmentId, string Department);
 
 public sealed record PersonDto(Guid Id, string Name, string AvatarColour, string JobTitle, decimal HoursPerDay);

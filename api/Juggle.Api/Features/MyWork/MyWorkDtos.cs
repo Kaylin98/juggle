@@ -25,6 +25,7 @@ public sealed record MyTaskDto(
     string TeamName,
     string ProjectName,
     string ProjectColour,
+    Guid ProjectDepartmentId,
     string ProjectDepartment,
     string StatusName,
     StatusCategory Category);

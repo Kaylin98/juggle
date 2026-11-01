@@ -8,9 +8,10 @@ public class User
     public required string Email { get; set; }
     public OrgRole OrgRole { get; set; }
     public required string AvatarColour { get; set; }
-    public Guid? DepartmentId { get; set; }
 
-    public Department? Department { get; set; }
     public Person? Person { get; set; }
     public List<TeamMembership> Memberships { get; set; } = [];
+
+    /// <summary>The brands this user manages, as their marketing manager (D58).</summary>
+    public List<DepartmentManager> ManagedDepartments { get; set; } = [];
 }

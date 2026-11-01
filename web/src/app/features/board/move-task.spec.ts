@@ -18,6 +18,7 @@ function task(id: string, statusId: string, sortOrder: number): Task {
     link: null,
     bookedHours: 0,
     bookings: [],
+    feedback: null,
   };
 }
 

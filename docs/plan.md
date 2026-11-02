@@ -9,11 +9,11 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | | |
 | --- | --- |
 | Current phase | J - Roles and jobs |
-| Phase status | Awaiting review |
+| Phase status | Done (approved 2026-11-02) |
 | Last completed task | J.4 Brief form sections A to F and the job page |
-| Next task | Phase J review; then W.1 once approved |
+| Next task | W.1 Traffic Manager actions, once the user says to start Phase W |
 | Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; question 8 (job categories) has a placeholder list in code until the client answers. Listed in the Phase J review summary for the client |
-| Last updated | 2026-11-01 |
+| Last updated | 2026-11-02 |
 
 ## Phase overview
 
@@ -32,7 +32,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30.
 | S | Sat | Stretch: My work, time off | Done |
 | C | - | Client demo for The Core Group | Done (folded into R) |
 | R | - | Requirements and gap analysis | Done |
-| J | - | Roles and jobs | Awaiting review |
+| J | - | Roles and jobs | Done |
 | W | - | Workflow | Not started |
 | V | - | Views and demo | Not started |
 
@@ -870,7 +870,7 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 
 ## Phase J - Roles and jobs
 
-**Status:** Awaiting review
+**Status:** Done (approved 2026-11-02)
 **Done when:** the five roles sign in to their own landing page and nav, the board shows jobs in the five columns with their detailed status, and a submitted brief gets its job ID at once
 
 **Tasks**
@@ -922,7 +922,7 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - [x] Committed, one commit per step
 - [x] "Where we left off" and the phase status updated to Awaiting review
 - [x] **STOP** for review
-- [ ] Approved by user
+- [x] Approved by user (2026-11-02)
 
 ---
 
@@ -1093,3 +1093,4 @@ Ask Juggle is not built (the AI assistant is out of scope), so the script has no
 - 2026-11-01: The previous session left more of J.2 uncommitted than the log said: besides the workflow files, the `Job` and workflow entities, `Features/Jobs` and the removal of requests, projects and tasks were in the working tree. J.2 finished: jobs on the board in the org's columns, job visibility by capability, the incoming queue, My work and My requests on jobs, the dashboard and report on jobs, the seed of the workflow and jobs, migration `Jobs`. Build with no warnings, lint, 69 API tests and 126 web tests pass; checked in Chromium at 1440. Demo data reset.
 - 2026-11-01: J.3 built: job IDs from the org's format and an atomic per-brand counter at submission, never changed; migration `JobNumbers`; the brief form starts on the only team for marketing managers. Build with no warnings, lint, 76 API tests and 127 web tests pass; DJI0143 checked in Chromium at 1440.
 - 2026-11-01: J.4 built: the brief form in the client's template, sections A to F, with deliverable rows (type, specifications, deadline) and supporting links; the job page shows the whole brief; migration `BriefSections`. Build with no warnings, lint, 77 API tests and 129 web tests pass; checked in Chromium at 1440. Demo data reset. Phase J awaiting review.
+- 2026-11-02: Phase J approved and done. Phase W not started; waiting for the user to say to start.

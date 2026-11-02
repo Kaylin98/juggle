@@ -287,6 +287,8 @@ export interface BusinessApproval {
   decidedOn: string;
   note: string | null;
   link: string | null;
+  /** Close the job in the same step. */
+  close: boolean;
 }
 
 /** Changes asked for after the artwork was submitted. A stakeholder's decision also says who and when. */

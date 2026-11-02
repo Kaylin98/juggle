@@ -45,6 +45,9 @@ public sealed class JobWorkflow(JuggleDbContext db)
     /// <summary>The statuses in which a job waits for an approval.</summary>
     public Task<IReadOnlySet<Guid>> AwaitingApprovalAsync(CancellationToken ct) => StatusesBeforeAsync(Approvals, ct);
 
+    /// <summary>The statuses in which an approved job waits to be closed.</summary>
+    public Task<IReadOnlySet<Guid>> ReadyToCloseAsync(CancellationToken ct) => StatusesBeforeAsync([WorkflowAction.Close], ct);
+
     /// <summary>
     /// The statuses in which a job waits in the incoming queue, for the users who triage and book work: those Request
     /// information, Mark ready or Allocate and schedule start from. Cancel is left out, as it starts from any open status.

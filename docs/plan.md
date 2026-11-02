@@ -175,6 +175,7 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - [x] Group 3, Incoming and brief form: three sections, "Checked, allocate later", optional deliverable deadline, Team hidden for one team
 - [x] Round 2 (2026-11-02): schedule job rules in the API and UI with reassign and extend-in-place, every screen follows an action, artwork review beside the approve buttons
 - [x] Group 4, files and seed: uploads for the brief and artwork, seeded approval queues, `dotnet test` zero-tests cause
+- [x] Marketing Manager closing (2026-11-02): "Approve and close job" and "Approve, keep open" on a job awaiting Marketing approval, "Record approval and close" after a Sales approval, a "Ready to close" section with Close and Close all on Approvals (counted in the nav badge), Close in the job page header
 
 **Review gate**
 
@@ -235,6 +236,7 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - Total hours bookings: enter the total hours and the dates, and hours/day is worked out, since work is often estimated as a total rather than per day
 - Tentative bookings: pencilled-in bookings shown in a lighter style and left out of (or flagged in) utilisation, so likely work can be planned before it is confirmed
 - Settings screens (statuses, request types, teams)
+- Auto-close a job after N days in Approved / Ready to Close, as an organisation setting, so approved jobs do not wait for the Marketing Manager to close them
 - **Members reassigning tasks becomes a setting** (requested by the product owner, 2026-10-27)
   - Today (D36): only Team Admins and Org Admins can change a task's assignee; Members cannot, even on their own tasks
   - After the MVP: Team Admins and Org Admins can switch this on or off, so each team chooses whether its Members may reassign their own tasks

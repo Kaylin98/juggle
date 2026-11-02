@@ -35,7 +35,7 @@ public sealed class JobActionsController(JobActions actions) : ControllerBase
     public Task<JobDetailDto> SendBack(Guid id, CommentRequest request, CancellationToken ct) => actions.SendBackAsync(id, request, ct);
 
     [HttpPost("approve-marketing")]
-    public Task<JobDetailDto> ApproveMarketing(Guid id, CommentRequest request, CancellationToken ct) =>
+    public Task<JobDetailDto> ApproveMarketing(Guid id, ApproveRequest request, CancellationToken ct) =>
         actions.ApproveMarketingAsync(id, request, ct);
 
     [HttpPost("needs-business-approval")]

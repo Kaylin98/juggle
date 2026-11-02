@@ -3,6 +3,7 @@ import { Component, computed, inject, input, resource } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
 import { JobsService, reloadOnJobChange } from '../../core/jobs.service';
 import { StatusChip } from '../../shared/status-chip';
+import { ActionRunner } from '../workflow/action-runner';
 import { JobActionArea } from '../workflow/job-action-area';
 import { JobApprovals } from '../workflow/job-approvals';
 import { JobArtwork } from '../workflow/job-artwork';
@@ -57,10 +58,17 @@ import {
             </p>
             <h1 class="page-title mt-1">{{ job.title }}</h1>
           </div>
-          <app-status-chip class="text-sm" [name]="job.statusName" [colour]="job.statusColour" />
+          <div class="flex items-center gap-4">
+            @if (job.actions.includes('Close')) {
+              <button type="button" class="btn-primary" (click)="close(job.id)">
+                Close {{ auth.terms().job.toLowerCase() }}
+              </button>
+            }
+            <app-status-chip class="text-sm" [name]="job.statusName" [colour]="job.statusColour" />
+          </div>
         </div>
 
-        <app-job-action-area class="mt-6" [job]="job" />
+        <app-job-action-area class="mt-6" [job]="job" [omit]="['Close']" />
 
         <section class="panel mt-6 p-6" aria-label="Who does it and when">
           <dl class="grid gap-4 text-sm sm:grid-cols-3">
@@ -254,6 +262,11 @@ export class RequestDetailPage {
   private readonly jobs = inject(JobsService);
   protected readonly location = inject(Location);
   protected readonly auth = inject(AuthService);
+  private readonly runner = inject(ActionRunner);
+
+  protected async close(id: string): Promise<void> {
+    await this.runner.runOneClick(id, 'Close');
+  }
 
   /** From the `/requests/:id` route. */
   readonly id = input.required<string>();

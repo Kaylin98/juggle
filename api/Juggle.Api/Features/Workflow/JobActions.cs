@@ -38,9 +38,12 @@ public sealed class JobActions(
     public Task<JobDetailDto> SendBackAsync(Guid id, CommentRequest request, CancellationToken ct) =>
         DecideAsync(id, WorkflowAction.SendBack, ApprovalDecision.ChangesRequested, request.Comment, ct);
 
-    /// <summary>The requester approves the artwork the head of design approved, which readies the job to close.</summary>
-    public Task<JobDetailDto> ApproveMarketingAsync(Guid id, CommentRequest request, CancellationToken ct) =>
-        DecideAsync(id, WorkflowAction.ApproveMarketing, ApprovalDecision.Approved, request.Comment, ct);
+    /// <summary>
+    /// The requester approves the artwork the head of design approved, which readies the job to close; with
+    /// <see cref="ApproveRequest.Close"/> it closes in the same step.
+    /// </summary>
+    public Task<JobDetailDto> ApproveMarketingAsync(Guid id, ApproveRequest request, CancellationToken ct) =>
+        DecideAsync(id, WorkflowAction.ApproveMarketing, ApprovalDecision.Approved, request.Comment, ct, closeToo: request.Close);
 
     /// <summary>The requester sends the artwork for a stakeholder's approval, saying who needs to give it.</summary>
     public Task<JobDetailDto> NeedsBusinessApprovalAsync(Guid id, MessageRequest request, CancellationToken ct) =>
@@ -61,7 +64,8 @@ public sealed class JobActions(
                 approval.StakeholderName = request.StakeholderName.Trim();
                 approval.DecidedOn = request.DecidedOn;
                 approval.Link = string.IsNullOrWhiteSpace(request.Link) ? null : request.Link.Trim();
-            });
+            },
+            request.Close);
     }
 
     /// <summary>
@@ -118,11 +122,17 @@ public sealed class JobActions(
     public async Task<JobDetailDto> CloseAsync(Guid id, CancellationToken ct)
     {
         var job = await LoadAsync(id, ct);
-        Apply(job, WorkflowAction.Close, await access.EnsureAsync(job, WorkflowAction.Close, ct), null);
-        job.ClosedAt = clock.Now;
-        job.ClosedByUserId = currentUser.UserId;
+        await CloseAsync(job, clock.Now, ct);
         await db.SaveChangesAsync(ct);
         return await jobs.GetAsync(id, ct);
+    }
+
+    /// <summary>Moves the job from its current status to closed, if the user may close it there, and records who and when.</summary>
+    private async Task CloseAsync(Job job, DateTimeOffset at, CancellationToken ct)
+    {
+        Apply(job, WorkflowAction.Close, await access.EnsureAsync(job, WorkflowAction.Close, ct), null, at);
+        job.ClosedAt = at;
+        job.ClosedByUserId = currentUser.UserId;
     }
 
     public Task<JobDetailDto> StartAsync(Guid id, CancellationToken ct) => MoveAsync(id, WorkflowAction.Start, null, ct);
@@ -207,7 +217,7 @@ public sealed class JobActions(
     /// <summary>Moves the job and records the approval its step calls for, for the latest artwork (D72).</summary>
     private async Task<JobDetailDto> DecideAsync(
         Guid id, WorkflowAction action, ApprovalDecision decision, string? comment, CancellationToken ct,
-        Action<JobApproval>? details = null)
+        Action<JobApproval>? details = null, bool closeToo = false)
     {
         var job = await LoadAsync(id, ct);
         var transition = await access.EnsureAsync(job, action, ct);
@@ -224,6 +234,12 @@ public sealed class JobActions(
         }
 
         Apply(job, action, transition, comment);
+        if (closeToo)
+        {
+            // A millisecond later, so the trail reads approved, then closed. Nothing is saved if the user may not close.
+            await CloseAsync(job, clock.Now.AddMilliseconds(1), ct);
+        }
+
         await db.SaveChangesAsync(ct);
         return await jobs.GetAsync(id, ct);
     }
@@ -267,14 +283,14 @@ public sealed class JobActions(
         return job;
     }
 
-    private void Apply(Job job, WorkflowAction action, WorkflowTransition transition, string? message)
+    private void Apply(Job job, WorkflowAction action, WorkflowTransition transition, string? message, DateTimeOffset? at = null)
     {
         db.JobEvents.Add(new JobEvent
         {
             OrgId = job.OrgId,
             JobId = job.Id,
             UserId = currentUser.UserId,
-            At = clock.Now,
+            At = at ?? clock.Now,
             Action = action,
             FromStatusId = job.StatusId,
             ToStatusId = transition.ToStatusId,

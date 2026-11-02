@@ -7,7 +7,7 @@ import { today } from '../../shared/dates';
   selector: 'app-business-approval-form',
   imports: [FormField],
   template: `
-    <form class="rounded-control bg-surface-muted p-4" novalidate (submit)="send($event)">
+    <form class="rounded-control bg-surface-muted p-4" novalidate (submit)="send($event, true)">
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="form-label" for="business-stakeholder">Who approved</label>
@@ -53,8 +53,16 @@ import { today } from '../../shared/dates';
       }
       <div class="mt-4 flex justify-end gap-2">
         <button type="button" class="btn-secondary" (click)="closed.emit()">Back</button>
+        <button
+          type="button"
+          class="btn-secondary"
+          [disabled]="approvalForm().submitting()"
+          (click)="send($event, false)"
+        >
+          Record approval, keep open
+        </button>
         <button type="submit" class="btn-primary" [disabled]="approvalForm().submitting()">
-          Record approval
+          Record approval and close
         </button>
       </div>
     </form>
@@ -89,7 +97,7 @@ export class BusinessApprovalForm {
     this.approvalForm.link,
   ];
 
-  protected async send(event: Event): Promise<void> {
+  protected async send(event: Event, close: boolean): Promise<void> {
     event.preventDefault();
     await submit(this.approvalForm, async () => {
       const { stakeholderName, decidedOn, note, link } = this.model();
@@ -98,6 +106,7 @@ export class BusinessApprovalForm {
         decidedOn,
         note: note.trim() || null,
         link: link.trim() || null,
+        close,
       });
       return undefined;
     });

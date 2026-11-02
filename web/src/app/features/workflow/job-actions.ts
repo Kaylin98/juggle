@@ -94,7 +94,7 @@ const ACTIONS: WorkflowAction[] = [
             label="Comment (optional)"
             submitLabel="Approve artwork"
             [mandatory]="false"
-            [action]="approveMarketing"
+            [action]="approveAndKeepOpen"
             (closed)="open.set(null)"
           />
         }
@@ -129,14 +129,23 @@ const ACTIONS: WorkflowAction[] = [
         @default {
           <div class="flex flex-wrap items-center gap-2">
             @for (action of available(); track action) {
-              <button
-                type="button"
-                [class]="action === 'Cancel' ? 'btn-quiet' : 'btn-secondary'"
-                [appTooltip]="hints()[action] ?? ''"
-                (click)="choose(action)"
-              >
-                {{ labels()[action] }}
-              </button>
+              @if (action === 'ApproveMarketing') {
+                <button type="button" class="btn-primary" (click)="approveMarketing(true)">
+                  Approve and close {{ jobTerm() }}
+                </button>
+                <button type="button" class="btn-secondary" (click)="approveMarketing(false)">
+                  Approve, keep open
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  [class]="action === 'Cancel' ? 'btn-quiet' : 'btn-secondary'"
+                  [appTooltip]="hints()[action] ?? ''"
+                  (click)="choose(action)"
+                >
+                  {{ labels()[action] }}
+                </button>
+              }
             }
           </div>
         }
@@ -155,10 +164,14 @@ export class JobActions {
   readonly people = input<Person[]>([]);
   /** The form to open at once, such as the one a card dropped on a column calls for. */
   readonly startWith = input<WorkflowAction | null>(null);
+  /** Actions shown elsewhere on the page, so not here. */
+  readonly omit = input<WorkflowAction[]>([]);
 
   protected readonly available = computed(() =>
-    ACTIONS.filter((a) => this.job().actions.includes(a)),
+    ACTIONS.filter((a) => this.job().actions.includes(a) && !this.omit().includes(a)),
   );
+
+  protected readonly jobTerm = computed(() => this.auth.terms().job.toLowerCase());
 
   protected readonly labels = computed(() => actionLabels(this.auth.terms()));
 
@@ -207,9 +220,17 @@ export class JobActions {
     await this.run(() => this.jobs.sendBack(this.job().id, comment), 'Sent back to the designer.');
   };
 
-  protected readonly approveMarketing = async (comment: string): Promise<void> => {
+  /** Approves the artwork at once, closing the job too when asked. */
+  protected async approveMarketing(close: boolean): Promise<void> {
     await this.run(
-      () => this.jobs.approveMarketing(this.job().id, comment || null),
+      () => this.jobs.approveMarketing(this.job().id, null, close),
+      close ? `Artwork approved. ${this.auth.terms().job} closed.` : 'Artwork approved.',
+    );
+  }
+
+  protected readonly approveAndKeepOpen = async (comment: string): Promise<void> => {
+    await this.run(
+      () => this.jobs.approveMarketing(this.job().id, comment || null, false),
       'Artwork approved.',
     );
   };
@@ -224,7 +245,9 @@ export class JobActions {
   protected readonly recordBusinessApproval = async (approval: BusinessApproval): Promise<void> => {
     await this.run(
       () => this.jobs.recordBusinessApproval(this.job().id, approval),
-      'Business approval recorded.',
+      approval.close
+        ? `Business approval recorded. ${this.auth.terms().job} closed.`
+        : 'Business approval recorded.',
     );
   };
 

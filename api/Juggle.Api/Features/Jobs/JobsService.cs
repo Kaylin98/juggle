@@ -203,11 +203,12 @@ public sealed class JobsService(
 
     /// <summary>
     /// The jobs waiting for the user to approve, newest first, each with the latest artwork they may see. A job is
-    /// queued when its status is one an approval starts from and the user may take that approval.
+    /// queued when its status is one an approval starts from and the user may take that approval, or when it is approved
+    /// and the user may close it.
     /// </summary>
     public async Task<IReadOnlyList<QueuedJobDto>> GetApprovalsAsync(CancellationToken ct)
     {
-        var waiting = (await workflow.AwaitingApprovalAsync(ct)).ToList();
+        var waiting = (await workflow.AwaitingApprovalAsync(ct)).Union(await workflow.ReadyToCloseAsync(ct)).ToList();
         var jobs = await JobDto.Load(await jobAccess.VisibleAsync(ct))
             .Where(j => waiting.Contains(j.StatusId))
             .OrderByDescending(j => j.CreatedAt)
@@ -216,7 +217,7 @@ public sealed class JobsService(
         var dtos = await ToDtosAsync(jobs, ct);
         for (var i = 0; i < jobs.Count; i++)
         {
-            if (dtos[i].Actions.Any(JobWorkflow.IsApproval))
+            if (dtos[i].Actions.Any(a => JobWorkflow.IsApproval(a) || a == WorkflowAction.Close))
             {
                 var artwork = await ArtworkAsync(jobs[i], ct);
                 queue.Add(new QueuedJobDto(dtos[i], artwork.Count > 0 ? artwork[^1] : null));

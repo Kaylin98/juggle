@@ -15,7 +15,13 @@ import { JobActions } from './job-actions';
     @if (reviewing()) {
       <app-artwork-review [job]="job()" [people]="people()" [startWith]="startWith()" />
     } @else {
-      <app-job-actions class="block empty:hidden" [job]="job()" [people]="people()" [startWith]="startWith()" />
+      <app-job-actions
+        class="block empty:hidden"
+        [job]="job()"
+        [people]="people()"
+        [startWith]="startWith()"
+        [omit]="omit()"
+      />
     }
   `,
 })
@@ -23,6 +29,8 @@ export class JobActionArea {
   readonly job = input.required<Job>();
   readonly people = input<Person[]>([]);
   readonly startWith = input<WorkflowAction | null>(null);
+  /** Actions shown elsewhere on the page. */
+  readonly omit = input<WorkflowAction[]>([]);
 
   protected readonly reviewing = computed(
     () => this.job().actions.includes('ApproveDesign') || this.job().actions.includes('ApproveMarketing'),

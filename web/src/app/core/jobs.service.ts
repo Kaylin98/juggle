@@ -121,9 +121,9 @@ export class JobsService {
     return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/send-back`, { comment }));
   }
 
-  approveMarketing(id: string, comment: string | null): Promise<JobDetail> {
+  approveMarketing(id: string, comment: string | null, close: boolean): Promise<JobDetail> {
     return firstValueFrom(
-      this.http.post<JobDetail>(`/api/jobs/${id}/approve-marketing`, { comment }),
+      this.http.post<JobDetail>(`/api/jobs/${id}/approve-marketing`, { comment, close }),
     );
   }
 

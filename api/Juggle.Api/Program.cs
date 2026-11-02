@@ -38,6 +38,7 @@ builder.Services.AddScoped<DemoSeeder>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<TeamsService>();
 builder.Services.AddScoped<CapacityService>();
+builder.Services.AddScoped<AllocationChecks>();
 builder.Services.AddScoped<AllocationService>();
 builder.Services.AddScoped<JobsService>();
 builder.Services.AddScoped<JobActions>();

@@ -24,7 +24,7 @@ async function render(mine: Job[]): Promise<HTMLElement> {
 describe('MyRequestsPage', () => {
   it('lists the jobs in the order given (newest first), each with its job ID and status, linking to its page', async () => {
     const page = await render([
-      job({ id: 'j2', title: 'Roadshow deck', requiredDate: '2026-11-13', statusName: 'New Request' }),
+      job({ id: 'j2', title: 'Roadshow deck', requiredDate: '2026-11-13', deadline: '2026-11-13', statusName: 'New Request' }),
       job({ id: 'j1', title: 'Brochure', statusName: 'In Progress' }),
     ]);
 

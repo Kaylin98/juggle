@@ -4,12 +4,21 @@ namespace Juggle.Api.Features.Allocations;
 
 [ApiController]
 [Route("api/allocations")]
-public sealed class AllocationsController(AllocationService allocations) : ControllerBase
+public sealed class AllocationsController(AllocationService allocations, AllocationChecks checks) : ControllerBase
 {
+    /// <summary>What a booking would run into, before it is saved.</summary>
+    [HttpGet("check")]
+    public Task<AllocationCheckDto> Check([FromQuery] AllocationCheckQuery query, CancellationToken ct) => checks.CheckAsync(query, ct);
+
+    /// <summary>The hours each person in the team has free over the days.</summary>
+    [HttpGet("availability")]
+    public Task<IReadOnlyList<PersonAvailabilityDto>> Availability(Guid teamId, DateOnly startDate, DateOnly endDate, CancellationToken ct) =>
+        checks.AvailabilityAsync(teamId, startDate, endDate, ct);
+
     [HttpPost]
     public async Task<ActionResult<SavedAllocationDto>> Create(SaveAllocationRequest request, CancellationToken ct)
     {
-        var saved = await allocations.CreateAsync(request, ct);
+        var saved = await allocations.BookAsync(request, ct);
         return StatusCode(StatusCodes.Status201Created, saved);
     }
 

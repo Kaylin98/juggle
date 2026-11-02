@@ -53,7 +53,7 @@ describe('JobCard drag and due date', () => {
   });
 
   it('shows an overdue required date in red', async () => {
-    const element = await render(card({ requiredDate: '2026-10-30', isOverdue: true }));
+    const element = await render(card({ deadline: '2026-10-30', isOverdue: true }));
     expect(element.querySelector('app-due-date span')!.className).toContain('text-over-700');
   });
 });
@@ -78,9 +78,9 @@ describe('JobCard booking chip', () => {
   });
 
   it('shows no chip on a closed or cancelled job, nor off the board', async () => {
-    expect((await render(card({ statusKind: 'Done' }))).textContent).not.toContain('booked');
+    expect((await render(card({ statusKind: 'Done', acceptsBookings: false }))).textContent).not.toContain('booked');
     TestBed.resetTestingModule();
-    expect((await render(card({ statusKind: 'Cancelled' }))).textContent).not.toContain('booked');
+    expect((await render(card({ statusKind: 'Cancelled', acceptsBookings: false }))).textContent).not.toContain('booked');
     TestBed.resetTestingModule();
     expect((await render(card({}), false)).textContent).not.toContain('booked');
   });

@@ -59,7 +59,7 @@ describe('JobDrawer schedule actions', () => {
   it('offers no schedule actions without Allocate, nor on a closed job or one with no designer', async () => {
     expect(actions(await render(booked(8), false))).toEqual([]);
     TestBed.resetTestingModule();
-    expect(actions(await render({ statusKind: 'Done' }))).toEqual([]);
+    expect(actions(await render({ statusKind: 'Done', acceptsBookings: false }))).toEqual([]);
     TestBed.resetTestingModule();
     expect(actions(await render({ designerPersonId: null, designerName: null }))).toEqual([]);
   });

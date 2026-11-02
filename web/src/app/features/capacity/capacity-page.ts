@@ -1,16 +1,18 @@
 import { CdkConnectedOverlay, ConnectedPosition } from '@angular/cdk/overlay';
-import { Component, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
+import { Component, LOCALE_ID, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
 import { AllocationsService } from '../../core/allocations.service';
 import { AuthService } from '../../core/auth.service';
-import { Allocation, SaveAllocation, Schedule } from '../../core/models';
+import { JobsService } from '../../core/jobs.service';
+import { Allocation, Job, SaveAllocation, Schedule } from '../../core/models';
 import { ALL_TEAMS, TeamContextService } from '../../core/team-context.service';
 import { BrandLegend, legendBrands } from '../../shared/brand-legend';
-import { isIsoDate, startOfWeek, today } from '../../shared/dates';
+import { ClashDialog } from '../../shared/clash-dialog';
+import { lateText, scheduledMessage } from '../../shared/clash-message';
+import { isIsoDate, startOfWeek, today, weekdaysBetween } from '../../shared/dates';
 import { ToastService } from '../../shared/toast.service';
 import { AllocationPopover, BookingDetails, BookingDraft } from './allocation-popover';
 import { CapacityGrid, NewBooking, PopoverOrigin } from './capacity-grid';
 import { CapacityService, Weeks } from './capacity.service';
-import { ClashDialog } from './clash-dialog';
 import { GridToolbar } from './grid-toolbar';
 import { clashDays, leaveDays, withBookings } from './live-load';
 import { PeopleFilter } from './people-filter';
@@ -32,6 +34,8 @@ const POPOVER_POSITIONS: ConnectedPosition[] = [
 export class CapacityPage {
   private readonly capacityService = inject(CapacityService);
   private readonly allocations = inject(AllocationsService);
+  private readonly jobsService = inject(JobsService);
+  private readonly locale = inject(LOCALE_ID);
   protected readonly auth = inject(AuthService);
   private readonly prefs = inject(SchedulePrefsService);
   private readonly toast = inject(ToastService);
@@ -109,6 +113,19 @@ export class CapacityPage {
     },
     loader: ({ params }) => this.capacityService.openJobs(params),
   });
+
+  /**
+   * The jobs a row's person can be booked on, by the job's rules: one still in Incoming or In Design that is not yet
+   * allocated (booking it runs Allocate and schedule) or is allocated to this person.
+   */
+  protected bookableJobs(personId: string): Job[] {
+    return (this.jobs.hasValue() ? this.jobs.value() : []).filter(
+      (job) =>
+        job.acceptsBookings &&
+        (job.designerPersonId === personId ||
+          (job.designerPersonId === null && job.actions.includes('AllocateAndSchedule'))),
+    );
+  }
 
   /** The booking popover, when open. Closes when the team or view changes. */
   protected readonly popover = linkedSignal<string, (BookingDraft & { origin: PopoverOrigin }) | null>({
@@ -206,30 +223,74 @@ export class CapacityPage {
     const person = data.people.find((p) => p.id === booking.personId)!;
     const others = data.allocations.filter((a) => a.personId === booking.personId && a.id !== booking.id);
     const overDays = clashDays(booking, withBookings(person.days, [...others, booking]));
+    const late = await this.lateness(booking);
+    if (late === undefined) return cancel();
     const wasOnLeave = (day: string) =>
       previous?.personId === booking.personId && previous.startDate <= day && day <= previous.endDate;
     const onLeave = leaveDays(booking, person.days).filter((day) => !wasOnLeave(day));
-    if (overDays.length === 0 && onLeave.length === 0) return book();
+    if (overDays.length === 0 && onLeave.length === 0 && !late) return book();
     this.clash.set({
       personId: booking.personId,
       personName: person.name,
       clashDays: overDays,
       leaveDays: onLeave,
+      lateText: late,
       origin: booking.origin,
       book,
       cancel,
     });
   }
 
-  /** Saves and reloads the schedule for the new load. */
+  /** Where the booking finishes after its job's deadline, in words: null when it does not, undefined when the check failed. */
+  private async lateness(booking: BookingCheck): Promise<string | null | undefined> {
+    try {
+      const check = await this.allocations.check({
+        jobId: booking.jobId,
+        personId: booking.personId,
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+        hoursPerDay: booking.hoursPerDay,
+        exceptAllocationId: booking.id ?? undefined,
+      });
+      return lateText(check.deadline, booking.endDate, check.workingDaysLate, this.locale);
+    } catch (error) {
+      this.toast.error(error);
+      return undefined;
+    }
+  }
+
+  /** Saves and reloads the schedule for the new load. A new booking on an unallocated job runs Allocate and schedule. */
   private async save(id: string | null, request: SaveAllocation): Promise<void> {
     try {
-      await (id ? this.allocations.update(id, request) : this.allocations.create(request));
-      this.toast.show('Booking saved.', 'success');
+      if (!id && this.isUnallocated(request.jobId)) {
+        await this.allocate(request);
+      } else {
+        await (id ? this.allocations.update(id, request) : this.allocations.create(request));
+        this.toast.show('Booking saved.', 'success');
+      }
     } catch (error) {
       this.toast.error(error);
     }
     this.schedule.reload();
+  }
+
+  private isUnallocated(jobId: string): boolean {
+    return (this.jobs.hasValue() ? this.jobs.value() : []).some((j) => j.id === jobId && j.designerPersonId === null);
+  }
+
+  /** Allocate and schedule from the schedule: the estimate is what the booking covers, and the job moves on. */
+  private async allocate(request: SaveAllocation): Promise<void> {
+    const { personId, startDate, endDate, hoursPerDay } = request;
+    const result = await this.jobsService.allocate(request.jobId, {
+      personId,
+      startDate,
+      endDate,
+      hoursPerDay,
+      estimateHours: hoursPerDay * weekdaysBetween(startDate, endDate),
+    });
+    const message = scheduledMessage(this.personName(personId), startDate, endDate, result, this.locale);
+    this.toast.show(message.text, message.kind);
+    this.jobs.reload();
   }
 
   private replace(allocation: Allocation): void {
@@ -242,7 +303,7 @@ export class CapacityPage {
 }
 
 /** A booking to check for a clash before saving: its days and hours, and where to ask. */
-type BookingCheck = Pick<Allocation, 'personId' | 'startDate' | 'endDate' | 'hoursPerDay'> & {
+type BookingCheck = Pick<Allocation, 'jobId' | 'personId' | 'startDate' | 'endDate' | 'hoursPerDay'> & {
   id: string | null;
   origin: PopoverOrigin;
 };
@@ -252,6 +313,7 @@ interface Clash {
   personName: string;
   clashDays: string[];
   leaveDays: string[];
+  lateText: string | null;
   origin: PopoverOrigin;
   book: () => Promise<void>;
   cancel: () => void;

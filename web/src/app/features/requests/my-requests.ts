@@ -50,8 +50,8 @@ import { StatusChip } from '../../shared/status-chip';
                     <span class="truncate text-ink-muted max-md:hidden">{{ job.department }}</span>
                     <span class="text-ink-muted max-md:hidden">{{ job.createdAt | date: 'd MMM y' }}</span>
                     <span class="max-md:hidden">
-                      @if (job.requiredDate) {
-                        <app-due-date [date]="job.requiredDate" [overdue]="job.isOverdue" format="d MMM y" />
+                      @if (job.deadline) {
+                        <app-due-date [date]="job.deadline" [overdue]="job.isOverdue" format="d MMM y" />
                       } @else {
                         <span class="text-ink-muted">-</span>
                       }

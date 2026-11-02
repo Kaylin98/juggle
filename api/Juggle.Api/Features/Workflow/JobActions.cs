@@ -182,7 +182,7 @@ public sealed class JobActions(
         await transaction.CommitAsync(ct);
 
         return new AllocatedJobDto(
-            await jobs.GetAsync(id, ct), booking.ClashDays, booking.LeaveDays, job.RequiredDate < request.EndDate);
+            await jobs.GetAsync(id, ct), booking.ClashDays, booking.LeaveDays, job.Deadline < request.EndDate);
     }
 
     private async Task<JobDetailDto> MoveAsync(Guid id, WorkflowAction action, string? message, CancellationToken ct)
@@ -250,7 +250,7 @@ public sealed class JobActions(
 
     private async Task<Job> LoadAsync(Guid id, CancellationToken ct)
     {
-        var job = await db.Jobs.Include(j => j.Status).Include(j => j.Designer).FirstOrDefaultAsync(j => j.Id == id, ct)
+        var job = await db.Jobs.Include(j => j.Status).Include(j => j.Designer).Include(j => j.Deliverables).FirstOrDefaultAsync(j => j.Id == id, ct)
             ?? throw new NotFoundException("Job not found.");
         await jobAccess.EnsureCanSeeAsync(job, ct);
         return job;

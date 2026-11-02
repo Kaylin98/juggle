@@ -1,9 +1,11 @@
+import { CdkConnectedOverlay, CdkOverlayOrigin, ConnectedPosition } from '@angular/cdk/overlay';
 import { formatDate } from '@angular/common';
-import { Component, LOCALE_ID, inject, input, linkedSignal, output } from '@angular/core';
+import { Component, LOCALE_ID, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { FormField, form, max, min, required, submit } from '@angular/forms/signals';
 import { AllocationsService } from '../../core/allocations.service';
-import { Job, Person } from '../../core/models';
-import { clashMessage } from '../../shared/clash-message';
+import { AllocationCheck, Job, Person } from '../../core/models';
+import { ClashDialog } from '../../shared/clash-dialog';
+import { clashMessage, lateText } from '../../shared/clash-message';
 import { addWeekdays, nextWeekday, today } from '../../shared/dates';
 import { ToastService } from '../../shared/toast.service';
 
@@ -28,12 +30,24 @@ export function defaults(job: Job): BookingForm {
   return { startDate: nextWeekday(today()), days, hoursPerDay };
 }
 
-/** Books the job's designer on the schedule for the job (D28). */
+/** The confirmation opens above the button, or below it when there is no room. */
+const CONFIRM_POSITIONS: ConnectedPosition[] = [
+  { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', offsetY: -8 },
+  { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 8 },
+];
+
+/** What the booking runs into, waiting for Cancel or "Book anyway". */
+interface Warning {
+  check: AllocationCheck;
+  late: string | null;
+}
+
+/** Books the job's designer on the schedule for the job (D28), asking first if it runs into anything. */
 @Component({
   selector: 'app-book-on-schedule',
-  imports: [FormField],
+  imports: [CdkConnectedOverlay, CdkOverlayOrigin, ClashDialog, FormField],
   template: `
-    <form class="rounded-control bg-surface-muted p-4" novalidate (submit)="book($event)">
+    <form class="rounded-control bg-surface-muted p-4" novalidate (submit)="check($event)">
       <p class="text-sm">Book <span class="font-semibold">{{ designer().name }}</span> on the schedule</p>
       <div class="mt-4 grid grid-cols-2 gap-4">
         <div class="col-span-2">
@@ -56,8 +70,38 @@ export function defaults(job: Job): BookingForm {
       }
       <div class="mt-4 flex justify-end gap-2">
         <button type="button" class="btn-secondary" (click)="closed.emit()">Cancel</button>
-        <button type="submit" class="btn-primary" [disabled]="bookingForm().submitting()">Book</button>
+        <button
+          #origin="cdkOverlayOrigin"
+          cdkOverlayOrigin
+          type="submit"
+          class="btn-primary"
+          [disabled]="bookingForm().submitting()"
+        >
+          Book
+        </button>
       </div>
+
+      @if (warning(); as pending) {
+        <ng-template
+          cdkConnectedOverlay
+          [cdkConnectedOverlayOrigin]="origin"
+          [cdkConnectedOverlayOpen]="true"
+          [cdkConnectedOverlayPositions]="confirmPositions"
+          [cdkConnectedOverlayHasBackdrop]="true"
+          cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+          (overlayOutsideClick)="warning.set(null)"
+          (overlayKeydown)="$event.key === 'Escape' && warning.set(null)"
+        >
+          <app-clash-dialog
+            [personName]="designer().name"
+            [clashDays]="pending.check.clashDays"
+            [leaveDays]="pending.check.leaveDays"
+            [lateText]="pending.late"
+            (cancelled)="warning.set(null)"
+            (confirmed)="book()"
+          />
+        </ng-template>
+      }
     </form>
   `,
 })
@@ -71,7 +115,11 @@ export class BookOnSchedule {
   readonly closed = output<void>();
   readonly booked = output<void>();
 
+  protected readonly confirmPositions = CONFIRM_POSITIONS;
+
   protected readonly model = linkedSignal(() => defaults(this.job()));
+
+  protected readonly warning = signal<Warning | null>(null);
 
   protected readonly bookingForm = form(this.model, (booking) => {
     required(booking.startDate, { message: 'Choose a start date.' });
@@ -83,32 +131,55 @@ export class BookOnSchedule {
     max(booking.hoursPerDay, 24, { message: 'A day has 24 hours.' });
   });
 
-  protected async book(event: Event): Promise<void> {
+  protected async check(event: Event): Promise<void> {
     event.preventDefault();
     await submit(this.bookingForm, async () => {
       const { startDate, days, hoursPerDay } = this.model();
       const endDate = addWeekdays(startDate, Math.round(days!) - 1);
       try {
-        const saved = await this.allocations.create({
-          personId: this.designer().id,
+        const check = await this.allocations.check({
           jobId: this.job().id,
+          personId: this.designer().id,
           startDate,
           endDate,
           hoursPerDay: hoursPerDay!,
-          notes: null,
         });
-        const clash = clashMessage(this.designer().name, saved.clashDays, saved.leaveDays, this.locale);
-        const date = (d: string) => formatDate(d, 'EEE d MMM', this.locale);
-        this.toast.show(
-          clash ?? `Booked ${this.designer().name} for ${hoursPerDay}h/day, ${date(startDate)} to ${date(endDate)}.`,
-          clash ? 'warning' : 'success',
-        );
-        this.booked.emit();
-        this.closed.emit();
+        const late = lateText(check.deadline, endDate, check.workingDaysLate, this.locale);
+        if (check.clashDays.length || check.leaveDays.length || late) {
+          this.warning.set({ check, late });
+        } else {
+          await this.book();
+        }
       } catch (error) {
         this.toast.error(error);
       }
       return undefined;
     });
+  }
+
+  protected async book(): Promise<void> {
+    this.warning.set(null);
+    const { startDate, days, hoursPerDay } = this.model();
+    const endDate = addWeekdays(startDate, Math.round(days!) - 1);
+    try {
+      const saved = await this.allocations.create({
+        personId: this.designer().id,
+        jobId: this.job().id,
+        startDate,
+        endDate,
+        hoursPerDay: hoursPerDay!,
+        notes: null,
+      });
+      const clash = clashMessage(this.designer().name, saved.clashDays, saved.leaveDays, this.locale);
+      const date = (d: string) => formatDate(d, 'EEE d MMM', this.locale);
+      this.toast.show(
+        clash ?? `Booked ${this.designer().name} for ${hoursPerDay}h/day, ${date(startDate)} to ${date(endDate)}.`,
+        clash ? 'warning' : 'success',
+      );
+      this.booked.emit();
+      this.closed.emit();
+    } catch (error) {
+      this.toast.error(error);
+    }
   }
 }

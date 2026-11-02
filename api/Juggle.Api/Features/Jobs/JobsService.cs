@@ -53,6 +53,10 @@ public sealed class JobsService(
         {
             throw new BadRequestException("A deadline can't be in the past.");
         }
+        if (request.Deliverables.Any(d => d.DueDate > request.RequiredDate))
+        {
+            throw new BadRequestException("A deliverable can't be due after the job's required date.");
+        }
 
         var (objectives, guidelines) = (request.Objectives, request.Guidelines);
 

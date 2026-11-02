@@ -59,7 +59,7 @@ const CHEVRON_RIGHT =
             cdkDrag
             [cdkDragDisabled]="card.job.actions.length === 0"
             [card]="card"
-            [showBooking]="showBooking()"
+            [showBooking]="true"
             [canDrag]="card.job.actions.length > 0"
             (opened)="open(card.job)"
             (cdkDragStarted)="dragStarted(card.job)"
@@ -100,8 +100,6 @@ export class BoardColumn {
   readonly collapsed = input(false);
   /** A board filter is on, so an empty column has no matching cards rather than none at all. */
   readonly filtered = input(false);
-  /** The booking chip is shown on the cards (D57). */
-  readonly showBooking = input(false);
   /** Set while a card is dragged: what dropping it here does, or null when it does nothing. */
   readonly dropHint = input<string | null>(null);
   /** A card is dragged and cannot be dropped here, so the column dims. */

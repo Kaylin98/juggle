@@ -69,6 +69,9 @@ public class Job
     public DateTimeOffset? ClosedAt { get; set; }
     public Guid? ClosedByUserId { get; set; }
 
+    /// <summary>The earliest deadline: the required date or the earliest deliverable's. Needs <see cref="Deliverables"/> loaded.</summary>
+    public DateOnly? Deadline => Deliverables.Select(d => d.DueDate).Append(RequiredDate).Min();
+
     public Team Team { get; set; } = null!;
     public Department Department { get; set; } = null!;
     public User Requester { get; set; } = null!;

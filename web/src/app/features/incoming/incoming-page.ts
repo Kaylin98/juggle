@@ -61,8 +61,8 @@ const PRIORITY_PILL: Record<Priority, string> = {
               <p class="mt-1 text-sm text-ink-muted">
                 From {{ job.requesterName }} &middot; briefed in
                 {{ job.createdAt | date: 'EEE d MMM, HH:mm' }}
-                @if (job.requiredDate; as required) {
-                  &middot; required
+                @if (job.deadline; as required) {
+                  &middot; due
                   <app-due-date [date]="required" [overdue]="job.isOverdue" format="EEE d MMM" />
                 }
                 @if (job.designerName; as designer) {

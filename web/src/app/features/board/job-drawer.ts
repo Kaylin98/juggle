@@ -55,7 +55,7 @@ import { BoardCard } from './job-card';
           Unbooked: "Book on schedule". Booked: "View on schedule", and "Add booking" until the estimate is booked (D59).
           Others see a job's bookings through the card's chip.
         -->
-        @if (canBook() && !card().done) {
+        @if (canBook() && job.acceptsBookings) {
           @if (booking() && card().designer; as designer) {
             <app-book-on-schedule
               [job]="job"
@@ -110,9 +110,9 @@ import { BoardCard } from './job-card';
             </dd>
           </div>
           <div>
-            <dt class="label-caps">Required</dt>
+            <dt class="label-caps">Deadline</dt>
             <dd class="mt-1" [class]="job.isOverdue ? 'font-semibold text-over-700' : ''">
-              {{ job.requiredDate ? (job.requiredDate | date: 'EEE d MMM y') : 'No date' }}
+              {{ job.deadline ? (job.deadline | date: 'EEE d MMM y') : 'No date' }}
             </dd>
           </div>
           <div>

@@ -10,7 +10,7 @@ import { Tooltip } from './tooltip';
     <span
       class="inline-flex items-center gap-1.5 whitespace-nowrap"
       [class]="overdue() ? 'font-semibold text-over-700' : 'text-ink-muted'"
-      [appTooltip]="overdue() ? 'Overdue' : 'Required date'"
+      [appTooltip]="overdue() ? 'Overdue' : 'Deadline'"
     >
       @if (overdue()) {
         <span class="size-1.5 rounded-full bg-over-500"></span>

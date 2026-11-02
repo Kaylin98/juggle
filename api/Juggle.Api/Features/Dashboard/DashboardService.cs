@@ -60,7 +60,7 @@ public sealed class DashboardService(
         var incoming = (await workflow.IncomingAsync(ct)).ToList();
 
         // Overdue (D21): required before today and still open.
-        var overdueCounts = await CountByTeamAsync(openJobs.Where(j => j.RequiredDate < today), ct);
+        var overdueCounts = await CountByTeamAsync(openJobs.Where(j => j.RequiredDate < today || j.Deliverables.Any(d => d.DueDate < today)), ct);
         var approvalCounts = await CountByTeamAsync(openJobs.Where(j => awaitingApproval.Contains(j.StatusId)), ct);
         var incomingCounts = await CountByTeamAsync(openJobs.Where(j => incoming.Contains(j.StatusId)), ct);
 

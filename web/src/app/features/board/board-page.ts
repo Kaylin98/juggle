@@ -124,7 +124,7 @@ export class BoardPage {
           .sort(
             (a, b) =>
               order.get(a.job.statusId)! - order.get(b.job.statusId)! ||
-              (a.job.requiredDate ?? '9999').localeCompare(b.job.requiredDate ?? '9999'),
+              (a.job.deadline ?? '9999').localeCompare(b.job.deadline ?? '9999'),
           ),
       };
     });
@@ -255,10 +255,6 @@ export class BoardPage {
     }
   }
 
-  /** The booking chip is for work still to be done: the board's first two columns, Incoming and In Design (D57). */
-  protected showsBooking(columnId: string): boolean {
-    return (this.data()?.workflow.columns.slice(0, 2) ?? []).some((c) => c.id === columnId);
-  }
 
   /** A manual collapse is remembered for this user; a manual expand holds only until the next resize. */
   protected toggleColumn(columnId: string): void {

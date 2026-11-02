@@ -135,6 +135,8 @@ export interface Job {
   statusKind: JobStatusKind;
   priority: Priority;
   requiredDate: string | null;
+  /** The earliest of the required date and the deliverables' deadlines; overdue and due checks use it. */
+  deadline: string | null;
   /** When the brief was sent: the date briefed. */
   createdAt: string;
   /** What the artwork is for (section 3.1B). */
@@ -150,6 +152,8 @@ export interface Job {
   isOverdue: boolean;
   /** Open and required within the next 7 days, or overdue (D57). */
   isDueSoon: boolean;
+  /** Open and still in Incoming or In Design, so it can be booked on the schedule. */
+  acceptsBookings: boolean;
   /** The hours of all its bookings, on the person's working days. */
   bookedHours: number;
   /** Its bookings, earliest first. */
@@ -234,22 +238,32 @@ export interface AllocateJob {
   estimateHours: number;
 }
 
-/** A job just scheduled, with what its booking ran into. */
-export interface AllocatedJob {
-  job: JobDetail;
+/** What a booking would run into, before it is saved. */
+export interface AllocationCheck {
   clashDays: string[];
   leaveDays: string[];
-  /** The booking ends after the date the job is required. */
-  afterRequiredDate: boolean;
+  /** The job's earliest deadline; null when it has none. */
+  deadline: string | null;
+  /** The person's working days between the deadline and the end of the booking. */
+  workingDaysLate: number;
+  /** The person's working days from the start to the deadline, inclusive. */
+  workingDaysToDeadline: number;
 }
 
-/** Allocate and schedule: the designer, the booking that schedules them (dates inclusive), and the estimate. */
-export interface AllocateJob {
+export interface CheckAllocation {
+  jobId: string;
   personId: string;
   startDate: string;
   endDate: string;
   hoursPerDay: number;
-  estimateHours: number;
+  /** The booking being moved or resized, which the check leaves out. */
+  exceptAllocationId?: string;
+}
+
+/** The hours a person has free over some days. */
+export interface PersonAvailability {
+  personId: string;
+  freeHours: number;
 }
 
 /** A job just scheduled, with what its booking ran into. */

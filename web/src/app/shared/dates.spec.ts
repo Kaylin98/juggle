@@ -1,6 +1,11 @@
-import { addDays, addWeekdays, isIsoDate, isWeekend, isoWeek, nextWeekday, startOfWeek } from './dates';
+import { addDays, addWeekdays, isIsoDate, isWeekend, isoWeek, nextWeekday, startOfWeek, weekdaysBetween } from './dates';
 
 describe('dates', () => {
+  it('counts the working days between two dates, both included', () => {
+    expect(weekdaysBetween('2026-11-06', '2026-11-10')).toBe(3);
+    expect(weekdaysBetween('2026-11-07', '2026-11-08')).toBe(0);
+  });
+
   it('adds days across a month end', () => {
     expect(addDays('2026-10-30', 3)).toBe('2026-11-02');
   });

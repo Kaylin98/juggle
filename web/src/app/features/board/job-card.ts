@@ -61,10 +61,10 @@ export interface BoardCard {
           }
         </span>
         <span class="mt-3 flex h-6 items-center gap-2 text-xs">
-          @if (job.requiredDate) {
-            <app-due-date class="pointer-events-auto shrink-0" [date]="job.requiredDate" [overdue]="job.isOverdue" />
+          @if (job.deadline) {
+            <app-due-date class="pointer-events-auto shrink-0" [date]="job.deadline" [overdue]="job.isOverdue" />
           }
-          @if (showBooking() && !card().done) {
+          @if (showBooking() && job.acceptsBookings) {
             @if (job.bookings.length > 0) {
               <a
                 class="pointer-events-auto rounded-full bg-ok-50 px-2 py-0.5 font-semibold whitespace-nowrap text-ok-700 hover:underline focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"

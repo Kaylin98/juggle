@@ -1,8 +1,11 @@
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { Component, LOCALE_ID, computed, inject, input, output } from '@angular/core';
-import { clashText } from '../../shared/clash-message';
+import { clashText } from './clash-message';
 
-/** Asks before a booking puts someone over capacity (D16) or on days of their leave: cancel it, or book it anyway. */
+/**
+ * Asks before a booking puts someone over capacity (D16), onto days of their leave or past the job's deadline, listing
+ * everything it runs into at once: cancel it, or book it anyway.
+ */
 @Component({
   selector: 'app-clash-dialog',
   imports: [CdkTrapFocus],
@@ -23,12 +26,16 @@ import { clashText } from '../../shared/clash-message';
             clip-rule="evenodd"
           />
         </svg>
-        Booking clash
+        Check this booking
       </h2>
-      <p id="clash-text" class="mt-2 text-sm text-ink-muted">{{ message() }}</p>
+      <div id="clash-text" class="mt-2 space-y-2 text-sm text-ink-muted">
+        @for (line of lines(); track line) {
+          <p>{{ line }}</p>
+        }
+      </div>
       <div class="mt-6 flex justify-end gap-2">
         <button type="button" class="btn-secondary" (click)="cancelled.emit()">Cancel</button>
-        <button type="button" class="btn-primary" (click)="confirmed.emit()">{{ confirmLabel() }}</button>
+        <button type="button" class="btn-primary" (click)="confirmed.emit()">Book anyway</button>
       </div>
     </div>
   `,
@@ -41,14 +48,16 @@ export class ClashDialog {
   readonly clashDays = input.required<string[]>();
   /** Days of the booking on which the person is on approved leave. */
   readonly leaveDays = input.required<string[]>();
+  /** Where the booking finishes after the job's deadline, in words; null when it does not. */
+  readonly lateText = input<string | null>(null);
   readonly cancelled = output<void>();
   readonly confirmed = output<void>();
 
-  /** For example "Lerato Mokoena is over capacity on Mon 2 Nov and Tue 3 Nov." or "Ruben Fourie is on leave on Mon 2 Nov." */
-  protected readonly message = computed(
-    () => `${this.personName()} is ${clashText(this.clashDays(), this.leaveDays(), this.locale)}.`,
-  );
-
-  /** Over capacity is overtime; leave alone is not. */
-  protected readonly confirmLabel = computed(() => (this.clashDays().length ? 'Book with overtime' : 'Book anyway'));
+  /** For example "Lerato Mokoena is over capacity on Mon 2 Nov and Tue 3 Nov." then "Finishes Fri 27 Nov, 5 working days after Fri 20 Nov." */
+  protected readonly lines = computed(() => {
+    const clash = clashText(this.clashDays(), this.leaveDays(), this.locale);
+    return [clash ? `${this.personName()} is ${clash}.` : null, this.lateText() ? `${this.lateText()}.` : null].filter(
+      (line) => line !== null,
+    );
+  });
 }

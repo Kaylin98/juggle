@@ -144,8 +144,7 @@ public sealed class TimeOffTests(ApiFactory api)
         var leave = await RequestAsync(ruben, TimeOffType.AnnualLeave, monday, monday.AddDays(1));
         await chloe.PostAsync($"/api/time-off/{leave.Id}/approve", null, _ct);
         var studioId = await TeamIdAsync(chloe, "Design Studio");
-        var job = (await chloe.GetFromJsonAsync<List<JobDto>>($"/api/teams/{studioId}/jobs", ApiFactory.Json, _ct))![0];
-        var rubenId = (await ruben.GetFromJsonAsync<MeDto>("/api/auth/me", ApiFactory.Json, _ct))!.PersonId!.Value;
+        var (rubenId, job) = await Briefs.AllocatedJobAsync(api, "Ruben Fourie", monday.AddDays(7 * 10), _ct);
 
         var response = await chloe.PostAsJsonAsync(
             "/api/allocations", new SaveAllocationRequest(rubenId, job.Id, monday, monday.AddDays(2), 4, null), ApiFactory.Json, _ct);

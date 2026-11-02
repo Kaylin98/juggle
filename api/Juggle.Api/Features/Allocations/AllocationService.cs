@@ -11,9 +11,34 @@ namespace Juggle.Api.Features.Allocations;
 /// Books people onto jobs. An allocation belongs to its job's team, so only users who may book work (Allocate)
 /// in that team change it. Saving never fails on a clash; the response lists the days now over capacity.
 /// </summary>
-public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess, OrgClock clock)
+public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess, AllocationChecks checks, OrgClock clock)
 {
     private const int MaxDays = 366;
+
+    /// <summary>
+    /// A booking made from the schedule follows the job's rules: only a job still in Incoming or In Design, and only for
+    /// its designer. An unallocated job is booked through Allocate and schedule, which also moves its status.
+    /// </summary>
+    public async Task<SavedAllocationDto> BookAsync(SaveAllocationRequest request, CancellationToken ct)
+    {
+        var job = await db.Jobs.Include(j => j.Status).ThenInclude(s => s.Column).FirstOrDefaultAsync(j => j.Id == request.JobId, ct)
+            ?? throw new BadRequestException("The job does not exist.");
+        await teamAccess.EnsureAsync(job.TeamId, Capability.Allocate, ct);
+        if (job.Status.Kind != JobStatusKind.Open || job.Status.Column.Order >= Jobs.JobDto.BookableColumns)
+        {
+            throw new BadRequestException("This job is no longer being worked on, so it can't be booked.");
+        }
+        if (job.DesignerPersonId is null)
+        {
+            throw new BadRequestException("Allocate and schedule this job before booking it.");
+        }
+        if (job.DesignerPersonId != request.PersonId)
+        {
+            throw new BadRequestException("This job is allocated to someone else.");
+        }
+
+        return await CreateAsync(request, ct);
+    }
 
     public async Task<SavedAllocationDto> CreateAsync(SaveAllocationRequest request, CancellationToken ct)
     {
@@ -121,7 +146,7 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
 
     private async Task<SavedAllocationDto> ToDtoAsync(Allocation allocation, CancellationToken ct)
     {
-        var days = await DayLoadsAsync(allocation, ct);
+        var days = await checks.DayLoadsAsync(allocation.PersonId, allocation.StartDate, allocation.EndDate, null, ct);
         return new(
             allocation.Id,
             allocation.PersonId,
@@ -134,25 +159,4 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
             days.Where(d => d.TimeOff is not null && !d.PublicHoliday && !d.Date.IsWeekend()).Select(d => d.Date).ToList());
     }
 
-    /// <summary>The person's load on each of the allocation's days, with their bookings across every team.</summary>
-    private async Task<IReadOnlyList<DayLoad>> DayLoadsAsync(Allocation allocation, CancellationToken ct)
-    {
-        var (from, to) = (allocation.StartDate, allocation.EndDate);
-        var person = await db.People.AsNoTracking().FirstAsync(p => p.Id == allocation.PersonId, ct);
-        var allocations = await db.Allocations
-            .Where(a => a.PersonId == person.Id && a.StartDate <= to && a.EndDate >= from)
-            .AsNoTracking()
-            .ToListAsync(ct);
-        var timeOff = await db.TimeOff
-            .Where(t => t.Status == TimeOffStatus.Approved
-                && (t.PersonId == null || t.PersonId == person.Id)
-                && t.StartDate <= to && t.EndDate >= from)
-            .AsNoTracking()
-            .ToListAsync(ct);
-
-        return Enumerable.Range(0, to.DayNumber - from.DayNumber + 1)
-            .Select(from.AddDays)
-            .Select(date => CapacityCalculator.ForDay(person, date, allocations, timeOff))
-            .ToList();
-    }
 }

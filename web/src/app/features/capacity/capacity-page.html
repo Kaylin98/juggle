@@ -57,7 +57,7 @@
   >
     <app-allocation-popover
       [draft]="draft"
-      [jobs]="jobs.hasValue() ? jobs.value() : []"
+      [jobs]="bookableJobs(draft.personId)"
       [jobLabel]="auth.terms().job"
       [canBook]="editable()"
       [ownPersonId]="ownPersonId()"
@@ -85,6 +85,7 @@
       [personName]="clash.personName"
       [clashDays]="clash.clashDays"
       [leaveDays]="clash.leaveDays"
+      [lateText]="clash.lateText"
       (cancelled)="cancelClash()"
       (confirmed)="confirmClash()"
     />

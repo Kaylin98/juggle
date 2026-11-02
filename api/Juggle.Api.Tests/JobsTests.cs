@@ -255,6 +255,7 @@ public sealed class JobsTests(ApiFactory api)
             valid with { Deliverables = [deliverable with { Description = "" }] },
             valid with { Deliverables = [deliverable with { Description = new string('x', 201) }] },
             valid with { Deliverables = [deliverable with { DueDate = _today.AddDays(-1) }] },
+            valid with { Deliverables = [deliverable with { DueDate = _today.AddDays(15) }] },
             valid with { Deliverables = [.. Enumerable.Repeat(deliverable, 21)] },
             valid with { Objectives = valid.Objectives with { Objective = new string('x', 1001) } },
             valid with { Guidelines = valid.Guidelines with { LegalDisclaimers = new string('x', 1001) } },

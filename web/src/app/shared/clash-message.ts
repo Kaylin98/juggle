@@ -25,3 +25,39 @@ export function clashMessage(personName: string, clashDays: string[], leaveDays:
   if (!text) return null;
   return `Saved, but ${personName} is ${leaveDays.length ? '' : 'now '}${text}.`;
 }
+
+/** "Finishes Fri 27 Nov, 5 working days after Fri 20 Nov", or null when the booking finishes by the deadline. */
+export function lateText(deadline: string | null, endDate: string, workingDaysLate: number, locale: string): string | null {
+  if (!deadline || workingDaysLate === 0) return null;
+  const date = (d: string) => formatDate(d, 'EEE d MMM', locale);
+  return `Finishes ${date(endDate)}, ${workingDaysLate} working ${workingDaysLate === 1 ? 'day' : 'days'} after ${date(deadline)}`;
+}
+
+/** The live line for a booking's load: "3 days over capacity from Mon 9 Nov", or leave; null when it fits. */
+export function capacityLine(clashDays: string[], leaveDays: string[], locale: string): string | null {
+  const parts = [
+    ...(leaveDays.length ? [`On leave on ${clashDaysText(leaveDays, locale)}`] : []),
+    ...(clashDays.length
+      ? [`${clashDays.length} ${clashDays.length === 1 ? 'day' : 'days'} over capacity from ${formatDate(clashDays[0], 'EEE d MMM', locale)}`]
+      : []),
+  ];
+  return parts.length ? parts.join('. ') : null;
+}
+
+/** The toast after Allocate and schedule: what was booked, or what the booking ran into. */
+export function scheduledMessage(
+  name: string,
+  startDate: string,
+  endDate: string,
+  result: { clashDays: string[]; leaveDays: string[]; afterRequiredDate: boolean },
+  locale: string,
+): { text: string; kind: 'success' | 'warning' } {
+  const warnings = [
+    clashText(result.clashDays, result.leaveDays, locale),
+    result.afterRequiredDate ? 'booked past the deadline' : null,
+  ].filter((w) => w !== null);
+  const date = (d: string) => formatDate(d, 'EEE d MMM', locale);
+  return warnings.length
+    ? { text: `Scheduled, but ${name} is ${warnings.join(', and ')}.`, kind: 'warning' }
+    : { text: `Scheduled ${name} from ${date(startDate)} to ${date(endDate)}.`, kind: 'success' };
+}

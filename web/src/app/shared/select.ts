@@ -27,6 +27,8 @@ export interface SelectOption {
   label: string;
   avatarColour?: string;
   colour?: string;
+  /** Quiet text after the label, such as the hours a person has free. */
+  detail?: string;
 }
 
 /** Above this many options the panel gets a search box. */
@@ -61,6 +63,8 @@ export class Select implements ControlValueAccessor {
   readonly variant = input<'pill' | 'form'>('form');
   /** Id for the trigger, so a <label for> can point at it. */
   readonly triggerId = input<string>();
+  /** Shown while nothing is chosen, which also keeps the trigger its full height. */
+  readonly placeholder = input('');
 
   protected readonly open = signal(false);
   protected readonly disabled = signal(false);

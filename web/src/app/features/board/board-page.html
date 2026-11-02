@@ -42,7 +42,6 @@
           [filtered]="filtered()"
           (opened)="openJobId.set($event.id)"
           (toggled)="toggleColumn(column.column.id)"
-          [showBooking]="showsBooking(column.column.id)"
           [dropHint]="dragTargets()?.get(column.column.id)?.hint ?? null"
           [dimmed]="dragTargets()?.get(column.column.id)?.dimmed ?? false"
           (dragStart)="dragging.set($event)"

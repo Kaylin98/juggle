@@ -50,6 +50,13 @@ export function addWeekdays(date: string, weekdays: number): string {
   return result;
 }
 
+/** How many working days (Monday to Friday) fall from one date to the other, both included. */
+export function weekdaysBetween(from: string, to: string): number {
+  let count = 0;
+  for (let day = from; day <= to; day = addDays(day, 1)) if (!isWeekend(day)) count++;
+  return count;
+}
+
 /** The first working day after a date: Monday from a Friday, Saturday or Sunday. */
 export function nextWeekday(date: string): string {
   return addWeekdays(addDays(date, 1), 0);

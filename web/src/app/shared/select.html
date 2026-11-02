@@ -15,6 +15,8 @@
 >
   @if (selected(); as option) {
     <ng-container *ngTemplateOutlet="optionContent; context: { $implicit: option }" />
+  } @else {
+    <span class="truncate text-ink-faint">{{ placeholder() }}&#8203;</span>
   }
 </button>
 <app-select-chevron />
@@ -84,4 +86,7 @@
     <span class="hue-dot size-2 shrink-0 rounded-full" [style.--hue]="option.colour"></span>
   }
   <span class="truncate">{{ option.label }}</span>
+  @if (option.detail) {
+    <span class="ml-auto shrink-0 pl-2 text-xs text-ink-muted">{{ option.detail }}</span>
+  }
 </ng-template>

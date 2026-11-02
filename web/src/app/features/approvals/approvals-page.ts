@@ -47,8 +47,8 @@ import { JobActions } from '../workflow/job-actions';
                   {{ job.designerName }} &middot;
                 }
                 from {{ job.requesterName }}
-                @if (job.requiredDate; as required) {
-                  &middot; required
+                @if (job.deadline; as required) {
+                  &middot; due
                   <app-due-date [date]="required" [overdue]="job.isOverdue" format="EEE d MMM" />
                 }
               </p>

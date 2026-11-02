@@ -12,8 +12,10 @@ namespace Juggle.Api.Features.Jobs;
 /// <param name="CreatedAt">When the brief was sent: the date briefed.</param>
 /// <param name="Purpose">What the artwork is for (section 3.1B).</param>
 /// <param name="Deliverables">Section 3.1C, in the order given.</param>
-/// <param name="IsOverdue">Open and the required date has passed (D21).</param>
-/// <param name="IsDueSoon">Open and required within the next 7 days, or overdue (D57).</param>
+/// <param name="Deadline">The earliest of the required date and the deliverables' deadlines.</param>
+/// <param name="IsOverdue">Open and the earliest deadline has passed (D21).</param>
+/// <param name="IsDueSoon">Open and due within the next 7 days, or overdue (D57).</param>
+/// <param name="AcceptsBookings">Open and still in Incoming or In Design, so it can be booked on the schedule.</param>
 /// <param name="Bookings">Its bookings, earliest first.</param>
 /// <param name="Actions">The workflow actions the signed-in user may take on it now (D70).</param>
 /// <param name="RevisionCount">How many rounds of changes have been asked for after the first submission.</param>
@@ -34,6 +36,7 @@ public sealed record JobDto(
     JobStatusKind StatusKind,
     Priority Priority,
     DateOnly? RequiredDate,
+    DateOnly? Deadline,
     DateTimeOffset CreatedAt,
     string? Purpose,
     IReadOnlyList<BriefDeliverable> Deliverables,
@@ -44,6 +47,7 @@ public sealed record JobDto(
     DateOnly? ExpectedCompletionDate,
     bool IsOverdue,
     bool IsDueSoon,
+    bool AcceptsBookings,
     decimal BookedHours,
     IReadOnlyList<JobBookingDto> Bookings,
     IReadOnlyList<WorkflowAction> Actions,
@@ -51,12 +55,15 @@ public sealed record JobDto(
 {
     private const int DueSoonDays = 7;
 
+    /// <summary>Bookings are for work still to be done: the board's first two columns, Incoming and In Design.</summary>
+    public const int BookableColumns = 2;
+
     /// <summary>The jobs with what <see cref="From"/> maps, read without tracking.</summary>
     public static IQueryable<Job> Load(IQueryable<Job> jobs) => jobs
         .Include(j => j.Team)
         .Include(j => j.Department)
         .Include(j => j.Requester)
-        .Include(j => j.Status)
+        .Include(j => j.Status).ThenInclude(s => s.Column)
         .Include(j => j.Designer).ThenInclude(p => p!.User)
         .Include(j => j.Deliverables.OrderBy(d => d.SortOrder))
         .AsSplitQuery()
@@ -84,6 +91,7 @@ public sealed record JobDto(
             job.Status.Kind,
             job.Priority,
             job.RequiredDate,
+            job.Deadline,
             job.CreatedAt,
             job.Purpose,
             job.Deliverables.Select(d => new BriefDeliverable(d.Type, d.Description, d.Specifications, d.DueDate)).ToList(),
@@ -92,8 +100,9 @@ public sealed record JobDto(
             job.EstimateHours,
             job.PlannedStartDate,
             job.ExpectedCompletionDate,
-            open && job.RequiredDate < today,
-            open && job.RequiredDate <= today.AddDays(DueSoonDays),
+            open && job.Deadline < today,
+            open && job.Deadline <= today.AddDays(DueSoonDays),
+            open && job.Status.Column.Order < BookableColumns,
             linked.Sum(b => b.Hours),
             linked,
             actions,

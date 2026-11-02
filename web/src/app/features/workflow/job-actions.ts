@@ -190,7 +190,10 @@ export class JobActions {
 
   protected readonly submitArtwork = async (artwork: ArtworkSubmission): Promise<void> => {
     await this.run(
-      () => this.jobs.submitArtwork(this.job().id, artwork.url, artwork.note),
+      () =>
+        artwork.file
+          ? this.jobs.submitArtworkFile(this.job().id, artwork.file, artwork.note)
+          : this.jobs.submitArtwork(this.job().id, artwork.url!, artwork.note),
       'Artwork submitted for approval.',
     );
   };

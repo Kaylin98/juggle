@@ -366,6 +366,9 @@ namespace Juggle.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("JobId")
                         .HasColumnType("uuid");
 
@@ -383,7 +386,6 @@ namespace Juggle.Api.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Url")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
@@ -391,6 +393,8 @@ namespace Juggle.Api.Data.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FileId");
 
                     b.HasIndex("OrgId");
 
@@ -489,6 +493,58 @@ namespace Juggle.Api.Data.Migrations
                     b.HasIndex("JobId", "At");
 
                     b.ToTable("JobEvents");
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("character varying(260)");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId");
+
+                    b.HasIndex("OrgId");
+
+                    b.HasIndex("UploadedByUserId");
+
+                    b.ToTable("JobFiles");
                 });
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobLink", b =>
@@ -1063,6 +1119,11 @@ namespace Juggle.Api.Data.Migrations
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobArtwork", b =>
                 {
+                    b.HasOne("Juggle.Api.Data.Entities.JobFile", null)
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Juggle.Api.Data.Entities.Job", null)
                         .WithMany()
                         .HasForeignKey("JobId")
@@ -1125,6 +1186,27 @@ namespace Juggle.Api.Data.Migrations
                     b.HasOne("Juggle.Api.Data.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobFile", b =>
+                {
+                    b.HasOne("Juggle.Api.Data.Entities.Job", null)
+                        .WithMany()
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

@@ -481,6 +481,27 @@ public sealed class WorkflowTests(ApiFactory api)
             (await EventsAsync(job.Id)).Select(e => e.Event.Action));
     }
 
+    [Fact]
+    public async Task Seeded_jobs_waiting_on_an_approval_have_artwork_and_approvals_to_act_on()
+    {
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var bongani = await api.SignInAsAsync("Bongani Zulu");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+
+        var designQueue = (await naledi.GetFromJsonAsync<List<QueuedJobDto>>("/api/jobs/approvals", ApiFactory.Json, _ct))!;
+        var marketingQueue = (await bongani.GetFromJsonAsync<List<QueuedJobDto>>("/api/jobs/approvals", ApiFactory.Json, _ct))!;
+        var businessJob = (await zanele.GetFromJsonAsync<List<JobDto>>("/api/jobs/mine", ApiFactory.Json, _ct))!.Single(j => j.Title == "Scooter Spec Sheets");
+        var business = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{businessJob.Id}", ApiFactory.Json, _ct))!;
+
+        Assert.Contains(designQueue, q => q.Job.Title == "Black Friday iStore Banners");
+        Assert.Contains(designQueue, q => q.Job.Title == "Black Friday Retailer Inserts");
+        Assert.All(designQueue, q => Assert.NotNull(q.Artwork));
+        Assert.Contains(marketingQueue, q => q.Job.Title == "Launch Concept Boards" && q.Artwork is not null);
+        Assert.Equal("Awaiting Business Approval", business.Job.StatusName);
+        Assert.Single(business.Artwork);
+        Assert.Equal([(ApprovalStage.Design, ApprovalDecision.Approved, "Naledi Khumalo")], business.Approvals.Select(a => (a.Stage, a.Decision, a.ReviewerName)));
+    }
+
     private async Task<JobDto> SubmitAsync(string requester)
     {
         var client = await api.SignInAsAsync(requester);

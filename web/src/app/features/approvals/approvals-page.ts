@@ -54,14 +54,24 @@ import { JobActions } from '../workflow/job-actions';
               </p>
               <p class="mt-3 text-sm">
                 @if (item.artwork; as artwork) {
-                  <a
-                    class="font-semibold text-accent-700 hover:underline"
-                    [href]="artwork.url"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    Review version {{ artwork.version }}
-                  </a>
+                  @if (artwork.file; as file) {
+                    <a
+                      class="font-semibold text-accent-700 hover:underline"
+                      [href]="jobs.fileUrl(job.id, file.id)"
+                      [attr.download]="file.fileName"
+                    >
+                      Review version {{ artwork.version }}: {{ file.fileName }}
+                    </a>
+                  } @else {
+                    <a
+                      class="font-semibold text-accent-700 hover:underline"
+                      [href]="artwork.url"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      Review version {{ artwork.version }}
+                    </a>
+                  }
                   @if (artwork.note) {
                     <span class="text-ink-muted"> &middot; {{ artwork.note }}</span>
                   }
@@ -92,5 +102,6 @@ export class ApprovalsPage {
   protected readonly auth = inject(AuthService);
 
   /** Shared with the nav badge, so both refresh together. */
-  protected readonly approvals = inject(JobsService).approvals;
+  protected readonly jobs = inject(JobsService);
+  protected readonly approvals = this.jobs.approvals;
 }

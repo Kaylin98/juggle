@@ -1,4 +1,4 @@
-import { Component, computed, inject, linkedSignal, resource } from '@angular/core';
+import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { FormField, applyEach, form, maxLength, pattern, required, submit, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
@@ -6,6 +6,7 @@ import { JobsService } from '../../core/jobs.service';
 import { BriefObjectives, CreateJob, CreativeGuidelines, DeliverableType, JobCategory, Priority } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { today } from '../../shared/dates';
+import { FilePicker } from '../../shared/file-picker';
 import { segmentClass } from '../../shared/segment';
 import { Select, SelectOption } from '../../shared/select';
 import { ToastService } from '../../shared/toast.service';
@@ -85,7 +86,7 @@ function toCreateJob(value: BriefForm): CreateJob {
  */
 @Component({
   selector: 'app-request-form',
-  imports: [FormField, RequestGuide, RouterLink, Select],
+  imports: [FilePicker, FormField, RequestGuide, RouterLink, Select],
   template: `
     <!-- The form and its guide, centred together; under 1100px the guide moves below the form. -->
     <div class="px-8 pt-2 pb-8">
@@ -285,6 +286,22 @@ function toCreateJob(value: BriefForm): CreateJob {
                   @if (model().links.length < maxRows) {
                     <button type="button" class="btn-secondary mt-4" (click)="addLink()">Add a link</button>
                   }
+                  <div class="mt-8 border-t border-line pt-6">
+                    <h3 class="form-label">Files</h3>
+                    <p class="-mt-1 text-sm text-ink-muted">
+                      Attach the brief document and any supporting files, up to 25 MB each: documents, images, PDFs and videos.
+                    </p>
+                    <div class="mt-4 grid gap-6 sm:grid-cols-2">
+                      <div>
+                        <p class="form-label">Brief document</p>
+                        <app-file-picker label="Choose files" [(files)]="briefFiles" />
+                      </div>
+                      <div>
+                        <p class="form-label">Supporting files</p>
+                        <app-file-picker label="Choose files" [(files)]="supportingFiles" />
+                      </div>
+                    </div>
+                  </div>
                 </section>
 
                 <section class="panel p-8" aria-labelledby="brief-f">
@@ -321,6 +338,8 @@ export class RequestFormPage {
   protected readonly auth = inject(AuthService);
 
   protected readonly today = today();
+  protected readonly briefFiles = signal<File[]>([]);
+  protected readonly supportingFiles = signal<File[]>([]);
   protected readonly maxRows = MAX_ROWS;
   protected readonly objectiveFields = OBJECTIVE_FIELDS;
   protected readonly guidelineFields = GUIDELINE_FIELDS;
@@ -430,12 +449,23 @@ export class RequestFormPage {
       try {
         const { job } = await this.jobs.submit(toCreateJob(this.model()));
         this.toast.show(`${this.auth.terms().brief} sent as ${job.code}.`, 'success');
+        await this.attachFiles(job.id);
         await this.router.navigate(['/requests', job.id]);
       } catch (error) {
         this.toast.error(error);
       }
       return undefined;
     });
+  }
+
+  /** Attaches the chosen files to the job just sent. A failure leaves the job sent; the job's page takes the rest. */
+  private async attachFiles(jobId: string): Promise<void> {
+    try {
+      for (const file of this.briefFiles()) await this.jobs.attach(jobId, 'Brief', file);
+      for (const file of this.supportingFiles()) await this.jobs.attach(jobId, 'Supporting', file);
+    } catch (error) {
+      this.toast.error(error);
+    }
   }
 
   /** The only team to brief, when there is just one. */

@@ -146,7 +146,8 @@ public sealed class JobsService(
         var job = await JobDto.Load(db.Jobs).Include(j => j.Links.OrderBy(l => l.SortOrder)).FirstOrDefaultAsync(j => j.Id == id, ct)
             ?? throw new NotFoundException("Job not found.");
         await jobAccess.EnsureCanSeeAsync(job, ct);
-        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct), await ArtworkAsync(job, ct), await ApprovalsAsync(id, ct), await RevisionsAsync(id, ct));
+        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct), await ArtworkAsync(job, ct), await ApprovalsAsync(id, ct), await RevisionsAsync(id, ct), await FilesAsync(id, ct),
+            job.RequesterUserId == currentUser.UserId);
     }
 
     /// <summary>
@@ -159,11 +160,23 @@ public sealed class JobsService(
         return await (from a in db.JobArtwork.Where(a => a.JobId == job.Id)
                       where all || db.JobApprovals.Any(p => p.ArtworkId == a.Id && p.Stage == ApprovalStage.Design && p.Decision == ApprovalDecision.Approved)
                       join u in db.Users on a.SubmittedByUserId equals u.Id
+                      join f in db.JobFiles on a.FileId equals f.Id into files
+                      from f in files.DefaultIfEmpty()
                       orderby a.Version
-                      select new ArtworkDto(a.Version, a.Url, a.Note, u.Name, a.SubmittedAt))
+                      select new ArtworkDto(
+                          a.Version, a.Url, f == null ? null : new JobFileDto(f.Id, f.Kind, f.FileName, f.SizeBytes, u.Name, f.UploadedAt),
+                          a.Note, u.Name, a.SubmittedAt))
             .AsNoTracking()
             .ToListAsync(ct);
     }
+
+    private async Task<IReadOnlyList<JobFileDto>> FilesAsync(Guid jobId, CancellationToken ct) =>
+        await (from f in db.JobFiles.Where(f => f.JobId == jobId && f.Kind != FileKind.Artwork)
+               join u in db.Users on f.UploadedByUserId equals u.Id
+               orderby f.UploadedAt, f.Id
+               select new JobFileDto(f.Id, f.Kind, f.FileName, f.SizeBytes, u.Name, f.UploadedAt))
+            .AsNoTracking()
+            .ToListAsync(ct);
 
     private async Task<IReadOnlyList<RevisionDto>> RevisionsAsync(Guid jobId, CancellationToken ct) =>
         await (from r in db.JobRevisions.Where(r => r.JobId == jobId)

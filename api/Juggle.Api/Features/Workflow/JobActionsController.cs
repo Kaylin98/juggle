@@ -1,3 +1,4 @@
+using Juggle.Api.Features.Files;
 using Juggle.Api.Features.Jobs;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +21,11 @@ public sealed class JobActionsController(JobActions actions) : ControllerBase
     [HttpPost("submit-artwork")]
     public Task<JobDetailDto> SubmitArtwork(Guid id, SubmitArtworkRequest request, CancellationToken ct) =>
         actions.SubmitArtworkAsync(id, request, ct);
+
+    [HttpPost("submit-artwork-file")]
+    [RequestSizeLimit(FileRules.MaxRequestBytes)]
+    public Task<JobDetailDto> SubmitArtworkFile(Guid id, IFormFile file, [FromForm] string? note, CancellationToken ct) =>
+        actions.SubmitArtworkFileAsync(id, file, note, ct);
 
     [HttpPost("approve-design")]
     public Task<JobDetailDto> ApproveDesign(Guid id, CommentRequest request, CancellationToken ct) =>

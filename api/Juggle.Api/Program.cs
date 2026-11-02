@@ -5,8 +5,10 @@ using Juggle.Api.Data;
 using Juggle.Api.Data.Seed;
 using Juggle.Api.Features.Allocations;
 using Juggle.Api.Features.Auth;
+using Azure.Storage.Blobs;
 using Juggle.Api.Features.Capacity;
 using Juggle.Api.Features.Dashboard;
+using Juggle.Api.Features.Files;
 using Juggle.Api.Features.Jobs;
 using Juggle.Api.Features.MyWork;
 using Juggle.Api.Features.Reports;
@@ -41,6 +43,18 @@ builder.Services.AddScoped<CapacityService>();
 builder.Services.AddScoped<AllocationChecks>();
 builder.Services.AddScoped<AllocationService>();
 builder.Services.AddScoped<JobsService>();
+builder.Services.AddScoped<JobFilesService>();
+
+// Uploaded files go to Azure Blob Storage when a connection string is configured, otherwise to a local folder.
+var files = builder.Configuration.GetSection("Files").Get<FileStoreOptions>() ?? new FileStoreOptions();
+if (string.IsNullOrWhiteSpace(files.ConnectionString))
+{
+    builder.Services.AddSingleton<IFileStore>(new LocalFileStore(Path.Combine(builder.Environment.ContentRootPath, files.LocalPath)));
+}
+else
+{
+    builder.Services.AddSingleton<IFileStore>(new AzureBlobFileStore(new BlobContainerClient(files.ConnectionString, files.Container)));
+}
 builder.Services.AddScoped<JobActions>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<BriefsReportService>();

@@ -53,6 +53,9 @@ public enum WorkflowAction
 /// <summary>The approval a workflow step records, so an organisation can leave a stage out (D72, D77).</summary>
 public enum ApprovalStage { Design, Marketing, Business }
 
+/// <summary>What an uploaded file is for: the brief document, supporting material, or a version of the artwork.</summary>
+public enum FileKind { Brief, Supporting, Artwork }
+
 public enum ApprovalDecision { Approved, ChangesRequested }
 
 /// <summary>Who asked for a revision: the marketing manager, or a stakeholder whose decision they recorded.</summary>

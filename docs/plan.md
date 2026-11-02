@@ -10,8 +10,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30. Finish
 | --- | --- |
 | Current phase | W - Workflow |
 | Phase status | Awaiting review |
-| Last completed task | W.7 Drag between columns; Phase W review gate |
-| Next task | Phase V once Phase W is approved |
+| Last completed task | Phase W review fixes, groups 1 to 4 (board and actions, allocation and schedule, Incoming and brief form, files and seed) |
+| Next task | The brief form and job page redesigns the user has queued, then Phase V once Phase W is approved |
 | Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; question 8 (job categories) has a placeholder list in code until the client answers. Listed in the Phase J review summary for the client |
 | Last updated | 2026-11-02 |
 
@@ -124,6 +124,13 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - D77 Juggle is configurable per organisation: roles, capabilities, statuses, columns, workflow, terms and the job ID format are data, never code checks
 - D78 Reassign and Reschedule are logged on the job but are not workflow steps: a booking moved to another person reassigns the job if that person was its designer; a booking's dates set the job's planned start and expected completion
 
+- D79 A job accepts bookings while it is open and in Incoming or In Design (`JobDto.AcceptsBookings`, the board's first two columns). The Booked chip, the drawer's booking actions and the schedule's job picker use it. The schedule offers unallocated jobs (booking one runs Allocate and schedule) and the row's own jobs; the API refuses a booking on any other job
+- D80 A job's deadline is the earliest of its required date and its deliverables' deadlines; overdue, due soon and the lateness warnings use it. A deliverable deadline is optional ("Same as job") and cannot be after the required date
+- D81 Booking checks (`GET /api/allocations/check` and `/availability`): Allocate and schedule shows the designer's capacity and the deadline live, offers Fit before deadline, and asks once before saving when either applies; moves, resizes and reassigns check the deadline too. A check never blocks a save (D16)
+- D82 The board's drag uses CDK with each column a drop list (sorting off, no transfers) so the preview is lifted into the page, not clipped by the column; a move under 3px is a click. A drop on a column several actions lead to opens a menu of them at the drop point (replaces the refusal in D74)
+- D83 Files (`JobFile`: Brief, Supporting, Artwork) are kept by `IFileStore`: Azure Blob Storage when `Files:ConnectionString` is set, otherwise a local folder. 25 MB, an extension allow-list, downloads only through the API as attachments for users who can see the job; an artwork file follows the artwork's visibility (the requester waits for the design approval). An artwork version is a link or a file; only the user who briefed a job attaches brief files
+- D84 Incoming's three sections group the queue by status name (Awaiting Traffic Review and Awaiting Information; Awaiting Allocation; Awaiting Revision Scheduling)
+
 ## Review gate (ends every phase)
 
 - Build passes with no warnings, lint passes, smoke tests pass
@@ -156,6 +163,13 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - [x] No artwork reaches the Marketing Manager before Head of Design approval
 - [x] A revision goes to the Traffic Manager, never straight to the designer, and keeps the same job ID
 - [x] Every action writes a `JobEvent` with user and time; approvals record reviewer, time, decision, comment and version
+
+**Review fixes (2026-11-02, one commit per group)**
+
+- [x] Group 1, board and actions: drag preview no longer clipped, 3px click rule, grab cursor and drop hints, drop menu, every action offered in the drawer, job page and Approvals, Booked chip only in Incoming and In Design, overdue dates in red
+- [x] Group 2, allocation and schedule: live capacity and deadline warnings with Fit before deadline and one confirmation, designer picker with free hours and a placeholder, compact form, revisions pre-select the designer, schedule bookings follow the job rules
+- [x] Group 3, Incoming and brief form: three sections, "Checked, allocate later", optional deliverable deadline, Team hidden for one team
+- [x] Group 4, files and seed: uploads for the brief and artwork, seeded approval queues, `dotnet test` zero-tests cause
 
 **Review gate**
 
@@ -224,6 +238,7 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - Admins' own leave is approved by someone else (requested 2026-10-31): in the MVP an admin's own time off goes to another admin of their team or an Org Admin, not self-approved (the demo lets admins approve their own, D47)
 - Time off on someone's behalf (requested 2026-10-31): admins enter time off for a person, such as sick leave phoned in, without the person asking for it in the app
 - Studio logging briefs on behalf of a manager (requested 2026-11-01): a Studio member enters a brief that arrived by email or phone for a brand's marketing manager, who then follows it in My requests (D55 did this; D58 removed it for the demo)
+- Review-fix follow-ups (2026-11-02): Fit before deadline and the "working days late" count use the designer's calendar, not other designers'; Traffic Managers attaching files to a brief; a real "Same as job" placeholder if the date input gets a text mode; Incoming sections and the bookable columns by configuration, not by status and column position (D77); a settings screen for the 25 MB limit and allowed types
 - Comments, audit log, notifications, email
 - Board column preferences stored per user in the database, so they follow the user across devices (today they are in localStorage, per browser)
 - SSO (Entra ID, Google) behind `IDemoAuth`
@@ -232,7 +247,7 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - Integrations, AI assistant, CSV export, mobile layout
 - **Per-organisation configuration** (D77, 2026-11-01): settings screens for roles and capabilities, statuses and columns, the workflow and terms; custom brief form fields per organisation; workflow templates for new organisations; a configurable working week; organisation by subdomain
 - **Deferred from the client's requirements to the MVP** (2026-11-01, `docs/gap-analysis.md` section 4):
-  - File uploads: working files, artwork files, preview and download (the demo uses artwork links, D72)
+  - File uploads beyond the brief and artwork files (D83): working files, preview in the page, replacing or deleting a file, virus scanning
   - Notifications (section 8), email and in-app, beyond the nav counts
   - Comment threads on jobs: replies, tags, attachments
   - An organisation-wide audit screen and export (each job's own history is in the demo)
@@ -264,3 +279,4 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - 2026-11-02: W.5 built: the marketing manager who briefed a job approves the artwork the head of design approved, sends it for business approval, records a stakeholder's approval (who, the day they decided, note, link; not future-dated) and closes the job (close date and user stored). Only the requester may; the head of design and traffic manager may not. No schema change. 95 API tests and 131 web tests pass.
 - 2026-11-02: W.6 built: Request changes (from marketing or, with who and when, a stakeholder's decision) records the approval, creates a numbered `JobRevision` (migration `JobRevisions`) and sends the job to the traffic manager as Awaiting Revision Scheduling with the same job ID and an optional new required date; Allocate and schedule then sets the revision's designer and estimate (the job's estimate becomes the total) and makes that designer the job's designer; the head of design's approval completes the revision. The card shows "Rev N"; the job page lists revisions, approvals, artwork versions and activity. 97 API tests and 131 web tests pass.
 - 2026-11-02: W.7 built: a card dragged to another column runs the one workflow action the user may take that leads there (clicks run at once; forms open in the job drawer); any other drop is refused with a hint naming the actions (D74). The workflow endpoint now lists each step. Phase W awaiting review. Build with no warnings, lint, 99 API tests and 136 web tests pass; a headless Chrome check (text only) passed: Incoming actions and forms, a drop on Done opening Cancel, a drop on In Review refused with the hint, Approvals for the head of design, Activity on the marketing manager's job page, no console errors. Known gap for Phase V: the seeded jobs in approval statuses have no artwork or approval records, so their queue entries say "No artwork to review" until the seed is extended (V.8).
+- 2026-11-02: Phase W review fixes, four commits. Group 1: the dragged card stayed inside its column's scroll area (no drop list, so no preview in the page) and was clipped; each column is now a drop list with sorting off, a move under 3px is a click, draggable cards show a grip and grab cursor, valid columns name the action and others dim, a drop several actions lead to opens a menu (D82). The actions panel listed only four actions, so the designer, head of design and marketing manager had no buttons in the drawer, job page or Approvals; all actions are listed now. Group 2: D79 to D81. Group 3: D84, "Checked, allocate later" with a tooltip, D80. Group 4: D83 with migration `JobFiles`, seeded artwork and approvals for the three approval statuses, and the zero-tests cause: with the Microsoft.Testing.Platform runner in `global.json`, VSTest switches such as `--nologo` are passed to the xUnit test app, which rejects them, and `dotnet test` reports "Zero tests ran" (exit 5); `dotnet test api/Juggle.slnx` runs all tests, as the README now says. Build with no warnings, lint, 112 API tests and 150 web tests pass; checked in headless Chrome as the traffic manager, designer, head of design and marketing managers. Demo data reset. Awaiting review.

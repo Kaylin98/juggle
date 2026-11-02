@@ -3,6 +3,7 @@ using Juggle.Api.Common;
 using Juggle.Api.Data;
 using Juggle.Api.Data.Entities;
 using Juggle.Api.Features.Allocations;
+using Juggle.Api.Features.Files;
 using Juggle.Api.Features.Jobs;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,7 @@ public sealed class JobActions(
     JobActionAccess access,
     AllocationService allocations,
     JobsService jobs,
+    JobFilesService files,
     OrgClock clock)
 {
     public Task<JobDetailDto> RequestInformationAsync(Guid id, MessageRequest request, CancellationToken ct) =>
@@ -125,19 +127,28 @@ public sealed class JobActions(
 
     public Task<JobDetailDto> StartAsync(Guid id, CancellationToken ct) => MoveAsync(id, WorkflowAction.Start, null, ct);
 
-    /// <summary>Records the next version of the artwork and sends the job for approval.</summary>
-    public async Task<JobDetailDto> SubmitArtworkAsync(Guid id, SubmitArtworkRequest request, CancellationToken ct)
+    /// <summary>Records the next version of the artwork as a link and sends the job for approval.</summary>
+    public Task<JobDetailDto> SubmitArtworkAsync(Guid id, SubmitArtworkRequest request, CancellationToken ct) =>
+        SubmitArtworkVersionAsync(id, request.Url.Trim(), null, request.Note, ct);
+
+    /// <summary>Records the next version of the artwork as an uploaded file and sends the job for approval.</summary>
+    public Task<JobDetailDto> SubmitArtworkFileAsync(Guid id, IFormFile file, string? note, CancellationToken ct) =>
+        SubmitArtworkVersionAsync(id, null, file, note, ct);
+
+    private async Task<JobDetailDto> SubmitArtworkVersionAsync(Guid id, string? url, IFormFile? file, string? note, CancellationToken ct)
     {
         var job = await LoadAsync(id, ct);
         var transition = await access.EnsureAsync(job, WorkflowAction.SubmitForApproval, ct);
+        var stored = file is null ? null : await files.StoreAsync(job, FileKind.Artwork, file, ct);
         var version = (await db.JobArtwork.Where(a => a.JobId == id).Select(a => (int?)a.Version).MaxAsync(ct) ?? 0) + 1;
         db.JobArtwork.Add(new JobArtwork
         {
             OrgId = job.OrgId,
             JobId = id,
             Version = version,
-            Url = request.Url.Trim(),
-            Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+            Url = url,
+            FileId = stored?.Id,
+            Note = Clean(note),
             SubmittedByUserId = currentUser.UserId,
             SubmittedAt = clock.Now,
         });

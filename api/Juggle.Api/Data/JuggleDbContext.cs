@@ -25,6 +25,7 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
     public DbSet<JobLink> JobLinks => Set<JobLink>();
     public DbSet<JobEvent> JobEvents => Set<JobEvent>();
     public DbSet<JobArtwork> JobArtwork => Set<JobArtwork>();
+    public DbSet<JobFile> JobFiles => Set<JobFile>();
     public DbSet<JobApproval> JobApprovals => Set<JobApproval>();
     public DbSet<JobRevision> JobRevisions => Set<JobRevision>();
     public DbSet<Allocation> Allocations => Set<Allocation>();
@@ -164,9 +165,21 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.HasOne<JobStatus>().WithMany().HasForeignKey(j => j.ToStatusId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<JobFile>(e =>
+        {
+            e.HasQueryFilter(f => f.OrgId == OrgId);
+            e.Property(f => f.FileName).HasMaxLength(260);
+            e.Property(f => f.ContentType).HasMaxLength(100);
+            e.Property(f => f.StorageKey).HasMaxLength(100);
+            e.HasIndex(f => f.JobId);
+            e.HasOne<Job>().WithMany().HasForeignKey(f => f.JobId);
+            e.HasOne<User>().WithMany().HasForeignKey(f => f.UploadedByUserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<JobArtwork>(e =>
         {
             e.HasQueryFilter(a => a.OrgId == OrgId);
+            e.HasOne<JobFile>().WithMany().HasForeignKey(a => a.FileId).OnDelete(DeleteBehavior.Restrict);
             e.Property(a => a.Url).HasMaxLength(1000);
             e.Property(a => a.Note).HasMaxLength(1000);
             e.HasIndex(a => new { a.JobId, a.Version }).IsUnique();

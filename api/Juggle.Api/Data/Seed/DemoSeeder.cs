@@ -272,6 +272,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         }
 
         // Only the designers are on the studio's schedule (D70).
+        var userOfPerson = new Dictionary<Guid, User>();
         Person AddDesigner(string name, string jobTitle, string[] skills, decimal? hoursPerDay = null)
         {
             var user = AddUser(name, designer);
@@ -285,6 +286,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             };
             db.People.Add(person);
             db.TeamMemberships.Add(new TeamMembership { OrgId = org.Id, UserId = user.Id, TeamId = studio.Id });
+            userOfPerson[person.Id] = user;
             return person;
         }
 
@@ -301,7 +303,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         }
 
         AddUser("Megan Botha", headOfMarketing);
-        AddUser("Naledi Khumalo", headOfDesign);
+        var naledi = AddUser("Naledi Khumalo", headOfDesign);
         var chloe = AddUser("Chloe Adams", trafficManager);
 
         var ethan = AddDesigner("Ethan Pillay", "Senior Designer", ["Digital", "E-commerce"]);
@@ -381,7 +383,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         // Traffic Manager's incoming queue (two new, one reviewed after an answer, one ready to allocate, one revision).
         AddJob("DJI", 135, "Black Friday Bellyband", awaitingRevisionScheduling, -1, 12 * Day,
             "A bellyband for the Black Friday camera boxes.", "Bellyband", lerato, 4, Priority.High);
-        AddJob("DJI", 136, "Black Friday iStore Banners", awaitingDesignApproval, 4, 10 * Day,
+        var iStoreBanners = AddJob("DJI", 136, "Black Friday iStore Banners", awaitingDesignApproval, 4, 10 * Day,
             "iStore's Black Friday banners in the shared look.", "iStore web banners\niStore email header", lerato, 6, Priority.High);
         var aPlusContent = AddJob("DJI", 137, "Brand Store A+ Content", inProgress, 16, 30 * Day,
             "A+ content for the brand store's top products.", "A+ content modules", sipho, 12);
@@ -423,7 +425,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             "Position the printers as the tool for school projects in January, with parents and teachers.",
             "A4 insert: Incredible Connection\nSocial carousel\nTakealot banners");
 
-        AddJob("Pure Electric", 32, "Scooter Spec Sheets", awaitingBusinessApproval, -1, 40 * Day,
+        var specSheets = AddJob("Pure Electric", 32, "Scooter Spec Sheets", awaitingBusinessApproval, -1, 40 * Day,
             "Spec sheets for the sales team, checked by Sales before print.", "Scooter spec sheets", priya, 4);
         var billboard = AddJob("Pure Electric", 33, "Summer Billboard", scheduled, 42, 40 * Day,
             "The summer key visual adapted for billboards.", "Billboard adaptation", ruben, 8);
@@ -444,7 +446,7 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
             "Support the sales team's roadshow to corporate buyers in Johannesburg and Cape Town.",
             "Presentation template\nPull-up banner\nA5 leave-behind flyer");
 
-        AddJob("Ultra Human", 20, "Launch Concept Boards", awaitingMarketingApproval, 1, 45 * Day,
+        var conceptBoards = AddJob("Ultra Human", 20, "Launch Concept Boards", awaitingMarketingApproval, 1, 45 * Day,
             "Concept boards for the first retail stores.", "Launch concept boards", sipho, 8, Priority.High);
         var shelfStrips = AddJob("Ultra Human", 21, "Retail Launch Shelf Strips", scheduled, 18, 45 * Day,
             "Shelf strips that explain the ring at a glance.", "Shelf strips", ruben, 6);
@@ -467,6 +469,45 @@ public sealed partial class DemoSeeder(JuggleDbContext db, OrgClock clock, ILogg
         popUp.ClosedAt = now.AddDays(-3);
         popUp.ClosedByUserId = managerOf["Reloved"].Id;
         AddEvent(popUp, managerOf["Reloved"], popUp.ClosedAt.Value, WorkflowAction.Close, readyToClose, closed);
+
+        // The jobs waiting on an approval have the artwork their designer submitted and the approvals so far (D72), so
+        // every queue has something real to act on.
+
+        JobArtwork SubmitArtwork(Job job, double hoursAgo, string note)
+        {
+            var designerUser = userOfPerson[job.DesignerPersonId!.Value];
+            var artwork = new JobArtwork
+            {
+                OrgId = org.Id,
+                JobId = job.Id,
+                Version = 1,
+                Url = $"https://files.thecoregroup.example/artwork/{job.Code.Replace(' ', '-')}/v1",
+                Note = note,
+                SubmittedByUserId = designerUser.Id,
+                SubmittedAt = now.AddHours(-hoursAgo),
+            };
+            db.JobArtwork.Add(artwork);
+            AddEvent(job, designerUser, artwork.SubmittedAt, WorkflowAction.SubmitForApproval, inProgress, awaitingDesignApproval, "Version 1");
+            return artwork;
+        }
+
+        void ApproveDesign(Job job, JobArtwork artwork, double hoursAgo, string comment)
+        {
+            var at = now.AddHours(-hoursAgo);
+            db.JobApprovals.Add(new JobApproval
+            {
+                OrgId = org.Id, JobId = job.Id, Stage = ApprovalStage.Design, Decision = ApprovalDecision.Approved,
+                ArtworkId = artwork.Id, RecordedByUserId = naledi.Id, RecordedAt = at, Comment = comment,
+            });
+            AddEvent(job, naledi, at, WorkflowAction.ApproveDesign, awaitingDesignApproval, awaitingMarketingApproval, comment);
+        }
+
+        SubmitArtwork(iStoreBanners, 20, "Banners in three sizes, ready for review.");
+        SubmitArtwork(retailerInserts, 6, "All four inserts, print-ready PDFs.");
+        ApproveDesign(conceptBoards, SubmitArtwork(conceptBoards, 30, "Six boards for the first two stores."), 18, "Strong work. Approved.");
+        var specArtwork = SubmitArtwork(specSheets, 70, "Spec sheets for the whole commuter range.");
+        ApproveDesign(specSheets, specArtwork, 56, "Approved.");
+        AddEvent(specSheets, managerOf["Pure Electric"], now.AddHours(-40), WorkflowAction.NeedsBusinessApproval, awaitingMarketingApproval, awaitingBusinessApproval, "Sales must confirm the specifications.");
 
         // Jobs from the eight months before this one, so the briefs report shows nine months of work (D56). Each was
         // closed by its marketing manager about two weeks after it was sent, or cancelled by the Traffic Manager the next

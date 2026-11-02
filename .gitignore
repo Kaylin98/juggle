@@ -17,3 +17,5 @@ playwright-report/
 .idea/
 .DS_Store
 Thumbs.db
+
+App_Data/

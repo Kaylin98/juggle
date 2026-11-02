@@ -38,6 +38,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         builder.UseEnvironment("Development");
         builder.UseSetting("ConnectionStrings:Juggle", _db.GetConnectionString());
+        builder.UseSetting("Files:LocalPath", Path.Combine(Path.GetTempPath(), "juggle-test-files", Guid.NewGuid().ToString("N")));
     }
 
     public async Task<HttpClient> SignInAsAsync(string name)

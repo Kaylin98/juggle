@@ -8,7 +8,9 @@ import {
   BusinessApproval,
   CreateJob,
   Job,
+  FileKind,
   JobDetail,
+  JobFile,
   JobOptions,
   Person,
   QueuedJob,
@@ -123,6 +125,27 @@ export class JobsService {
     return firstValueFrom(
       this.http.post<JobDetail>(`/api/jobs/${id}/submit-artwork`, { url, note }),
     );
+  }
+
+  /** Submits a file as the next version of the artwork. */
+  submitArtworkFile(id: string, file: File, note: string | null): Promise<JobDetail> {
+    const body = new FormData();
+    body.append('file', file);
+    if (note) body.append('note', note);
+    return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/submit-artwork-file`, body));
+  }
+
+  /** Attaches a file to the job: its brief document or supporting material. */
+  attach(id: string, kind: FileKind, file: File): Promise<JobFile> {
+    const body = new FormData();
+    body.append('kind', kind);
+    body.append('file', file);
+    return firstValueFrom(this.http.post<JobFile>(`/api/jobs/${id}/files`, body));
+  }
+
+  /** Where a file downloads from, for a link. */
+  fileUrl(jobId: string, fileId: string): string {
+    return `/api/jobs/${jobId}/files/${fileId}`;
   }
 
   markReady(id: string): Promise<JobDetail> {

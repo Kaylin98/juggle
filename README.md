@@ -32,3 +32,9 @@ dotnet run --project api/Juggle.Api -- --reset-demo
 dotnet test api/Juggle.slnx                # needs Docker running (Testcontainers)
 cd web && npm test -- --watch=false && npx ng lint
 ```
+
+`global.json` runs `dotnet test` on Microsoft.Testing.Platform, which passes every extra switch to the test app. VSTest switches such as `--nologo`, `--logger` and `--filter` are unknown to it, so the run ends with "Zero tests ran". Use only the form above, or `dotnet test --solution api/Juggle.slnx`; stop the API first, or the build cannot replace `Juggle.Api.exe`.
+
+## Uploaded files
+
+Files attached to jobs go to Azure Blob Storage when `Files:ConnectionString` is set (the environment variable `Files__ConnectionString`; `Files:Container` names the container, `job-files` by default). Without it they go to `api/Juggle.Api/App_Data/files`, which Git ignores.

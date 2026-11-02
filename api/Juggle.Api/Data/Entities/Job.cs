@@ -128,7 +128,25 @@ public class JobEvent
     public string? Message { get; set; }
 }
 
-/// <summary>One version of the artwork a designer submitted for approval (D72): a link now, a file in the MVP.</summary>
+/// <summary>
+/// A file attached to a job: its brief document, supporting material or a version of the artwork. The bytes are kept
+/// by the file store under <see cref="StorageKey"/>; only users who can see the job can open it.
+/// </summary>
+public class JobFile
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid OrgId { get; set; }
+    public Guid JobId { get; set; }
+    public FileKind Kind { get; set; }
+    public required string FileName { get; set; }
+    public required string ContentType { get; set; }
+    public long SizeBytes { get; set; }
+    public required string StorageKey { get; set; }
+    public Guid UploadedByUserId { get; set; }
+    public DateTimeOffset UploadedAt { get; set; }
+}
+
+/// <summary>One version of the artwork a designer submitted for approval (D72): a link or an uploaded file.</summary>
 public class JobArtwork
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
@@ -138,7 +156,11 @@ public class JobArtwork
     /// <summary>1 for the first submission, counting up for each later one on the job.</summary>
     public int Version { get; set; }
 
-    public required string Url { get; set; }
+    public string? Url { get; set; }
+
+    /// <summary>The uploaded file, when the version is a file rather than a link.</summary>
+    public Guid? FileId { get; set; }
+
     public string? Note { get; set; }
     public Guid SubmittedByUserId { get; set; }
     public DateTimeOffset SubmittedAt { get; set; }

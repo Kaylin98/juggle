@@ -6,6 +6,7 @@ import { StatusChip } from '../../shared/status-chip';
 import { JobActions } from '../workflow/job-actions';
 import { JobApprovals } from '../workflow/job-approvals';
 import { JobArtwork } from '../workflow/job-artwork';
+import { JobFiles } from '../workflow/job-files';
 import { JobRevisions } from '../workflow/job-revisions';
 import { JobTrail } from '../workflow/job-trail';
 import {
@@ -21,7 +22,7 @@ import {
  */
 @Component({
   selector: 'app-request-detail',
-  imports: [DatePipe, JobActions, JobApprovals, JobArtwork, JobRevisions, JobTrail, StatusChip],
+  imports: [DatePipe, JobActions, JobApprovals, JobArtwork, JobFiles, JobRevisions, JobTrail, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <button
@@ -219,8 +220,18 @@ import {
             </p>
           </section>
 
+          @if (loaded.files.length > 0 || loaded.canAttachFiles) {
+            <app-job-files
+              class="xl:col-span-2"
+              [jobId]="job.id"
+              [files]="loaded.files"
+              [canAttach]="loaded.canAttachFiles"
+              (attached)="detail.reload()"
+            />
+          }
+
           @if (loaded.artwork.length > 0) {
-            <app-job-artwork class="xl:col-span-2" [artwork]="loaded.artwork" />
+            <app-job-artwork class="xl:col-span-2" [jobId]="job.id" [artwork]="loaded.artwork" />
           }
 
           @if (loaded.approvals.length > 0) {

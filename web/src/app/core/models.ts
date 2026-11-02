@@ -398,9 +398,23 @@ export interface Brief {
 
 /** A job and its whole brief, for its own page. */
 /** A version of the artwork submitted for approval (D72). */
+export type FileKind = 'Brief' | 'Supporting' | 'Artwork';
+
+/** A file attached to a job. It downloads from `/api/jobs/{jobId}/files/{id}` for anyone who can see the job. */
+export interface JobFile {
+  id: string;
+  kind: FileKind;
+  fileName: string;
+  sizeBytes: number;
+  uploadedByName: string;
+  uploadedAt: string;
+}
+
+/** A version of the artwork: a link or an uploaded file. */
 export interface Artwork {
   version: number;
-  url: string;
+  url: string | null;
+  file: JobFile | null;
   note: string | null;
   submittedByName: string;
   submittedAt: string;
@@ -469,6 +483,10 @@ export interface JobDetail {
   approvals: Approval[];
   /** The rounds of changes asked for, oldest first. */
   revisions: Revision[];
+  /** The brief document and supporting material, oldest first. */
+  files: JobFile[];
+  /** The signed-in user briefed the job, so may attach files to it. */
+  canAttachFiles: boolean;
 }
 
 /** A brief in the client's template, sections A to F (J.4). The signed-in user sends it (D67). */

@@ -82,6 +82,7 @@ Work directly on main. One commit per completed item. Do not create branches unl
 
 ## Context use
 
-- Never take browser screenshots, including at review gates; the user checks the UI themselves. Verify UI work with a headless browser check that reports only text (page loads, no console errors, key elements present)
+- No browser screenshots by default. Verify UI work with a headless browser check that reports only text (page loads, no console errors, key elements present)
+- Take screenshots only when a task changes layout or visual design, and then only of the screens that changed
 - Run builds and tests with minimal output and report only failures
 - Read only the file sections you need

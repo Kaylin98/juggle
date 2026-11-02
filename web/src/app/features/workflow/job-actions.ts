@@ -11,11 +11,21 @@ import { BusinessApprovalForm } from './business-approval-form';
 import { MessageForm } from './message-form';
 import { RequestChangesForm } from './request-changes-form';
 
-/** The actions this panel offers, in the order of the buttons. */
+/** The actions this panel offers, in the order of the buttons; Cancel comes last. */
 const ACTIONS: WorkflowAction[] = [
+  'Answer',
   'AllocateAndSchedule',
   'MarkReady',
   'RequestInformation',
+  'Start',
+  'SubmitForApproval',
+  'ApproveDesign',
+  'ApproveMarketing',
+  'NeedsBusinessApproval',
+  'RecordBusinessApproval',
+  'RequestChanges',
+  'SendBack',
+  'Close',
   'Cancel',
 ];
 
@@ -141,9 +151,9 @@ export class JobActions {
   readonly job = input.required<Job>();
   /** The team's people, for Allocate and schedule. */
   readonly people = input<Person[]>([]);
-  /** An action changed the job, so the page showing it should reload. */
   /** The form to open at once, such as the one a card dropped on a column calls for. */
   readonly startWith = input<WorkflowAction | null>(null);
+  /** An action changed the job, so the page showing it should reload. */
   readonly changed = output<void>();
 
   protected readonly available = computed(() =>

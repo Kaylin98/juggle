@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Job, Person } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { Avatar } from '../../shared/avatar';
+import { DueDate } from '../../shared/due-date';
 import { formatDateRange, startOfWeek } from '../../shared/dates';
 import { StatusChip } from '../../shared/status-chip';
 import { Tooltip } from '../../shared/tooltip';
@@ -26,13 +27,14 @@ export interface BoardCard {
  */
 @Component({
   selector: 'app-job-card',
-  imports: [Avatar, DatePipe, RouterLink, StatusChip, Tooltip],
+  imports: [Avatar, DatePipe, DueDate, RouterLink, StatusChip, Tooltip],
   template: `
     @let job = card().job;
     <div class="relative rounded-card bg-surface shadow-soft transition-shadow hover:shadow-lifted">
       <button
         type="button"
         class="absolute inset-0 rounded-card focus-visible:ring-3 focus-visible:ring-accent-200 focus-visible:outline-none"
+        [class.cursor-grab]="canDrag()"
         (click)="opened.emit()"
       >
         <span class="sr-only">{{ job.title }}, {{ job.code }}</span>
@@ -41,6 +43,13 @@ export interface BoardCard {
         <span class="flex items-center gap-2 text-xs text-ink-muted" [style.--hue]="job.colour">
           <span class="hue-dot size-2 shrink-0 rounded-full"></span>
           <span class="truncate">{{ job.code }}</span>
+          @if (canDrag()) {
+            <svg class="ml-auto size-4 shrink-0 text-ink-faint" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <circle cx="6" cy="4" r="1.2" /><circle cx="10" cy="4" r="1.2" />
+              <circle cx="6" cy="8" r="1.2" /><circle cx="10" cy="8" r="1.2" />
+              <circle cx="6" cy="12" r="1.2" /><circle cx="10" cy="12" r="1.2" />
+            </svg>
+          }
         </span>
         <span class="mt-2 block font-display text-sm font-semibold">{{ job.title }}</span>
         <span class="mt-2 flex flex-wrap items-center gap-2 text-xs">
@@ -53,16 +62,7 @@ export interface BoardCard {
         </span>
         <span class="mt-3 flex h-6 items-center gap-2 text-xs">
           @if (job.requiredDate) {
-            <span
-              class="pointer-events-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-              [class]="job.isOverdue ? 'font-semibold text-over-700' : 'text-ink-muted'"
-              [appTooltip]="job.isOverdue ? 'Overdue' : 'Required date'"
-            >
-              @if (job.isOverdue) {
-                <span class="size-1.5 rounded-full bg-over-500"></span>
-              }
-              {{ job.requiredDate | date: 'd MMM' }}
-            </span>
+            <app-due-date class="pointer-events-auto shrink-0" [date]="job.requiredDate" [overdue]="job.isOverdue" />
           }
           @if (showBooking() && !card().done) {
             @if (job.bookings.length > 0) {
@@ -120,6 +120,8 @@ export class JobCard {
   readonly detail = input<string | null>(null);
   /** The booking chip (D57), shown on the board. */
   readonly showBooking = input(false);
+  /** The signed-in user can act on this job, so it can be dragged to a column. */
+  readonly canDrag = input(false);
   readonly opened = output<void>();
 
   /** The week of the first booking, where the chip opens the schedule. */

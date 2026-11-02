@@ -3,12 +3,13 @@ import { Component, inject, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
+import { DueDate } from '../../shared/due-date';
 import { StatusChip } from '../../shared/status-chip';
 
 /** The jobs the signed-in user sent the brief for, newest first, each with its job ID and status. Each row opens the job. */
 @Component({
   selector: 'app-my-requests',
-  imports: [DatePipe, RouterLink, StatusChip],
+  imports: [DatePipe, DueDate, RouterLink, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <div class="flex flex-wrap items-end justify-between gap-4">
@@ -48,8 +49,12 @@ import { StatusChip } from '../../shared/status-chip';
                     </span>
                     <span class="truncate text-ink-muted max-md:hidden">{{ job.department }}</span>
                     <span class="text-ink-muted max-md:hidden">{{ job.createdAt | date: 'd MMM y' }}</span>
-                    <span class="text-ink-muted max-md:hidden">
-                      {{ job.requiredDate ? (job.requiredDate | date: 'd MMM y') : '-' }}
+                    <span class="max-md:hidden">
+                      @if (job.requiredDate) {
+                        <app-due-date [date]="job.requiredDate" [overdue]="job.isOverdue" format="d MMM y" />
+                      } @else {
+                        <span class="text-ink-muted">-</span>
+                      }
                     </span>
                     <span class="text-right max-md:col-start-2 max-md:row-span-2 max-md:row-start-1">
                       <app-status-chip [name]="job.statusName" [colour]="job.statusColour" />

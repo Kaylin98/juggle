@@ -278,7 +278,7 @@
 
 /* Angular CDK drag and drop adds these classes at runtime; the drag preview is appended to <body>. */
 .cdk-drag-preview {
-  @apply rotate-1 shadow-raised;
+  @apply rotate-1 cursor-grabbing shadow-raised;
 }
 
 .cdk-drag-placeholder {

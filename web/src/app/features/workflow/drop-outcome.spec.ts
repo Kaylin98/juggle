@@ -76,7 +76,7 @@ describe('dropOutcome', () => {
     });
   });
 
-  it('refuses when several actions lead to the column', () => {
+  it('offers the actions when several lead to the column', () => {
     const both: Workflow = {
       ...workflow,
       steps: [...workflow.steps, step('Close', 'new', 'closed')],
@@ -84,8 +84,8 @@ describe('dropOutcome', () => {
     const card = job({ statusId: 'new', actions: ['Cancel', 'Close'] });
 
     expect(dropOutcome(card, done, both, terms)).toEqual({
-      kind: 'refuse',
-      hint: 'More than one action moves it to Done: Cancel job or Close job. Open it and choose one.',
+      kind: 'choose',
+      actions: ['Cancel', 'Close'],
     });
   });
 });

@@ -4,6 +4,7 @@ import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { Priority } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
+import { DueDate } from '../../shared/due-date';
 import { StatusChip } from '../../shared/status-chip';
 import { JobActions } from '../workflow/job-actions';
 
@@ -21,7 +22,7 @@ const PRIORITY_PILL: Record<Priority, string> = {
  */
 @Component({
   selector: 'app-incoming-page',
-  imports: [DatePipe, JobActions, StatusChip],
+  imports: [DatePipe, DueDate, JobActions, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <h1 class="page-title">Incoming</h1>
@@ -62,7 +63,7 @@ const PRIORITY_PILL: Record<Priority, string> = {
                 {{ job.createdAt | date: 'EEE d MMM, HH:mm' }}
                 @if (job.requiredDate; as required) {
                   &middot; required
-                  <span class="font-semibold text-ink">{{ required | date: 'EEE d MMM' }}</span>
+                  <app-due-date [date]="required" [overdue]="job.isOverdue" format="EEE d MMM" />
                 }
                 @if (job.designerName; as designer) {
                   &middot; {{ designer }}

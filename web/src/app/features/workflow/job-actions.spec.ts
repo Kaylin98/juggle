@@ -7,6 +7,7 @@ import { job } from '../board/job.fixture';
 import { JobActions } from './job-actions';
 
 async function buttons(actions: WorkflowAction[]): Promise<string[]> {
+  TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       {
@@ -29,8 +30,21 @@ describe('JobActions', () => {
     expect(await buttons(['MarkReady', 'AllocateAndSchedule', 'Cancel', 'Start'])).toEqual([
       'Allocate and schedule',
       'Brief complete',
+      'Start work',
       'Cancel job',
     ]);
+  });
+
+  it('offers the designer, head of design and marketing manager their steps', async () => {
+    expect(await buttons(['Start'])).toEqual(['Start work']);
+    expect(await buttons(['SubmitForApproval'])).toEqual(['Submit artwork']);
+    expect(await buttons(['SendBack', 'ApproveDesign'])).toEqual(['Approve design', 'Send back']);
+    expect(await buttons(['RequestChanges', 'NeedsBusinessApproval', 'ApproveMarketing'])).toEqual([
+      'Approve artwork',
+      'Needs business approval',
+      'Request changes',
+    ]);
+    expect(await buttons(['Close'])).toEqual(['Close job']);
   });
 
   it('shows nothing when the user may take no action', async () => {

@@ -118,7 +118,7 @@ import {
               </div>
               <div>
                 <dt class="label-caps">Required completion</dt>
-                <dd class="mt-1">
+                <dd class="mt-1" [class]="job.isOverdue ? 'font-semibold text-over-700' : ''">
                   {{ job.requiredDate ? (job.requiredDate | date: 'EEE d MMM y') : 'No date' }}
                 </dd>
               </div>

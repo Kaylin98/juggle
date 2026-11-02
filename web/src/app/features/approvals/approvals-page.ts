@@ -1,8 +1,8 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
+import { DueDate } from '../../shared/due-date';
 import { StatusChip } from '../../shared/status-chip';
 import { JobActions } from '../workflow/job-actions';
 
@@ -12,7 +12,7 @@ import { JobActions } from '../workflow/job-actions';
  */
 @Component({
   selector: 'app-approvals-page',
-  imports: [DatePipe, JobActions, RouterLink, StatusChip],
+  imports: [DueDate, JobActions, RouterLink, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <h1 class="page-title">Approvals</h1>
@@ -49,7 +49,7 @@ import { JobActions } from '../workflow/job-actions';
                 from {{ job.requesterName }}
                 @if (job.requiredDate; as required) {
                   &middot; required
-                  <span class="font-semibold text-ink">{{ required | date: 'EEE d MMM' }}</span>
+                  <app-due-date [date]="required" [overdue]="job.isOverdue" format="EEE d MMM" />
                 }
               </p>
               <p class="mt-3 text-sm">

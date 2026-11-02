@@ -37,6 +37,27 @@ describe('JobCard', () => {
   });
 });
 
+describe('JobCard drag and due date', () => {
+  it('shows a grip only on a card the user can act on', async () => {
+    const boardCard = card({ actions: ['Start'] });
+    expect((await render(boardCard)).querySelector('svg')).toBeNull();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: TeamContextService, useValue: { teamId: () => 'studio' } }],
+    });
+    const fixture = TestBed.createComponent(JobCard);
+    fixture.componentRef.setInput('card', boardCard);
+    fixture.componentRef.setInput('canDrag', true);
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('svg')).not.toBeNull();
+  });
+
+  it('shows an overdue required date in red', async () => {
+    const element = await render(card({ requiredDate: '2026-10-30', isOverdue: true }));
+    expect(element.querySelector('app-due-date span')!.className).toContain('text-over-700');
+  });
+});
+
 describe('JobCard booking chip', () => {
   it("shows the booked hours, linking to the schedule at the first booking's week", async () => {
     const element = await render(

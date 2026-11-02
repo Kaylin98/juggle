@@ -16,7 +16,9 @@ import { TeamContextService } from '../../core/team-context.service';
 import { BrandLegend, legendBrands } from '../../shared/brand-legend';
 import { ToastService } from '../../shared/toast.service';
 import { ActionRunner } from '../workflow/action-runner';
-import { dropOutcome } from '../workflow/drop-outcome';
+import { ONE_CLICK_ACTIONS, actionLabels } from '../workflow/action-labels';
+import { DropMenu } from '../workflow/drop-menu';
+import { actionsLeadingTo, dropOutcome } from '../workflow/drop-outcome';
 import { BoardColumn } from './board-column';
 import { BoardFilters, matchesFilters } from './board-filters';
 import { BoardPrefsService } from './board-prefs.service';
@@ -32,7 +34,7 @@ import { JobDrawer } from './job-drawer';
  */
 @Component({
   selector: 'app-board-page',
-  imports: [BoardColumn, BoardFilters, BrandLegend, JobDrawer],
+  imports: [BoardColumn, BoardFilters, BrandLegend, DropMenu, JobDrawer],
   templateUrl: './board-page.html',
 })
 export class BoardPage {
@@ -179,6 +181,37 @@ export class BoardPage {
     computation: () => null,
   });
 
+  /** The job being dragged, so the columns can show where it may go. */
+  protected readonly dragging = signal<Job | null>(null);
+
+  /** The actions that open a menu, and where, when a card is dropped on a column that several of them lead to. */
+  protected readonly dropMenu = signal<{
+    job: Job;
+    actions: WorkflowAction[];
+    point: { x: number; y: number };
+  } | null>(null);
+
+  /** While a card is dragged, what dropping it on each column does (the action names), and which columns dim. */
+  protected readonly dragTargets = computed(() => {
+    const job = this.dragging();
+    const data = this.data();
+    if (!job || !data) return null;
+    const labels = actionLabels(this.auth.terms());
+    return new Map(
+      data.workflow.columns.map((column) => {
+        const actions = actionsLeadingTo(job, column, data.workflow);
+        const own = data.workflow.columns.find((c) => c.statuses.some((s) => s.id === job.statusId));
+        return [
+          column.id,
+          {
+            hint: actions.map((a) => labels[a]).join(' or ') || null,
+            dimmed: actions.length === 0 && column.id !== own?.id,
+          },
+        ] as const;
+      }),
+    );
+  });
+
   protected readonly openCard = computed(
     () => this.cards().find((card) => card.job.id === this.openJobId()) ?? null,
   );
@@ -195,15 +228,36 @@ export class BoardPage {
       ?.getAttribute('data-column-id');
     const target = data?.workflow.columns.find((c) => c.id === columnId);
     if (!data || !target) return;
+    this.dragging.set(null);
     const outcome = dropOutcome(event.job, target, data.workflow, this.auth.terms());
     if (outcome?.kind === 'refuse') {
       this.toast.show(outcome.hint, 'warning');
     } else if (outcome?.kind === 'run') {
       if (await this.runner.runOneClick(event.job.id, outcome.action)) this.board.reload();
+    } else if (outcome?.kind === 'choose') {
+      this.dropMenu.set({ job: event.job, actions: outcome.actions, point: event.point });
     } else if (outcome) {
       this.openJobId.set(event.job.id);
       this.openAction.set(outcome.action);
     }
+  }
+
+  /** An action chosen from the drop menu runs or opens its form, as a drop that leads to only that action does. */
+  protected async chooseDropAction(action: WorkflowAction): Promise<void> {
+    const menu = this.dropMenu();
+    this.dropMenu.set(null);
+    if (!menu) return;
+    if (ONE_CLICK_ACTIONS.includes(action)) {
+      if (await this.runner.runOneClick(menu.job.id, action)) this.board.reload();
+    } else {
+      this.openJobId.set(menu.job.id);
+      this.openAction.set(action);
+    }
+  }
+
+  /** The booking chip is for work still to be done: the board's first two columns, Incoming and In Design (D57). */
+  protected showsBooking(columnId: string): boolean {
+    return (this.data()?.workflow.columns.slice(0, 2) ?? []).some((c) => c.id === columnId);
   }
 
   /** A manual collapse is remembered for this user; a manual expand holds only until the next resize. */

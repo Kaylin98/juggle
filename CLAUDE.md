@@ -77,4 +77,11 @@ Work directly on main. One commit per completed item. Do not create branches unl
 - Tick tasks in `docs/plan.md` as they are finished; update "Where we left off", the phase status and the progress log at the end of every session or phase
 - Work one phase at a time. **At the end of every phase, stop for human review.** Do not start the next phase until the user approves it
 - Ideas outside the brief go in the "Later" list in `docs/plan.md`, not into the code
+- `docs/plan-archive.md`: finished phases, full decision text and the old progress log. Read it only when needed
 - Ask before adding any paid library
+
+## Context use
+
+- Take browser screenshots only at review gates
+- Run builds and tests with minimal output and report only failures
+- Read only the file sections you need

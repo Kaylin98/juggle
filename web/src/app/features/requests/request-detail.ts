@@ -1,10 +1,10 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, Location } from '@angular/common';
 import { Component, computed, inject, input, resource } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { StatusChip } from '../../shared/status-chip';
 import { JobActions } from '../workflow/job-actions';
+import { JobArtwork } from '../workflow/job-artwork';
 import { JobTrail } from '../workflow/job-trail';
 import {
   CATEGORY_LABELS,
@@ -19,10 +19,14 @@ import {
  */
 @Component({
   selector: 'app-request-detail',
-  imports: [DatePipe, JobActions, JobTrail, RouterLink, StatusChip],
+  imports: [DatePipe, JobActions, JobArtwork, JobTrail, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
-      <a routerLink="/requests" class="btn-quiet inline-flex items-center gap-1">
+      <button
+        type="button"
+        class="btn-quiet inline-flex items-center gap-1"
+        (click)="location.back()"
+      >
         <!-- Heroicons arrow-left (mini, MIT) -->
         <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path
@@ -31,8 +35,8 @@ import {
             clip-rule="evenodd"
           />
         </svg>
-        My requests
-      </a>
+        Back
+      </button>
 
       @if (detail.error()) {
         <p class="empty-state mt-6 text-over-700">
@@ -213,6 +217,10 @@ import {
             </p>
           </section>
 
+          @if (loaded.artwork.length > 0) {
+            <app-job-artwork class="xl:col-span-2" [artwork]="loaded.artwork" />
+          }
+
           <app-job-trail class="xl:col-span-2" [history]="loaded.history" />
         </div>
       } @else {
@@ -223,6 +231,7 @@ import {
 })
 export class RequestDetailPage {
   private readonly jobs = inject(JobsService);
+  protected readonly location = inject(Location);
   protected readonly auth = inject(AuthService);
 
   /** From the `/requests/:id` route. */

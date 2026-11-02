@@ -100,7 +100,9 @@ public sealed record JobDto(
 
 /// <summary>A job, its whole brief and what has been done to it, for its own page.</summary>
 /// <param name="History">Every action taken on the job, oldest first (D72).</param>
-public sealed record JobDetailDto(JobDto Job, BriefDto Brief, IReadOnlyList<JobEventDto> History);
+/// <param name="Artwork">The versions submitted, oldest first. The user who briefed the job sees none until the head of design has approved the design.</param>
+public sealed record JobDetailDto(
+    JobDto Job, BriefDto Brief, IReadOnlyList<JobEventDto> History, IReadOnlyList<ArtworkDto> Artwork);
 
 /// <param name="ToStatusName">The status the action left the job in.</param>
 /// <param name="Message">What the user wrote with it, such as a question or the reason for cancelling.</param>
@@ -203,3 +205,6 @@ public sealed record CreativeGuidelines(
 
 /// <summary>E. Supporting material: a link to existing artwork, guidelines, images or a cloud folder, with a label.</summary>
 public sealed record BriefLink([Required, MaxLength(1000), Url] string Url, [MaxLength(200)] string? Label);
+
+/// <summary>A version of the artwork submitted for approval (D72).</summary>
+public sealed record ArtworkDto(int Version, string Url, string? Note, string SubmittedByName, DateTimeOffset SubmittedAt);

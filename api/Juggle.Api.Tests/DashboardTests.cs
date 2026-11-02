@@ -80,7 +80,9 @@ public sealed class DashboardTests(ApiFactory api)
         Assert.Equal([new TeamCountDto(studioId, "Design Studio", jobs.Count(j => j.IsOverdue))], dashboard.OverdueJobs);
         Assert.Equal([new TeamCountDto(studioId, "Design Studio", incoming!.Count)], dashboard.Incoming);
         Assert.Equal([new TeamCountDto(studioId, "Design Studio", jobs.Count(j => approvals.Contains(j.StatusName)))], dashboard.AwaitingApproval);
-        Assert.Equal((4, 4), (dashboard.AwaitingApproval[0].Count, dashboard.OverdueJobs[0].Count));
+        // Other tests send jobs on to approval, so only the seeded four are certain.
+        Assert.Equal(4, dashboard.OverdueJobs[0].Count);
+        Assert.True(dashboard.AwaitingApproval[0].Count >= 4);
         Assert.Equal(jobs.Count(j => j.StatusKind == JobStatusKind.Open), dashboard.WorkByDepartment.Sum(d => d.Count));
         Assert.Equal(dashboard.WorkByDepartment.OrderByDescending(d => d.Count), dashboard.WorkByDepartment);
     }

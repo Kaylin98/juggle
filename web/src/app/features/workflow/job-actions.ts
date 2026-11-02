@@ -4,6 +4,7 @@ import { JobsService } from '../../core/jobs.service';
 import { Job, Person, WorkflowAction } from '../../core/models';
 import { ToastService } from '../../shared/toast.service';
 import { AllocateForm } from './allocate-form';
+import { ArtworkForm, ArtworkSubmission } from './artwork-form';
 import { MessageForm } from './message-form';
 
 /** The actions this panel offers, in the order of the buttons. */
@@ -20,7 +21,7 @@ const ACTIONS: WorkflowAction[] = [
  */
 @Component({
   selector: 'app-job-actions',
-  imports: [AllocateForm, MessageForm],
+  imports: [AllocateForm, ArtworkForm, MessageForm],
   template: `
     @if (available().length > 0) {
       @switch (open()) {
@@ -49,6 +50,9 @@ const ACTIONS: WorkflowAction[] = [
             [action]="answer"
             (closed)="open.set(null)"
           />
+        }
+        @case ('SubmitForApproval') {
+          <app-artwork-form [action]="submitArtwork" (closed)="open.set(null)" />
         }
         @case ('Cancel') {
           <app-message-form
@@ -93,6 +97,8 @@ export class JobActions {
 
   protected readonly labels = computed<Partial<Record<WorkflowAction, string>>>(() => ({
     Answer: 'Answer the question',
+    Start: 'Start work',
+    SubmitForApproval: 'Submit artwork',
     AllocateAndSchedule: 'Allocate and schedule',
     MarkReady: `${this.auth.terms().brief} complete`,
     RequestInformation: 'Request information',
@@ -105,22 +111,31 @@ export class JobActions {
     computation: () => null,
   });
 
+  /** Actions that need no more than a click run at once; the rest open their form. */
   protected async choose(action: WorkflowAction): Promise<void> {
-    if (action !== 'MarkReady') {
-      this.open.set(action);
-      return;
-    }
-    try {
-      await this.jobs.markReady(this.job().id);
-      this.toast.show(`${this.auth.terms().brief} marked complete.`, 'success');
-      this.changed.emit();
-    } catch (error) {
-      this.toast.error(error);
+    const id = this.job().id;
+    switch (action) {
+      case 'MarkReady':
+        return this.run(
+          () => this.jobs.markReady(id),
+          `${this.auth.terms().brief} marked complete.`,
+        );
+      case 'Start':
+        return this.run(() => this.jobs.start(id), 'Work started.');
+      default:
+        this.open.set(action);
     }
   }
 
   protected readonly requestInformation = async (message: string): Promise<void> => {
     await this.run(() => this.jobs.requestInformation(this.job().id, message), 'Question sent.');
+  };
+
+  protected readonly submitArtwork = async (artwork: ArtworkSubmission): Promise<void> => {
+    await this.run(
+      () => this.jobs.submitArtwork(this.job().id, artwork.url, artwork.note),
+      'Artwork submitted for approval.',
+    );
   };
 
   protected readonly answer = async (message: string): Promise<void> => {

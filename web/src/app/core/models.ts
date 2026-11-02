@@ -354,6 +354,15 @@ export interface Brief {
 }
 
 /** A job and its whole brief, for its own page. */
+/** A version of the artwork submitted for approval (D72). */
+export interface Artwork {
+  version: number;
+  url: string;
+  note: string | null;
+  submittedByName: string;
+  submittedAt: string;
+}
+
 /** Something done to a job, by whom and when (D72). */
 export interface JobEvent {
   at: string;
@@ -370,6 +379,8 @@ export interface JobDetail {
   brief: Brief;
   /** Every action taken on the job, oldest first. */
   history: JobEvent[];
+  /** The versions submitted, oldest first. The user who briefed the job sees none until the design is approved. */
+  artwork: Artwork[];
 }
 
 /** A brief in the client's template, sections A to F (J.4). The signed-in user sends it (D67). */

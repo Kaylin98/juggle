@@ -68,6 +68,16 @@ export class JobsService {
     return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/answer`, { message }));
   }
 
+  start(id: string): Promise<JobDetail> {
+    return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/start`, {}));
+  }
+
+  submitArtwork(id: string, url: string, note: string | null): Promise<JobDetail> {
+    return firstValueFrom(
+      this.http.post<JobDetail>(`/api/jobs/${id}/submit-artwork`, { url, note }),
+    );
+  }
+
   markReady(id: string): Promise<JobDetail> {
     return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/mark-ready`, {}));
   }

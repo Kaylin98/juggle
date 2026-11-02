@@ -96,6 +96,53 @@ public sealed class WorkflowTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task The_designer_starts_the_job_and_submits_artwork_versions()
+    {
+        var job = await SubmitAsync("Zanele Mthembu");
+        await ScheduleAsync(job, "Priya Naidoo");
+        var priya = await api.SignInAsAsync("Priya Naidoo");
+
+        var scheduled = (await priya.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!.Job;
+        var early = await priya.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("https://example.com/v1", null), ApiFactory.Json, _ct);
+        var started = await priya.PostAsync($"/api/jobs/{job.Id}/start", null, _ct);
+        var badLink = await priya.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("not a link", null), ApiFactory.Json, _ct);
+        var submitted = await priya.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("https://example.com/v1", " First look "), ApiFactory.Json, _ct);
+
+        Assert.Equal([WorkflowAction.Start], scheduled.Actions);
+        Assert.Equal(HttpStatusCode.BadRequest, early.StatusCode);
+        Assert.Equal("In Progress", (await started.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job.StatusName);
+        Assert.Equal(HttpStatusCode.BadRequest, badLink.StatusCode);
+        var result = (await submitted.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal("Awaiting Design Approval", result.Job.StatusName);
+        var version = Assert.Single(result.Artwork);
+        Assert.Equal((1, "https://example.com/v1", "First look", "Priya Naidoo"), (version.Version, version.Url, version.Note, version.SubmittedByName));
+        Assert.Equal(WorkflowAction.SubmitForApproval, result.History[^1].Action);
+    }
+
+    [Fact]
+    public async Task Only_the_jobs_designer_works_on_it_and_the_requester_sees_no_artwork()
+    {
+        var job = await SubmitAsync("Zanele Mthembu");
+        await ScheduleAsync(job, "Priya Naidoo");
+        var priya = await api.SignInAsAsync("Priya Naidoo");
+        await priya.PostAsync($"/api/jobs/{job.Id}/start", null, _ct);
+        await priya.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("https://example.com/v1", null), ApiFactory.Json, _ct);
+
+        foreach (var name in new[] { "Ethan Pillay", "Chloe Adams", "Zanele Mthembu" })
+        {
+            var other = await api.SignInAsAsync(name);
+            var start = await other.PostAsync($"/api/jobs/{job.Id}/start", null, _ct);
+            var submit = await other.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("https://example.com/v2", null), ApiFactory.Json, _ct);
+            Assert.Equal((HttpStatusCode.Forbidden, HttpStatusCode.Forbidden), (start.StatusCode, submit.StatusCode));
+        }
+
+        var requesterView = (await (await api.SignInAsAsync("Zanele Mthembu")).GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!;
+        var trafficManagerView = (await (await api.SignInAsAsync("Chloe Adams")).GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!;
+        Assert.Empty(requesterView.Artwork);
+        Assert.Single(trafficManagerView.Artwork);
+    }
+
+    [Fact]
     public async Task Marking_ready_moves_a_new_request_to_awaiting_allocation_and_only_once()
     {
         var job = await SubmitAsync("Zanele Mthembu");
@@ -230,6 +277,17 @@ public sealed class WorkflowTests(ApiFactory api)
         var response = await client.PostAsJsonAsync("/api/jobs", brief, ApiFactory.Json, _ct);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job;
+    }
+
+    /// <summary>Books the designer for a day, in a week of their own so the tests do not share capacity.</summary>
+    private async Task ScheduleAsync(JobDto job, string designer)
+    {
+        var chloe = await api.SignInAsAsync("Chloe Adams");
+        var person = await StudioPersonAsync(chloe, designer);
+        var start = _today.AddDays(7 * 40);
+        start = start.AddDays((8 - (int)start.DayOfWeek) % 7);
+        var response = await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/allocate", new AllocateRequest(person, start, start, 4, 4), ApiFactory.Json, _ct);
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task<Guid> StudioPersonAsync(HttpClient client, string name)

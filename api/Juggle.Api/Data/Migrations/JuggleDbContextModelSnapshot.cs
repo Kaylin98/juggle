@@ -301,6 +301,48 @@ namespace Juggle.Api.Data.Migrations
                     b.ToTable("Jobs");
                 });
 
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobArtwork", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrgId");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.HasIndex("JobId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("JobArtwork");
+                });
+
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobDeliverable", b =>
                 {
                     b.Property<Guid>("Id")
@@ -866,6 +908,27 @@ namespace Juggle.Api.Data.Migrations
                     b.Navigation("Status");
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobArtwork", b =>
+                {
+                    b.HasOne("Juggle.Api.Data.Entities.Job", null)
+                        .WithMany()
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobDeliverable", b =>

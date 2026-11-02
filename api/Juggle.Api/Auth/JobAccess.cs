@@ -15,6 +15,11 @@ public sealed class JobAccess(JuggleDbContext db, CurrentUser currentUser, Permi
         ? db.Jobs
         : db.Jobs.Where(j => j.RequesterUserId == currentUser.UserId || (j.Designer != null && j.Designer.UserId == currentUser.UserId));
 
+    /// <summary>The artwork is for the job's designer and users who see every job; the user who briefed it waits for approval.</summary>
+    public async Task<bool> CanSeeArtworkAsync(Job job, CancellationToken ct) =>
+        await permissions.HasAsync(Capability.ViewAllJobs, ct) || (job.DesignerPersonId is { } designerId
+            && await db.People.AnyAsync(p => p.Id == designerId && p.UserId == currentUser.UserId, ct));
+
     public async Task EnsureCanSeeAsync(Job job, CancellationToken ct)
     {
         var mine = job.RequesterUserId == currentUser.UserId

@@ -124,3 +124,19 @@ public class JobEvent
     /// <summary>What the user wrote with it, such as a request for information or the reason for cancelling.</summary>
     public string? Message { get; set; }
 }
+
+/// <summary>One version of the artwork a designer submitted for approval (D72): a link now, a file in the MVP.</summary>
+public class JobArtwork
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid OrgId { get; set; }
+    public Guid JobId { get; set; }
+
+    /// <summary>1 for the first submission, counting up for each later one on the job.</summary>
+    public int Version { get; set; }
+
+    public required string Url { get; set; }
+    public string? Note { get; set; }
+    public Guid SubmittedByUserId { get; set; }
+    public DateTimeOffset SubmittedAt { get; set; }
+}

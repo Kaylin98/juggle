@@ -38,6 +38,9 @@ import { BoardCard } from './job-card';
               >
             }
           </div>
+          <a class="btn-quiet mt-2 -ml-3 inline-block" [routerLink]="['/requests', job.id]"
+            >Open the whole brief and activity</a
+          >
         </div>
 
         <app-job-actions

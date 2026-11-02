@@ -142,7 +142,26 @@ public sealed class JobsService(
         var job = await JobDto.Load(db.Jobs).Include(j => j.Links.OrderBy(l => l.SortOrder)).FirstOrDefaultAsync(j => j.Id == id, ct)
             ?? throw new NotFoundException("Job not found.");
         await jobAccess.EnsureCanSeeAsync(job, ct);
-        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct));
+        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct), await ArtworkAsync(job, ct));
+    }
+
+    /// <summary>
+    /// The artwork versions. The user who briefed the job is not the designer or a viewer of all jobs, so sees none: no
+    /// artwork reaches them before the head of design approves it.
+    /// </summary>
+    private async Task<IReadOnlyList<ArtworkDto>> ArtworkAsync(Job job, CancellationToken ct)
+    {
+        if (!await jobAccess.CanSeeArtworkAsync(job, ct))
+        {
+            return [];
+        }
+
+        return await (from a in db.JobArtwork.Where(a => a.JobId == job.Id)
+                      join u in db.Users on a.SubmittedByUserId equals u.Id
+                      orderby a.Version
+                      select new ArtworkDto(a.Version, a.Url, a.Note, u.Name, a.SubmittedAt))
+            .AsNoTracking()
+            .ToListAsync(ct);
     }
 
     private async Task<IReadOnlyList<JobEventDto>> HistoryAsync(Guid jobId, CancellationToken ct) =>

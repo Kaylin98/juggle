@@ -28,6 +28,29 @@ public sealed class JobActions(
     public Task<JobDetailDto> AnswerAsync(Guid id, MessageRequest request, CancellationToken ct) =>
         MoveAsync(id, WorkflowAction.Answer, request.Message, ct);
 
+    public Task<JobDetailDto> StartAsync(Guid id, CancellationToken ct) => MoveAsync(id, WorkflowAction.Start, null, ct);
+
+    /// <summary>Records the next version of the artwork and sends the job for approval.</summary>
+    public async Task<JobDetailDto> SubmitArtworkAsync(Guid id, SubmitArtworkRequest request, CancellationToken ct)
+    {
+        var job = await LoadAsync(id, ct);
+        var transition = await access.EnsureAsync(job, WorkflowAction.SubmitForApproval, ct);
+        var version = (await db.JobArtwork.Where(a => a.JobId == id).Select(a => (int?)a.Version).MaxAsync(ct) ?? 0) + 1;
+        db.JobArtwork.Add(new JobArtwork
+        {
+            OrgId = job.OrgId,
+            JobId = id,
+            Version = version,
+            Url = request.Url.Trim(),
+            Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+            SubmittedByUserId = currentUser.UserId,
+            SubmittedAt = clock.Now,
+        });
+        Apply(job, WorkflowAction.SubmitForApproval, transition, $"Version {version}");
+        await db.SaveChangesAsync(ct);
+        return await jobs.GetAsync(id, ct);
+    }
+
     public Task<JobDetailDto> MarkReadyAsync(Guid id, CancellationToken ct) => MoveAsync(id, WorkflowAction.MarkReady, null, ct);
 
     /// <summary>Cancels an open job with the reason (D75).</summary>

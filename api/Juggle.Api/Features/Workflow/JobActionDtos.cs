@@ -22,3 +22,6 @@ public sealed record AllocatedJobDto(
     IReadOnlyList<DateOnly> ClashDays,
     IReadOnlyList<DateOnly> LeaveDays,
     bool AfterRequiredDate);
+
+/// <summary>The artwork a designer submits for approval: a link to the file, with an optional note (D72).</summary>
+public sealed record SubmitArtworkRequest([Required, MaxLength(1000), Url] string Url, [MaxLength(1000)] string? Note);

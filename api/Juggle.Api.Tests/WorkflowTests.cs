@@ -195,6 +195,73 @@ public sealed class WorkflowTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task The_requester_approves_the_artwork_and_closes_the_job()
+    {
+        var job = await AwaitingMarketingApprovalAsync();
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        var early = await zanele.PostAsync($"/api/jobs/{job.Id}/close", null, _ct);
+
+        var approved = await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/approve-marketing", new CommentRequest("Love it"), ApiFactory.Json, _ct);
+        var closed = await zanele.PostAsync($"/api/jobs/{job.Id}/close", null, _ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, early.StatusCode);
+        var ready = (await approved.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal("Approved / Ready to Close", ready.Job.StatusName);
+        Assert.Contains(WorkflowAction.Close, ready.Job.Actions);
+        var result = (await closed.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal(("Closed / Completed", JobStatusKind.Done), (result.Job.StatusName, result.Job.StatusKind));
+        Assert.Empty(result.Job.Actions);
+        Assert.Equal((ApprovalStage.Marketing, ApprovalDecision.Approved, "Zanele Mthembu", "Love it"), (result.Approvals[^1].Stage, result.Approvals[^1].Decision, result.Approvals[^1].ReviewerName, result.Approvals[^1].Comment));
+        Assert.Equal(WorkflowAction.Close, result.History[^1].Action);
+        await using var scope = api.Services.CreateAsyncScope();
+        var stored = await scope.ServiceProvider.GetRequiredService<JuggleDbContext>().Jobs.IgnoreQueryFilters().SingleAsync(j => j.Id == job.Id, _ct);
+        Assert.NotNull(stored.ClosedAt);
+        Assert.NotNull(stored.ClosedByUserId);
+    }
+
+    [Fact]
+    public async Task A_stakeholders_approval_is_recorded_by_the_requester_with_who_when_and_the_evidence()
+    {
+        var job = await AwaitingMarketingApprovalAsync();
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        var decidedOn = _today.AddDays(-1);
+
+        var needs = await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/needs-business-approval", new MessageRequest("Sales must sign off the offer"), ApiFactory.Json, _ct);
+        var noName = await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/record-business-approval", new { DecidedOn = decidedOn, StakeholderName = " " }, ApiFactory.Json, _ct);
+        var future = await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/record-business-approval", new BusinessApprovalRequest("Sales", _today.AddDays(1), null, null), ApiFactory.Json, _ct);
+        var recorded = await zanele.PostAsJsonAsync(
+            $"/api/jobs/{job.Id}/record-business-approval",
+            new BusinessApprovalRequest(" Sales ", decidedOn, "Approved by email", "https://example.com/email"), ApiFactory.Json, _ct);
+
+        Assert.Equal("Awaiting Business Approval", (await needs.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job.StatusName);
+        Assert.Equal((HttpStatusCode.BadRequest, HttpStatusCode.BadRequest), (noName.StatusCode, future.StatusCode));
+        var result = (await recorded.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal("Approved / Ready to Close", result.Job.StatusName);
+        var approval = result.Approvals[^1];
+        Assert.Equal(
+            (ApprovalStage.Business, ApprovalDecision.Approved, "Sales", decidedOn, "Approved by email", "https://example.com/email", "Zanele Mthembu"),
+            (approval.Stage, approval.Decision, approval.StakeholderName, approval.DecidedOn, approval.Comment, approval.Link, approval.ReviewerName));
+    }
+
+    [Fact]
+    public async Task Only_the_requester_decides_for_marketing_and_nobody_else_closes()
+    {
+        var job = await AwaitingMarketingApprovalAsync();
+
+        foreach (var name in new[] { "Thabo Mahlangu", "Chloe Adams", "Naledi Khumalo", "Priya Naidoo" })
+        {
+            var other = await api.SignInAsAsync(name);
+            var responses = new[]
+            {
+                await other.PostAsJsonAsync($"/api/jobs/{job.Id}/approve-marketing", new CommentRequest(null), ApiFactory.Json, _ct),
+                await other.PostAsJsonAsync($"/api/jobs/{job.Id}/needs-business-approval", new MessageRequest("Sales"), ApiFactory.Json, _ct),
+                await other.PostAsync($"/api/jobs/{job.Id}/close", null, _ct),
+            };
+            Assert.All(responses, r => Assert.Equal(HttpStatusCode.Forbidden, r.StatusCode));
+        }
+    }
+
+    [Fact]
     public async Task Marking_ready_moves_a_new_request_to_awaiting_allocation_and_only_once()
     {
         var job = await SubmitAsync("Zanele Mthembu");
@@ -350,6 +417,15 @@ public sealed class WorkflowTests(ApiFactory api)
         var priya = await api.SignInAsAsync("Priya Naidoo");
         (await priya.PostAsync($"/api/jobs/{job.Id}/start", null, _ct)).EnsureSuccessStatusCode();
         (await priya.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("https://example.com/v1", null), ApiFactory.Json, _ct)).EnsureSuccessStatusCode();
+        return job;
+    }
+
+    /// <summary>A job the head of design approved, so it waits for the marketing manager who briefed it.</summary>
+    private async Task<JobDto> AwaitingMarketingApprovalAsync()
+    {
+        var job = await AwaitingDesignApprovalAsync();
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        (await naledi.PostAsJsonAsync($"/api/jobs/{job.Id}/approve-design", new CommentRequest(null), ApiFactory.Json, _ct)).EnsureSuccessStatusCode();
         return job;
     }
 

@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import {
   AllocateJob,
   AllocatedJob,
+  BusinessApproval,
   CreateJob,
   Job,
   JobDetail,
@@ -85,6 +86,28 @@ export class JobsService {
 
   sendBack(id: string, comment: string): Promise<JobDetail> {
     return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/send-back`, { comment }));
+  }
+
+  approveMarketing(id: string, comment: string | null): Promise<JobDetail> {
+    return firstValueFrom(
+      this.http.post<JobDetail>(`/api/jobs/${id}/approve-marketing`, { comment }),
+    );
+  }
+
+  needsBusinessApproval(id: string, message: string): Promise<JobDetail> {
+    return firstValueFrom(
+      this.http.post<JobDetail>(`/api/jobs/${id}/needs-business-approval`, { message }),
+    );
+  }
+
+  recordBusinessApproval(id: string, approval: BusinessApproval): Promise<JobDetail> {
+    return firstValueFrom(
+      this.http.post<JobDetail>(`/api/jobs/${id}/record-business-approval`, approval),
+    );
+  }
+
+  close(id: string): Promise<JobDetail> {
+    return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/close`, {}));
   }
 
   start(id: string): Promise<JobDetail> {

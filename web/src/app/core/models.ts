@@ -250,6 +250,14 @@ export interface AllocatedJob {
   afterRequiredDate: boolean;
 }
 
+/** A stakeholder's approval, recorded by the marketing manager: who decided, when, a note and the evidence (CD4). */
+export interface BusinessApproval {
+  stakeholderName: string;
+  decidedOn: string;
+  note: string | null;
+  link: string | null;
+}
+
 export interface SavedAllocation extends SaveAllocation {
   id: string;
   /** Days of this allocation on which the person is now booked over capacity (D16). */

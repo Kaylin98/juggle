@@ -28,6 +28,21 @@ public sealed class JobActionsController(JobActions actions) : ControllerBase
     [HttpPost("send-back")]
     public Task<JobDetailDto> SendBack(Guid id, CommentRequest request, CancellationToken ct) => actions.SendBackAsync(id, request, ct);
 
+    [HttpPost("approve-marketing")]
+    public Task<JobDetailDto> ApproveMarketing(Guid id, CommentRequest request, CancellationToken ct) =>
+        actions.ApproveMarketingAsync(id, request, ct);
+
+    [HttpPost("needs-business-approval")]
+    public Task<JobDetailDto> NeedsBusinessApproval(Guid id, MessageRequest request, CancellationToken ct) =>
+        actions.NeedsBusinessApprovalAsync(id, request, ct);
+
+    [HttpPost("record-business-approval")]
+    public Task<JobDetailDto> RecordBusinessApproval(Guid id, BusinessApprovalRequest request, CancellationToken ct) =>
+        actions.RecordBusinessApprovalAsync(id, request, ct);
+
+    [HttpPost("close")]
+    public Task<JobDetailDto> Close(Guid id, CancellationToken ct) => actions.CloseAsync(id, ct);
+
     [HttpPost("mark-ready")]
     public Task<JobDetailDto> MarkReady(Guid id, CancellationToken ct) => actions.MarkReadyAsync(id, ct);
 

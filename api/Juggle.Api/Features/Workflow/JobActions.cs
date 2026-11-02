@@ -36,6 +36,43 @@ public sealed class JobActions(
     public Task<JobDetailDto> SendBackAsync(Guid id, CommentRequest request, CancellationToken ct) =>
         DecideAsync(id, WorkflowAction.SendBack, ApprovalDecision.ChangesRequested, request.Comment, ct);
 
+    /// <summary>The requester approves the artwork the head of design approved, which readies the job to close.</summary>
+    public Task<JobDetailDto> ApproveMarketingAsync(Guid id, CommentRequest request, CancellationToken ct) =>
+        DecideAsync(id, WorkflowAction.ApproveMarketing, ApprovalDecision.Approved, request.Comment, ct);
+
+    /// <summary>The requester sends the artwork for a stakeholder's approval, saying who needs to give it.</summary>
+    public Task<JobDetailDto> NeedsBusinessApprovalAsync(Guid id, MessageRequest request, CancellationToken ct) =>
+        MoveAsync(id, WorkflowAction.NeedsBusinessApproval, request.Message, ct);
+
+    /// <summary>The requester records that a stakeholder approved, with who, when, a note and a link to the evidence.</summary>
+    public Task<JobDetailDto> RecordBusinessApprovalAsync(Guid id, BusinessApprovalRequest request, CancellationToken ct)
+    {
+        if (request.DecidedOn > clock.Today)
+        {
+            throw new BadRequestException("The approval can't be dated in the future.");
+        }
+
+        return DecideAsync(
+            id, WorkflowAction.RecordBusinessApproval, ApprovalDecision.Approved, request.Note, ct,
+            approval =>
+            {
+                approval.StakeholderName = request.StakeholderName.Trim();
+                approval.DecidedOn = request.DecidedOn;
+                approval.Link = string.IsNullOrWhiteSpace(request.Link) ? null : request.Link.Trim();
+            });
+    }
+
+    /// <summary>The requester closes the approved job.</summary>
+    public async Task<JobDetailDto> CloseAsync(Guid id, CancellationToken ct)
+    {
+        var job = await LoadAsync(id, ct);
+        Apply(job, WorkflowAction.Close, await access.EnsureAsync(job, WorkflowAction.Close, ct), null);
+        job.ClosedAt = clock.Now;
+        job.ClosedByUserId = currentUser.UserId;
+        await db.SaveChangesAsync(ct);
+        return await jobs.GetAsync(id, ct);
+    }
+
     public Task<JobDetailDto> StartAsync(Guid id, CancellationToken ct) => MoveAsync(id, WorkflowAction.Start, null, ct);
 
     /// <summary>Records the next version of the artwork and sends the job for approval.</summary>
@@ -95,7 +132,8 @@ public sealed class JobActions(
 
     /// <summary>Moves the job and records the approval its step calls for, for the latest artwork (D72).</summary>
     private async Task<JobDetailDto> DecideAsync(
-        Guid id, WorkflowAction action, ApprovalDecision decision, string? comment, CancellationToken ct)
+        Guid id, WorkflowAction action, ApprovalDecision decision, string? comment, CancellationToken ct,
+        Action<JobApproval>? details = null)
     {
         var job = await LoadAsync(id, ct);
         var transition = await access.EnsureAsync(job, action, ct);
@@ -106,7 +144,7 @@ public sealed class JobActions(
         }
         if (transition.Stage is { } stage)
         {
-            db.JobApprovals.Add(new JobApproval
+            var approval = new JobApproval
             {
                 OrgId = job.OrgId,
                 JobId = id,
@@ -116,7 +154,9 @@ public sealed class JobActions(
                 RecordedByUserId = currentUser.UserId,
                 RecordedAt = clock.Now,
                 Comment = comment,
-            });
+            };
+            details?.Invoke(approval);
+            db.JobApprovals.Add(approval);
         }
 
         Apply(job, action, transition, comment);

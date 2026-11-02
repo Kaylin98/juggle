@@ -1,10 +1,11 @@
 import { Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
-import { Job, Person, WorkflowAction } from '../../core/models';
+import { BusinessApproval, Job, Person, WorkflowAction } from '../../core/models';
 import { ToastService } from '../../shared/toast.service';
 import { AllocateForm } from './allocate-form';
 import { ArtworkForm, ArtworkSubmission } from './artwork-form';
+import { BusinessApprovalForm } from './business-approval-form';
 import { MessageForm } from './message-form';
 
 /** The actions this panel offers, in the order of the buttons. */
@@ -21,7 +22,7 @@ const ACTIONS: WorkflowAction[] = [
  */
 @Component({
   selector: 'app-job-actions',
-  imports: [AllocateForm, ArtworkForm, MessageForm],
+  imports: [AllocateForm, ArtworkForm, BusinessApprovalForm, MessageForm],
   template: `
     @if (available().length > 0) {
       @switch (open()) {
@@ -73,6 +74,28 @@ const ACTIONS: WorkflowAction[] = [
             (closed)="open.set(null)"
           />
         }
+        @case ('ApproveMarketing') {
+          <app-message-form
+            id="approve-marketing"
+            label="Comment (optional)"
+            submitLabel="Approve artwork"
+            [mandatory]="false"
+            [action]="approveMarketing"
+            (closed)="open.set(null)"
+          />
+        }
+        @case ('NeedsBusinessApproval') {
+          <app-message-form
+            id="needs-business-approval"
+            label="Who needs to approve it?"
+            submitLabel="Send for business approval"
+            [action]="needsBusinessApproval"
+            (closed)="open.set(null)"
+          />
+        }
+        @case ('RecordBusinessApproval') {
+          <app-business-approval-form [action]="recordBusinessApproval" (closed)="open.set(null)" />
+        }
         @case ('Cancel') {
           <app-message-form
             id="cancel-reason"
@@ -118,6 +141,10 @@ export class JobActions {
     Answer: 'Answer the question',
     ApproveDesign: 'Approve design',
     SendBack: 'Send back',
+    ApproveMarketing: 'Approve artwork',
+    NeedsBusinessApproval: 'Needs business approval',
+    RecordBusinessApproval: 'Record business approval',
+    Close: `Close ${this.auth.terms().job.toLowerCase()}`,
     Start: 'Start work',
     SubmitForApproval: 'Submit artwork',
     AllocateAndSchedule: 'Allocate and schedule',
@@ -141,6 +168,8 @@ export class JobActions {
           () => this.jobs.markReady(id),
           `${this.auth.terms().brief} marked complete.`,
         );
+      case 'Close':
+        return this.run(() => this.jobs.close(id), `${this.auth.terms().job} closed.`);
       case 'Start':
         return this.run(() => this.jobs.start(id), 'Work started.');
       default:
@@ -168,6 +197,27 @@ export class JobActions {
 
   protected readonly sendBack = async (comment: string): Promise<void> => {
     await this.run(() => this.jobs.sendBack(this.job().id, comment), 'Sent back to the designer.');
+  };
+
+  protected readonly approveMarketing = async (comment: string): Promise<void> => {
+    await this.run(
+      () => this.jobs.approveMarketing(this.job().id, comment || null),
+      'Artwork approved.',
+    );
+  };
+
+  protected readonly needsBusinessApproval = async (message: string): Promise<void> => {
+    await this.run(
+      () => this.jobs.needsBusinessApproval(this.job().id, message),
+      'Sent for business approval.',
+    );
+  };
+
+  protected readonly recordBusinessApproval = async (approval: BusinessApproval): Promise<void> => {
+    await this.run(
+      () => this.jobs.recordBusinessApproval(this.job().id, approval),
+      'Business approval recorded.',
+    );
   };
 
   protected readonly answer = async (message: string): Promise<void> => {

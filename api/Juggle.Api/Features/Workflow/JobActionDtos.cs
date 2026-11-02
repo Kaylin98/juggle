@@ -28,3 +28,13 @@ public sealed record SubmitArtworkRequest([Required, MaxLength(1000), Url] strin
 
 /// <summary>What a reviewer writes with a decision. Sending work back needs it; approving does not.</summary>
 public sealed record CommentRequest([MaxLength(2000)] string? Comment);
+
+/// <summary>
+/// A stakeholder's approval that the marketing manager records (CD4): who decided, the day they decided, and the
+/// evidence. Stakeholders have no logins.
+/// </summary>
+public sealed record BusinessApprovalRequest(
+    [Required, MaxLength(200)] string StakeholderName,
+    DateOnly DecidedOn,
+    [MaxLength(2000)] string? Note,
+    [MaxLength(1000), Url] string? Link);

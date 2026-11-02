@@ -16,7 +16,7 @@ const options: JobOptions = {
   myDepartmentId: 'dji',
 };
 
-async function render(teamId: string | null = 'studio') {
+async function render(teamId: string | null = 'studio', teams = options.teams) {
   const sent: CreateJob[] = [];
   TestBed.configureTestingModule({
     imports: [RequestFormPage],
@@ -25,7 +25,7 @@ async function render(teamId: string | null = 'studio') {
       {
         provide: JobsService,
         useValue: {
-          options: () => Promise.resolve(options),
+          options: () => Promise.resolve({ ...options, teams }),
           submit: (brief: CreateJob) => {
             sent.push(brief);
             return Promise.resolve({ job: { id: 'j1', code: "DJI0143_Q1'27_Festive gifting" } } as JobDetail);
@@ -167,5 +167,25 @@ describe('RequestFormPage', () => {
     await submit(fixture);
 
     expect(sent.map((s) => s.teamId)).toEqual(['studio']);
+  });
+
+  it('hides the Team field for a user with only one team, and shows it for several', async () => {
+    expect((await render()).element.querySelector('#brief-team')).toBeNull();
+    TestBed.resetTestingModule();
+    const two = [...options.teams, { id: 'other', name: 'Other', colour: '#3fa7a0' }];
+    expect((await render('studio', two)).element.querySelector('#brief-team')).not.toBeNull();
+  });
+
+  it("leaves a deliverable deadline empty by default and refuses one after the job's required date", async () => {
+    const { fixture, element, sent } = await render();
+    await type(fixture, '#brief-title', 'Festive gifting');
+    await type(fixture, '#deliverable-description-0', 'Takealot banners');
+    expect(element.querySelector('#deliverable-due-0')!.parentElement!.textContent).toContain('Same as job');
+    await type(fixture, '#brief-required', '2099-11-10');
+    await type(fixture, '#deliverable-due-0', '2099-11-12');
+    await submit(fixture);
+
+    expect(sent).toEqual([]);
+    expect(element.textContent).toContain("A deliverable can't be due after the job's required date.");
   });
 });

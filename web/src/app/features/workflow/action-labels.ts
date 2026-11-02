@@ -8,7 +8,7 @@ export function actionLabels(terms: Terms): Record<WorkflowAction, string> {
   return {
     Answer: 'Answer the question',
     AllocateAndSchedule: 'Allocate and schedule',
-    MarkReady: `${terms.brief} complete`,
+    MarkReady: 'Checked, allocate later',
     RequestInformation: 'Request information',
     Cancel: `Cancel ${terms.job.toLowerCase()}`,
     Start: 'Start work',
@@ -20,5 +20,12 @@ export function actionLabels(terms: Terms): Record<WorkflowAction, string> {
     RecordBusinessApproval: 'Record business approval',
     RequestChanges: 'Request changes',
     Close: `Close ${terms.job.toLowerCase()}`,
+  };
+}
+
+/** A hint under a button, for the actions whose name alone does not say what happens. */
+export function actionHints(terms: Terms): Partial<Record<WorkflowAction, string>> {
+  return {
+    MarkReady: `The ${terms.brief.toLowerCase()} has everything needed. Moves it to Ready to allocate.`,
   };
 }

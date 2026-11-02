@@ -7,7 +7,7 @@ const ACTION_TEXT: Record<JobEvent['action'], string> = {
   Submit: 'sent the brief',
   RequestInformation: 'asked for information',
   Answer: 'answered',
-  MarkReady: 'marked the brief complete',
+  MarkReady: 'checked the brief and left it to allocate later',
   Cancel: 'cancelled the job',
   AllocateAndSchedule: 'allocated and scheduled the job',
   Start: 'started work',

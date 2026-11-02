@@ -104,13 +104,15 @@ function toCreateJob(value: BriefForm): CreateJob {
                 <section class="panel p-8" aria-labelledby="brief-a">
                   <h2 id="brief-a" class="font-display text-lg font-semibold">A. Job information</h2>
                   <div class="mt-6 grid gap-6 sm:grid-cols-2">
-                    <div>
-                      <label class="form-label" for="brief-team">Team</label>
-                      <app-select triggerId="brief-team" [options]="teamOptions()" [formField]="briefForm.teamId" />
-                      @if (briefForm.teamId().touched() && briefForm.teamId().invalid()) {
-                        <p class="field-error">{{ briefForm.teamId().errors()[0].message }}</p>
-                      }
-                    </div>
+                    @if (options.value().teams.length > 1) {
+                      <div>
+                        <label class="form-label" for="brief-team">Team</label>
+                        <app-select triggerId="brief-team" [options]="teamOptions()" [formField]="briefForm.teamId" />
+                        @if (briefForm.teamId().touched() && briefForm.teamId().invalid()) {
+                          <p class="field-error">{{ briefForm.teamId().errors()[0].message }}</p>
+                        }
+                      </div>
+                    }
                     <div>
                       <label class="form-label" for="brief-department">{{ auth.departmentLabel() }}</label>
                       <app-select triggerId="brief-department" [options]="departmentOptions()" [formField]="briefForm.departmentId" />
@@ -214,7 +216,12 @@ function toCreateJob(value: BriefForm): CreateJob {
                             </div>
                             <div>
                               <label class="form-label" [for]="'deliverable-due-' + i">Deadline</label>
-                              <input [id]="'deliverable-due-' + i" class="form-input" type="date" [min]="today" [formField]="item.dueDate" />
+                              <div class="relative">
+                                <input [id]="'deliverable-due-' + i" class="form-input peer" type="date" [min]="today" [max]="model().requiredDate || null" [formField]="item.dueDate" />
+                                @if (!item.dueDate().value()) {
+                                  <span class="pointer-events-none absolute inset-y-px left-px right-10 flex items-center rounded-l-control bg-surface pl-3 text-sm text-ink-faint peer-focus:hidden">Same as job</span>
+                                }
+                              </div>
                               @if (item.dueDate().touched() && item.dueDate().invalid()) {
                                 <p class="field-error">{{ item.dueDate().errors()[0].message }}</p>
                               }
@@ -341,7 +348,7 @@ export class RequestFormPage {
   );
 
   protected readonly model = linkedSignal<BriefForm>(() => ({
-    teamId: this.teamContext.teamId() ?? this.onlyTeamId(),
+    teamId: this.onlyTeamId() || (this.teamContext.teamId() ?? ''),
     departmentId: this.options.value()?.myDepartmentId ?? '',
     title: '',
     campaign: '',
@@ -374,6 +381,12 @@ export class RequestFormPage {
       maxLength(item.description, 200, { message: 'Keep this under 200 characters.' });
       maxLength(item.specifications, 500, { message: 'Keep the specifications under 500 characters.' });
       validate(item.dueDate, ({ value }) => notPast(value()));
+      validate(item.dueDate, ({ value }) => {
+        const required = this.model().requiredDate;
+        return value() && required && value() > required
+          ? { kind: 'afterJob', message: "A deliverable can't be due after the job's required date." }
+          : undefined;
+      });
     });
     for (const field of GUIDELINE_FIELDS) {
       maxLength(brief.guidelines[field.key], field.max, { message: `Keep this under ${field.max} characters.` });

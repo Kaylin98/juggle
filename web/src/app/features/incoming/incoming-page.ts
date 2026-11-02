@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, resource } from '@angular/core';
+import { Component, computed, inject, resource } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { Priority } from '../../core/models';
@@ -7,6 +7,25 @@ import { TeamContextService } from '../../core/team-context.service';
 import { DueDate } from '../../shared/due-date';
 import { StatusChip } from '../../shared/status-chip';
 import { JobActions } from '../workflow/job-actions';
+
+/** The queue's sections, in order: the statuses each holds, and what the Traffic Manager does with them. */
+const SECTIONS = [
+  {
+    title: 'New briefs to check',
+    explanation: 'Read each brief, then ask for more information, or send it on to be allocated.',
+    statuses: ['Awaiting Traffic Review', 'Awaiting Information'],
+  },
+  {
+    title: 'Ready to allocate',
+    explanation: 'Checked and waiting for a designer and dates.',
+    statuses: ['Awaiting Allocation'],
+  },
+  {
+    title: 'Revisions to schedule',
+    explanation: 'Changes asked for after the artwork was submitted, waiting to be booked in.',
+    statuses: ['Awaiting Revision Scheduling'],
+  },
+];
 
 const PRIORITY_PILL: Record<Priority, string> = {
   Urgent: 'bg-over-50 text-over-700',
@@ -38,63 +57,75 @@ const PRIORITY_PILL: Record<Priority, string> = {
           The queue could not be loaded. Refresh the page to try again.
         </p>
       } @else if (incoming.hasValue()) {
-        <ul class="mt-6 space-y-4">
-          @for (job of incoming.value(); track job.id) {
-            <li class="panel p-6">
-              <div class="flex flex-wrap items-center gap-2">
-                <span
-                  class="flex items-center gap-2 text-xs text-ink-muted"
-                  [style.--hue]="job.colour"
-                >
-                  <span class="hue-dot size-2 shrink-0 rounded-full"></span>
-                  {{ job.code }}
-                </span>
-                <app-status-chip [name]="job.statusName" [colour]="job.statusColour" />
-                <span
-                  class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                  [class]="priorityPill[job.priority]"
-                >
-                  {{ job.priority }}
-                </span>
-              </div>
-              <h2 class="mt-2 font-display text-base font-semibold">{{ job.title }}</h2>
-              <p class="mt-1 text-sm text-ink-muted">
-                From {{ job.requesterName }} &middot; briefed in
-                {{ job.createdAt | date: 'EEE d MMM, HH:mm' }}
-                @if (job.deadline; as required) {
-                  &middot; due
-                  <app-due-date [date]="required" [overdue]="job.isOverdue" format="EEE d MMM" />
-                }
-                @if (job.designerName; as designer) {
-                  &middot; {{ designer }}
-                }
-              </p>
-              @if (job.purpose) {
-                <p class="mt-3 line-clamp-2 text-sm">{{ job.purpose }}</p>
-              }
-              @if (job.deliverables.length) {
-                <ul class="mt-3 flex flex-wrap gap-2" aria-label="Deliverables">
-                  @for (deliverable of job.deliverables; track $index) {
-                    <li class="rounded-full bg-surface-muted px-3 py-1 text-xs">
-                      {{ deliverable.description }}
-                    </li>
+        @for (section of sections(); track section.title) {
+          <section class="mt-8" [attr.aria-labelledby]="'incoming-' + $index">
+            <h2 [id]="'incoming-' + $index" class="font-display text-lg font-semibold">
+              {{ section.title }}
+              <span class="label-caps ml-2">{{ section.jobs.length }}</span>
+            </h2>
+            <p class="mt-1 text-sm text-ink-muted">{{ section.explanation }}</p>
+            <ul class="mt-4 space-y-4">
+              @for (job of section.jobs; track job.id) {
+                <li class="panel p-6">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span
+                      class="flex items-center gap-2 text-xs text-ink-muted"
+                      [style.--hue]="job.colour"
+                    >
+                      <span class="hue-dot size-2 shrink-0 rounded-full"></span>
+                      {{ job.code }}
+                    </span>
+                    <app-status-chip [name]="job.statusName" [colour]="job.statusColour" />
+                    <span
+                      class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                      [class]="priorityPill[job.priority]"
+                    >
+                      {{ job.priority }}
+                    </span>
+                  </div>
+                  <h2 class="mt-2 font-display text-base font-semibold">{{ job.title }}</h2>
+                  <p class="mt-1 text-sm text-ink-muted">
+                    From {{ job.requesterName }} &middot; briefed in
+                    {{ job.createdAt | date: 'EEE d MMM, HH:mm' }}
+                    @if (job.deadline; as required) {
+                      &middot; due
+                      <app-due-date
+                        [date]="required"
+                        [overdue]="job.isOverdue"
+                        format="EEE d MMM"
+                      />
+                    }
+                    @if (job.designerName; as designer) {
+                      &middot; {{ designer }}
+                    }
+                  </p>
+                  @if (job.purpose) {
+                    <p class="mt-3 line-clamp-2 text-sm">{{ job.purpose }}</p>
                   }
-                </ul>
+                  @if (job.deliverables.length) {
+                    <ul class="mt-3 flex flex-wrap gap-2" aria-label="Deliverables">
+                      @for (deliverable of job.deliverables; track $index) {
+                        <li class="rounded-full bg-surface-muted px-3 py-1 text-xs">
+                          {{ deliverable.description }}
+                        </li>
+                      }
+                    </ul>
+                  }
+                  <app-job-actions
+                    class="mt-4 block empty:hidden"
+                    [job]="job"
+                    [people]="people.value() ?? []"
+                    (changed)="incoming.reload()"
+                  />
+                </li>
               }
-              <app-job-actions
-                class="mt-4 block empty:hidden"
-                [job]="job"
-                [people]="people.value() ?? []"
-                (changed)="incoming.reload()"
-              />
-            </li>
-          } @empty {
-            <li class="empty-state">
-              Nothing waiting. New {{ auth.terms().brief.toLowerCase() }}s for this team show up
-              here.
-            </li>
-          }
-        </ul>
+            </ul>
+          </section>
+        } @empty {
+          <p class="empty-state mt-6">
+            Nothing waiting. New {{ auth.terms().brief.toLowerCase() }}s for this team show up here.
+          </p>
+        }
       } @else {
         <p class="empty-state mt-6">Loading the queue...</p>
       }
@@ -116,4 +147,13 @@ export class IncomingPage {
   });
 
   protected readonly priorityPill = PRIORITY_PILL;
+
+  /** The queue split into its sections; a section with nothing in it is left out. */
+  protected readonly sections = computed(() => {
+    const jobs = this.incoming.hasValue() ? this.incoming.value() : [];
+    return SECTIONS.map(({ statuses, ...section }) => ({
+      ...section,
+      jobs: jobs.filter((job) => statuses.includes(job.statusName)),
+    })).filter((section) => section.jobs.length > 0);
+  });
 }

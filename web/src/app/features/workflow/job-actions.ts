@@ -3,7 +3,8 @@ import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { BusinessApproval, Job, Person, RequestChanges, WorkflowAction } from '../../core/models';
 import { ToastService } from '../../shared/toast.service';
-import { ONE_CLICK_ACTIONS, actionLabels } from './action-labels';
+import { Tooltip } from '../../shared/tooltip';
+import { ONE_CLICK_ACTIONS, actionHints, actionLabels } from './action-labels';
 import { ActionRunner } from './action-runner';
 import { AllocateForm } from './allocate-form';
 import { ArtworkForm, ArtworkSubmission } from './artwork-form';
@@ -35,7 +36,7 @@ const ACTIONS: WorkflowAction[] = [
  */
 @Component({
   selector: 'app-job-actions',
-  imports: [AllocateForm, ArtworkForm, BusinessApprovalForm, MessageForm, RequestChangesForm],
+  imports: [AllocateForm, ArtworkForm, BusinessApprovalForm, MessageForm, RequestChangesForm, Tooltip],
   template: `
     @if (available().length > 0) {
       @switch (open()) {
@@ -131,6 +132,7 @@ const ACTIONS: WorkflowAction[] = [
               <button
                 type="button"
                 [class]="action === 'Cancel' ? 'btn-quiet' : 'btn-secondary'"
+                [appTooltip]="hints()[action] ?? ''"
                 (click)="choose(action)"
               >
                 {{ labels()[action] }}
@@ -161,6 +163,8 @@ export class JobActions {
   );
 
   protected readonly labels = computed(() => actionLabels(this.auth.terms()));
+
+  protected readonly hints = computed(() => actionHints(this.auth.terms()));
 
   /** The form that is open. Closes when the job moves on or another opens. */
   protected readonly open = linkedSignal<

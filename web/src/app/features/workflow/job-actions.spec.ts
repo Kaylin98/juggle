@@ -29,7 +29,7 @@ describe('JobActions', () => {
   it('offers a button for each action the API lists, and only those', async () => {
     expect(await buttons(['MarkReady', 'AllocateAndSchedule', 'Cancel', 'Start'])).toEqual([
       'Allocate and schedule',
-      'Brief complete',
+      'Checked, allocate later',
       'Start work',
       'Cancel job',
     ]);

@@ -62,7 +62,7 @@ describe('dropOutcome', () => {
 
     expect(dropOutcome(card, design, workflow, terms)).toEqual({
       kind: 'refuse',
-      hint: 'Nothing you can do moves it to Design. You can: Brief complete.',
+      hint: 'Nothing you can do moves it to Design. You can: Checked, allocate later.',
     });
   });
 

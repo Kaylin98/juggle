@@ -17,7 +17,7 @@ export class ActionRunner {
       switch (action) {
         case 'MarkReady':
           await this.jobs.markReady(jobId);
-          this.toast.show(`${brief} marked complete.`, 'success');
+          this.toast.show(`${brief} checked. It is ready to allocate.`, 'success');
           break;
         case 'Start':
           await this.jobs.start(jobId);

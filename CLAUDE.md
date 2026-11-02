@@ -82,6 +82,6 @@ Work directly on main. One commit per completed item. Do not create branches unl
 
 ## Context use
 
-- Take browser screenshots only at review gates
+- Never take browser screenshots, including at review gates; the user checks the UI themselves. Verify UI work with a headless browser check that reports only text (page loads, no console errors, key elements present)
 - Run builds and tests with minimal output and report only failures
 - Read only the file sections you need

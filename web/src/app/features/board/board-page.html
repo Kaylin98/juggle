@@ -42,6 +42,7 @@
           [filtered]="filtered()"
           (opened)="openJobId.set($event.id)"
           (toggled)="toggleColumn(column.column.id)"
+          (dragged)="dropped($event)"
         />
       }
     </div>
@@ -57,6 +58,7 @@
     (closed)="openJobId.set(null)"
     (booked)="board.reload()"
     [people]="data()?.people ?? []"
+    [startWith]="openAction()"
     (changed)="board.reload()"
   />
 }

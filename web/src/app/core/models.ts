@@ -73,11 +73,20 @@ export interface BoardColumn {
   statuses: JobStatus[];
 }
 
+/** One step of the workflow: taking the action on a job in the from status leads to the to status. */
+export interface WorkflowStep {
+  action: WorkflowAction;
+  fromStatusId: string;
+  toStatusId: string;
+}
+
 /** The organisation's board (D64, D77). */
 export interface Workflow {
   columns: BoardColumn[];
   /** The statuses Allocate and schedule leads to, whose cards show "Starts <date>" (D76). */
   scheduledStatusIds: string[];
+  /** Where each action can be taken from and where it leads (D74). */
+  steps: WorkflowStep[];
 }
 
 export interface Person {

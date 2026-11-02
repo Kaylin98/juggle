@@ -9,9 +9,9 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30. Finish
 | | |
 | --- | --- |
 | Current phase | W - Workflow |
-| Phase status | In progress |
-| Last completed task | W.6 Revisions |
-| Next task | W.7 Drag between columns |
+| Phase status | Awaiting review |
+| Last completed task | W.7 Drag between columns; Phase W review gate |
+| Next task | Phase V once Phase W is approved |
 | Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; question 8 (job categories) has a placeholder list in code until the client answers. Listed in the Phase J review summary for the client |
 | Last updated | 2026-11-02 |
 
@@ -33,7 +33,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30. Finish
 | C | - | Client demo for The Core Group | Done (folded into R) |
 | R | - | Requirements and gap analysis | Done |
 | J | - | Roles and jobs | Done |
-| W | - | Workflow | In progress |
+| W | - | Workflow | Awaiting review |
 | V | - | Views and demo | Not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
@@ -137,7 +137,7 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 
 ## Phase W - Workflow
 
-**Status:** In progress
+**Status:** Awaiting review
 **Done when:** one job runs from brief to close across all five roles, with one revision routed back through the Traffic Manager, and every step is recorded
 
 **Tasks**
@@ -148,29 +148,29 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - [x] W.4 Head of Design: approval queue, Approve and Send back with a comment (`JobApproval`)
 - [x] W.5 Marketing Manager: Approve, Needs business approval, Record business approval (stakeholder, date, outcome, note, link), Close
 - [x] W.6 Revisions: Request changes creates a `JobRevision` that goes to the Traffic Manager and is scheduled, worked and approved; revision badge on the card; the job page lists versions, approvals, revisions and history
-- [ ] W.7 Drag between columns (D74): a drop that maps to exactly one action for the role runs it; any other drop is refused with a hint naming the action
+- [x] W.7 Drag between columns (D74): a drop that maps to exactly one action for the role runs it; any other drop is refused with a hint naming the action
 
 **Acceptance criteria**
 
-- [ ] Each transition in `docs/gap-analysis.md` section 2 works for its role only, and is refused for every other role and status
-- [ ] No artwork reaches the Marketing Manager before Head of Design approval
-- [ ] A revision goes to the Traffic Manager, never straight to the designer, and keeps the same job ID
-- [ ] Every action writes a `JobEvent` with user and time; approvals record reviewer, time, decision, comment and version
+- [x] Each transition in `docs/gap-analysis.md` section 2 works for its role only, and is refused for every other role and status
+- [x] No artwork reaches the Marketing Manager before Head of Design approval
+- [x] A revision goes to the Traffic Manager, never straight to the designer, and keeps the same job ID
+- [x] Every action writes a `JobEvent` with user and time; approvals record reviewer, time, decision, comment and version
 
 **Review gate**
 
-- [ ] Build passes with no warnings, lint passes, smoke tests pass
-- [ ] Acceptance criteria ticked
-- [ ] Committed, one commit per step
-- [ ] "Where we left off" and the phase status updated to Awaiting review
-- [ ] **STOP** for review
+- [x] Build passes with no warnings, lint passes, smoke tests pass
+- [x] Acceptance criteria ticked
+- [x] Committed, one commit per step
+- [x] "Where we left off" and the phase status updated to Awaiting review
+- [x] **STOP** for review
 - [ ] Approved by user
 
 ---
 
 ## Phase V - Views and demo
 
-**Status:** In progress
+**Status:** Not started
 **Done when:** each role has its dashboard, Reports is its own menu item scoped by role, and the demo script in `docs/gap-analysis.md` section 4 runs start to finish on freshly reset data
 
 **Tasks**
@@ -263,3 +263,4 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - 2026-11-02: W.4 built: Approvals page and nav badge for users who approve; the head of design approves the design or sends it back with a required comment, each recorded as a `JobApproval` with reviewer, time, decision, comment and the artwork version (migration `JobApprovals`). The user who briefed a job sees only the artwork versions the head of design approved. 92 API tests and 131 web tests pass. Two shared-data tests (dashboard, report) made independent of other tests' jobs.
 - 2026-11-02: W.5 built: the marketing manager who briefed a job approves the artwork the head of design approved, sends it for business approval, records a stakeholder's approval (who, the day they decided, note, link; not future-dated) and closes the job (close date and user stored). Only the requester may; the head of design and traffic manager may not. No schema change. 95 API tests and 131 web tests pass.
 - 2026-11-02: W.6 built: Request changes (from marketing or, with who and when, a stakeholder's decision) records the approval, creates a numbered `JobRevision` (migration `JobRevisions`) and sends the job to the traffic manager as Awaiting Revision Scheduling with the same job ID and an optional new required date; Allocate and schedule then sets the revision's designer and estimate (the job's estimate becomes the total) and makes that designer the job's designer; the head of design's approval completes the revision. The card shows "Rev N"; the job page lists revisions, approvals, artwork versions and activity. 97 API tests and 131 web tests pass.
+- 2026-11-02: W.7 built: a card dragged to another column runs the one workflow action the user may take that leads there (clicks run at once; forms open in the job drawer); any other drop is refused with a hint naming the actions (D74). The workflow endpoint now lists each step. Phase W awaiting review. Build with no warnings, lint, 99 API tests and 136 web tests pass; a headless Chrome check (text only) passed: Incoming actions and forms, a drop on Done opening Cancel, a drop on In Review refused with the hint, Approvals for the head of design, Activity on the marketing manager's job page, no console errors. Known gap for Phase V: the seeded jobs in approval statuses have no artwork or approval records, so their queue entries say "No artwork to review" until the seed is extended (V.8).

@@ -330,6 +330,32 @@ public sealed class WorkflowTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task The_board_gets_the_workflow_steps_so_it_can_tell_which_action_a_dropped_card_calls_for()
+    {
+        var chloe = await api.SignInAsAsync("Chloe Adams");
+
+        var workflow = (await chloe.GetFromJsonAsync<WorkflowDto>("/api/workflow", ApiFactory.Json, _ct))!;
+
+        var statuses = workflow.Columns.SelectMany(c => c.Statuses).ToDictionary(s => s.Id, s => s.Name);
+        var steps = workflow.Steps.Select(s => (s.Action, statuses[s.FromStatusId], statuses[s.ToStatusId])).ToList();
+        Assert.Contains((WorkflowAction.AllocateAndSchedule, "New Request", "Scheduled"), steps);
+        Assert.Contains((WorkflowAction.Close, "Approved / Ready to Close", "Closed / Completed"), steps);
+        // Submit has no from status, so it is not a step a card is moved by.
+        Assert.DoesNotContain(workflow.Steps, s => s.Action == WorkflowAction.Submit);
+    }
+
+    [Fact]
+    public void Every_workflow_action_a_user_takes_on_a_job_has_a_rule_for_who_may_take_it()
+    {
+        // Submit makes the job; Reassign and Reschedule are logged by bookings. Every other action must be gated.
+        WorkflowAction[] notTakenOnAJob = [WorkflowAction.Submit, WorkflowAction.Reassign, WorkflowAction.Reschedule];
+
+        var ungated = Enum.GetValues<WorkflowAction>().Except(notTakenOnAJob).Where(a => ActionRules.For(a) is null);
+
+        Assert.Empty(ungated);
+    }
+
+    [Fact]
     public async Task Marking_ready_moves_a_new_request_to_awaiting_allocation_and_only_once()
     {
         var job = await SubmitAsync("Zanele Mthembu");

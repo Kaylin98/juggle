@@ -1,7 +1,22 @@
-import { Component, ElementRef, computed, effect, inject, input, linkedSignal, resource, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  resource,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { AuthService } from '../../core/auth.service';
+import { Job, WorkflowAction } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { BrandLegend, legendBrands } from '../../shared/brand-legend';
+import { ToastService } from '../../shared/toast.service';
+import { ActionRunner } from '../workflow/action-runner';
+import { dropOutcome } from '../workflow/drop-outcome';
 import { BoardColumn } from './board-column';
 import { BoardFilters, matchesFilters } from './board-filters';
 import { BoardPrefsService } from './board-prefs.service';
@@ -23,6 +38,8 @@ import { JobDrawer } from './job-drawer';
 export class BoardPage {
   private readonly boardService = inject(BoardService);
   private readonly prefs = inject(BoardPrefsService);
+  private readonly runner = inject(ActionRunner);
+  private readonly toast = inject(ToastService);
   protected readonly auth = inject(AuthService);
   protected readonly teamContext = inject(TeamContextService);
 
@@ -40,7 +57,10 @@ export class BoardPage {
   protected readonly data = computed(() => (this.board.hasValue() ? this.board.value() : null));
 
   protected readonly designerFilter = linkedSignal({ source: this.teamId, computation: () => '' });
-  protected readonly departmentFilter = linkedSignal({ source: this.teamId, computation: () => '' });
+  protected readonly departmentFilter = linkedSignal({
+    source: this.teamId,
+    computation: () => '',
+  });
   protected readonly dueFilter = linkedSignal({
     source: () => ({ teamId: this.teamId(), due: this.due() }),
     computation: ({ due }): string => (due === 'overdue' ? due : ''),
@@ -125,7 +145,14 @@ export class BoardPage {
 
   /** Columns a filter leaves empty; they collapse first so the matching cards stay in view. */
   private readonly emptyWhileFiltered = computed(
-    () => new Set(this.filtered() ? this.columns().filter((c) => c.cards.length === 0).map((c) => c.column.id) : []),
+    () =>
+      new Set(
+        this.filtered()
+          ? this.columns()
+              .filter((c) => c.cards.length === 0)
+              .map((c) => c.column.id)
+          : [],
+      ),
   );
 
   /** The brands of the cards shown, for the colour key (D61). */
@@ -137,10 +164,47 @@ export class BoardPage {
   );
 
   protected readonly filtered = computed(
-    () => !!(this.designerFilter() || this.departmentFilter() || this.dueFilter() || this.bookingFilter()),
+    () =>
+      !!(
+        this.designerFilter() ||
+        this.departmentFilter() ||
+        this.dueFilter() ||
+        this.bookingFilter()
+      ),
   );
 
-  protected readonly openCard = computed(() => this.cards().find((card) => card.job.id === this.openJobId()) ?? null);
+  /** The workflow form the open job's drawer starts on, when a card was dropped on a column that calls for one. */
+  protected readonly openAction = linkedSignal<string | null, WorkflowAction | null>({
+    source: () => this.openJobId(),
+    computation: () => null,
+  });
+
+  protected readonly openCard = computed(
+    () => this.cards().find((card) => card.job.id === this.openJobId()) ?? null,
+  );
+
+  /**
+   * A card was dragged and let go: the column under the pointer decides the action (D74). One that needs only a click
+   * runs at once; one that needs more opens the job on its form; anything else is refused with a hint.
+   */
+  protected async dropped(event: { job: Job; point: { x: number; y: number } }): Promise<void> {
+    const data = this.data();
+    const columnId = document
+      .elementFromPoint(event.point.x, event.point.y)
+      ?.closest('[data-column-id]')
+      ?.getAttribute('data-column-id');
+    const target = data?.workflow.columns.find((c) => c.id === columnId);
+    if (!data || !target) return;
+    const outcome = dropOutcome(event.job, target, data.workflow, this.auth.terms());
+    if (outcome?.kind === 'refuse') {
+      this.toast.show(outcome.hint, 'warning');
+    } else if (outcome?.kind === 'run') {
+      if (await this.runner.runOneClick(event.job.id, outcome.action)) this.board.reload();
+    } else if (outcome) {
+      this.openJobId.set(event.job.id);
+      this.openAction.set(outcome.action);
+    }
+  }
 
   /** A manual collapse is remembered for this user; a manual expand holds only until the next resize. */
   protected toggleColumn(columnId: string): void {

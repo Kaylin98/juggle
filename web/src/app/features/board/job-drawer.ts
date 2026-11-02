@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { Person } from '../../core/models';
+import { Person, WorkflowAction } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { startOfWeek } from '../../shared/dates';
 import { Drawer } from '../../shared/drawer';
@@ -47,6 +47,7 @@ import { BoardCard } from './job-card';
           class="block empty:hidden"
           [job]="job"
           [people]="people()"
+          [startWith]="startWith()"
           (changed)="changed.emit()"
         />
 
@@ -170,6 +171,8 @@ export class JobDrawer {
   readonly canBook = input(false);
   /** The team's people, for Allocate and schedule. */
   readonly people = input<Person[]>([]);
+  /** The workflow form to open at once, such as the one a card dropped on a column calls for. */
+  readonly startWith = input<WorkflowAction | null>(null);
   readonly closed = output<void>();
   /** A booking was made from here, so the job's booked hours changed. */
   readonly booked = output<void>();

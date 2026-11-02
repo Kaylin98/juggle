@@ -1,3 +1,4 @@
+import { CdkDrag, CdkDragEnd } from '@angular/cdk/drag-drop';
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { BoardColumn as Column, Job } from '../../core/models';
@@ -10,14 +11,14 @@ const CHEVRON_RIGHT =
   'M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z';
 
 /**
- * One board column and its jobs (D64). Cards move through workflow actions, not by dragging between columns (D74,
- * until W.7). Expanded, columns share the width equally (240px to 360px) and fill the height. Collapsed, a column is a
+ * One board column and its jobs (D64). A card can be dragged to another column, which the board turns into a workflow
+ * action or refuses (D74). Expanded, columns share the width equally (240px to 360px) and fill the height. Collapsed, a column is a
  * narrow strip with its name and card count.
  */
 @Component({
   selector: 'app-board-column',
-  imports: [NgTemplateOutlet, JobCard],
-  host: { '[class]': 'hostClasses()' },
+  imports: [CdkDrag, NgTemplateOutlet, JobCard],
+  host: { '[class]': 'hostClasses()', '[attr.data-column-id]': 'column().id' },
   template: `
     @if (collapsed()) {
       <div class="flex min-h-0 flex-1 flex-col items-center gap-3 rounded-card px-2 py-4">
@@ -40,7 +41,13 @@ const CHEVRON_RIGHT =
       </div>
       <div class="scroll-quiet flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4">
         @for (card of cards(); track card.job.id) {
-          <app-job-card [card]="card" [showBooking]="true" (opened)="opened.emit(card.job)" />
+          <app-job-card
+            cdkDrag
+            [card]="card"
+            [showBooking]="true"
+            (opened)="opened.emit(card.job)"
+            (cdkDragEnded)="dragEnded($event, card.job)"
+          />
         } @empty {
           <p
             class="flex flex-1 items-center justify-center rounded-control border border-dashed border-line-strong text-sm text-ink-muted"
@@ -60,7 +67,11 @@ const CHEVRON_RIGHT =
         (click)="toggled.emit()"
       >
         <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path fill-rule="evenodd" clip-rule="evenodd" [attr.d]="collapsed() ? chevronRight : chevronLeft" />
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            [attr.d]="collapsed() ? chevronRight : chevronLeft"
+          />
         </svg>
       </button>
     </ng-template>
@@ -74,13 +85,23 @@ export class BoardColumn {
   readonly filtered = input(false);
   readonly opened = output<Job>();
   readonly toggled = output<void>();
+  /** A card was dragged and let go; the board finds the column under the pointer. */
+  readonly dragged = output<{ job: Job; point: { x: number; y: number } }>();
+
+  protected dragEnded(event: CdkDragEnd, job: Job): void {
+    event.source.reset();
+    this.dragged.emit({ job, point: event.dropPoint });
+  }
 
   protected readonly chevronLeft = CHEVRON_LEFT;
   protected readonly chevronRight = CHEVRON_RIGHT;
 
   protected readonly hostClasses = computed(
-    () => `panel flex flex-col ${this.collapsed() ? 'w-14 shrink-0' : 'min-w-60 max-w-90 flex-1 basis-0'}`,
+    () =>
+      `panel flex flex-col ${this.collapsed() ? 'w-14 shrink-0' : 'min-w-60 max-w-90 flex-1 basis-0'}`,
   );
 
-  protected readonly countLabel = computed(() => `${this.cards().length} ${this.cards().length === 1 ? 'card' : 'cards'}`);
+  protected readonly countLabel = computed(
+    () => `${this.cards().length} ${this.cards().length === 1 ? 'card' : 'cards'}`,
+  );
 }

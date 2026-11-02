@@ -3,6 +3,8 @@ import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { BusinessApproval, Job, Person, RequestChanges, WorkflowAction } from '../../core/models';
 import { ToastService } from '../../shared/toast.service';
+import { ONE_CLICK_ACTIONS, actionLabels } from './action-labels';
+import { ActionRunner } from './action-runner';
 import { AllocateForm } from './allocate-form';
 import { ArtworkForm, ArtworkSubmission } from './artwork-form';
 import { BusinessApprovalForm } from './business-approval-form';
@@ -133,56 +135,38 @@ const ACTIONS: WorkflowAction[] = [
 export class JobActions {
   private readonly auth = inject(AuthService);
   private readonly jobs = inject(JobsService);
+  private readonly runner = inject(ActionRunner);
   private readonly toast = inject(ToastService);
 
   readonly job = input.required<Job>();
   /** The team's people, for Allocate and schedule. */
   readonly people = input<Person[]>([]);
   /** An action changed the job, so the page showing it should reload. */
+  /** The form to open at once, such as the one a card dropped on a column calls for. */
+  readonly startWith = input<WorkflowAction | null>(null);
   readonly changed = output<void>();
 
   protected readonly available = computed(() =>
     ACTIONS.filter((a) => this.job().actions.includes(a)),
   );
 
-  protected readonly labels = computed<Partial<Record<WorkflowAction, string>>>(() => ({
-    Answer: 'Answer the question',
-    ApproveDesign: 'Approve design',
-    SendBack: 'Send back',
-    ApproveMarketing: 'Approve artwork',
-    NeedsBusinessApproval: 'Needs business approval',
-    RecordBusinessApproval: 'Record business approval',
-    RequestChanges: 'Request changes',
-    Close: `Close ${this.auth.terms().job.toLowerCase()}`,
-    Start: 'Start work',
-    SubmitForApproval: 'Submit artwork',
-    AllocateAndSchedule: 'Allocate and schedule',
-    MarkReady: `${this.auth.terms().brief} complete`,
-    RequestInformation: 'Request information',
-    Cancel: `Cancel ${this.auth.terms().job.toLowerCase()}`,
-  }));
+  protected readonly labels = computed(() => actionLabels(this.auth.terms()));
 
   /** The form that is open. Closes when the job moves on or another opens. */
-  protected readonly open = linkedSignal<string, WorkflowAction | null>({
-    source: () => `${this.job().id}/${this.job().statusId}`,
-    computation: () => null,
+  protected readonly open = linkedSignal<
+    { key: string; start: WorkflowAction | null },
+    WorkflowAction | null
+  >({
+    source: () => ({ key: `${this.job().id}/${this.job().statusId}`, start: this.startWith() }),
+    computation: ({ start }) => start,
   });
 
   /** Actions that need no more than a click run at once; the rest open their form. */
   protected async choose(action: WorkflowAction): Promise<void> {
-    const id = this.job().id;
-    switch (action) {
-      case 'MarkReady':
-        return this.run(
-          () => this.jobs.markReady(id),
-          `${this.auth.terms().brief} marked complete.`,
-        );
-      case 'Close':
-        return this.run(() => this.jobs.close(id), `${this.auth.terms().job} closed.`);
-      case 'Start':
-        return this.run(() => this.jobs.start(id), 'Work started.');
-      default:
-        this.open.set(action);
+    if (!ONE_CLICK_ACTIONS.includes(action)) {
+      this.open.set(action);
+    } else if (await this.runner.runOneClick(this.job().id, action)) {
+      this.changed.emit();
     }
   }
 

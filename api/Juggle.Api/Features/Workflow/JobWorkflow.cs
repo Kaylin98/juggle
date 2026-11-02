@@ -65,7 +65,11 @@ public sealed class JobWorkflow(JuggleDbContext db)
                     c.Name,
                     statuses.Where(s => s.ColumnId == c.Id).Select(s => new JobStatusDto(s.Id, s.Name, s.Colour, s.Kind)).ToList()))
                 .ToList(),
-            [.. scheduled]);
+            [.. scheduled],
+            (await TransitionsAsync(ct))
+                .Where(t => t.FromStatusId != null)
+                .Select(t => new WorkflowStepDto(t.Action, t.FromStatusId!.Value, t.ToStatusId))
+                .ToList());
     }
 
     private async Task<List<WorkflowTransition>> TransitionsAsync(CancellationToken ct) =>

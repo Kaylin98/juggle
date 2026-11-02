@@ -147,6 +147,8 @@ export interface Job {
   bookings: JobBooking[];
   /** The workflow actions the signed-in user may take on it now (D70). */
   actions: WorkflowAction[];
+  /** How many rounds of changes have been asked for after the first submission. */
+  revisionCount: number;
 }
 
 export interface JobBooking {
@@ -256,6 +258,16 @@ export interface BusinessApproval {
   decidedOn: string;
   note: string | null;
   link: string | null;
+}
+
+/** Changes asked for after the artwork was submitted. A stakeholder's decision also says who and when. */
+export interface RequestChanges {
+  reason: string;
+  changes: string | null;
+  revisedRequiredDate: string | null;
+  link: string | null;
+  stakeholderName: string | null;
+  decidedOn: string | null;
 }
 
 export interface SavedAllocation extends SaveAllocation {
@@ -389,6 +401,23 @@ export interface Approval {
   link: string | null;
 }
 
+/** A round of changes asked for after the artwork was submitted (D72). */
+export interface Revision {
+  number: number;
+  source: 'Marketing' | 'Business';
+  requestedByName: string;
+  requestedAt: string;
+  reason: string;
+  changes: string | null;
+  revisedRequiredDate: string | null;
+  link: string | null;
+  /** Who the traffic manager scheduled to make them; null until scheduled. */
+  designerName: string | null;
+  estimateHours: number | null;
+  /** When the head of design approved the revised design. */
+  completedAt: string | null;
+}
+
 /** A job waiting for the signed-in user's approval, with the artwork to review. */
 export interface QueuedJob {
   job: Job;
@@ -415,6 +444,8 @@ export interface JobDetail {
   artwork: Artwork[];
   /** The approval decisions on the artwork, oldest first. */
   approvals: Approval[];
+  /** The rounds of changes asked for, oldest first. */
+  revisions: Revision[];
 }
 
 /** A brief in the client's template, sections A to F (J.4). The signed-in user sends it (D67). */

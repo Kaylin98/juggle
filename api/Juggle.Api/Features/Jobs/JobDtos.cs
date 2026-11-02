@@ -16,6 +16,7 @@ namespace Juggle.Api.Features.Jobs;
 /// <param name="IsDueSoon">Open and required within the next 7 days, or overdue (D57).</param>
 /// <param name="Bookings">Its bookings, earliest first.</param>
 /// <param name="Actions">The workflow actions the signed-in user may take on it now (D70).</param>
+/// <param name="RevisionCount">How many rounds of changes have been asked for after the first submission.</param>
 public sealed record JobDto(
     Guid Id,
     Guid TeamId,
@@ -45,7 +46,8 @@ public sealed record JobDto(
     bool IsDueSoon,
     decimal BookedHours,
     IReadOnlyList<JobBookingDto> Bookings,
-    IReadOnlyList<WorkflowAction> Actions)
+    IReadOnlyList<WorkflowAction> Actions,
+    int RevisionCount)
 {
     private const int DueSoonDays = 7;
 
@@ -61,7 +63,7 @@ public sealed record JobDto(
         .AsNoTracking();
 
     /// <summary>Maps a job read with <see cref="Load"/>.</summary>
-    public static JobDto From(Job job, DateOnly today, IEnumerable<JobBookingDto> bookings, IReadOnlyList<WorkflowAction> actions)
+    public static JobDto From(Job job, DateOnly today, IEnumerable<JobBookingDto> bookings, IReadOnlyList<WorkflowAction> actions, int revisions)
     {
         var open = job.Status.Kind == JobStatusKind.Open;
         var linked = bookings.ToList();
@@ -94,7 +96,8 @@ public sealed record JobDto(
             open && job.RequiredDate <= today.AddDays(DueSoonDays),
             linked.Sum(b => b.Hours),
             linked,
-            actions);
+            actions,
+            revisions);
     }
 }
 
@@ -102,12 +105,14 @@ public sealed record JobDto(
 /// <param name="History">Every action taken on the job, oldest first (D72).</param>
 /// <param name="Artwork">The versions submitted, oldest first. The user who briefed the job sees none until the head of design has approved the design.</param>
 /// <param name="Approvals">The approval decisions on the artwork, oldest first.</param>
+/// <param name="Revisions">The rounds of changes asked for, oldest first.</param>
 public sealed record JobDetailDto(
     JobDto Job,
     BriefDto Brief,
     IReadOnlyList<JobEventDto> History,
     IReadOnlyList<ArtworkDto> Artwork,
-    IReadOnlyList<ApprovalDto> Approvals);
+    IReadOnlyList<ApprovalDto> Approvals,
+    IReadOnlyList<RevisionDto> Revisions);
 
 /// <param name="ToStatusName">The status the action left the job in.</param>
 /// <param name="Message">What the user wrote with it, such as a question or the reason for cancelling.</param>
@@ -231,3 +236,19 @@ public sealed record ApprovalDto(
 
 /// <summary>A job waiting for the signed-in user's approval, with the artwork to review.</summary>
 public sealed record QueuedJobDto(JobDto Job, ArtworkDto? Artwork);
+
+/// <summary>A round of changes asked for after the artwork was submitted (D72).</summary>
+/// <param name="DesignerName">Who the traffic manager scheduled to make them; null until scheduled.</param>
+/// <param name="CompletedAt">When the head of design approved the revised design.</param>
+public sealed record RevisionDto(
+    int Number,
+    RevisionSource Source,
+    string RequestedByName,
+    DateTimeOffset RequestedAt,
+    string Reason,
+    string? Changes,
+    DateOnly? RevisedRequiredDate,
+    string? Link,
+    string? DesignerName,
+    decimal? EstimateHours,
+    DateTimeOffset? CompletedAt);

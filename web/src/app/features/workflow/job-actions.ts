@@ -1,12 +1,13 @@
 import { Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
-import { BusinessApproval, Job, Person, WorkflowAction } from '../../core/models';
+import { BusinessApproval, Job, Person, RequestChanges, WorkflowAction } from '../../core/models';
 import { ToastService } from '../../shared/toast.service';
 import { AllocateForm } from './allocate-form';
 import { ArtworkForm, ArtworkSubmission } from './artwork-form';
 import { BusinessApprovalForm } from './business-approval-form';
 import { MessageForm } from './message-form';
+import { RequestChangesForm } from './request-changes-form';
 
 /** The actions this panel offers, in the order of the buttons. */
 const ACTIONS: WorkflowAction[] = [
@@ -22,7 +23,7 @@ const ACTIONS: WorkflowAction[] = [
  */
 @Component({
   selector: 'app-job-actions',
-  imports: [AllocateForm, ArtworkForm, BusinessApprovalForm, MessageForm],
+  imports: [AllocateForm, ArtworkForm, BusinessApprovalForm, MessageForm, RequestChangesForm],
   template: `
     @if (available().length > 0) {
       @switch (open()) {
@@ -96,6 +97,13 @@ const ACTIONS: WorkflowAction[] = [
         @case ('RecordBusinessApproval') {
           <app-business-approval-form [action]="recordBusinessApproval" (closed)="open.set(null)" />
         }
+        @case ('RequestChanges') {
+          <app-request-changes-form
+            [business]="job().actions.includes('RecordBusinessApproval')"
+            [action]="requestChanges"
+            (closed)="open.set(null)"
+          />
+        }
         @case ('Cancel') {
           <app-message-form
             id="cancel-reason"
@@ -144,6 +152,7 @@ export class JobActions {
     ApproveMarketing: 'Approve artwork',
     NeedsBusinessApproval: 'Needs business approval',
     RecordBusinessApproval: 'Record business approval',
+    RequestChanges: 'Request changes',
     Close: `Close ${this.auth.terms().job.toLowerCase()}`,
     Start: 'Start work',
     SubmitForApproval: 'Submit artwork',
@@ -217,6 +226,13 @@ export class JobActions {
     await this.run(
       () => this.jobs.recordBusinessApproval(this.job().id, approval),
       'Business approval recorded.',
+    );
+  };
+
+  protected readonly requestChanges = async (changes: RequestChanges): Promise<void> => {
+    await this.run(
+      () => this.jobs.requestChanges(this.job().id, changes),
+      'Changes requested. The traffic manager will schedule them.',
     );
   };
 

@@ -262,6 +262,74 @@ public sealed class WorkflowTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task A_revision_goes_back_through_the_traffic_manager_keeps_the_job_id_and_is_approved_again()
+    {
+        var job = await AwaitingMarketingApprovalAsync();
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        var chloe = await api.SignInAsAsync("Chloe Adams");
+        var priya = await api.SignInAsAsync("Priya Naidoo");
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var newDeadline = _today.AddDays(30);
+
+        var byTrafficManager = await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/request-changes", ChangesRequest("No"), ApiFactory.Json, _ct);
+        var noReason = await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/request-changes", new { Reason = " " }, ApiFactory.Json, _ct);
+        var requested = await zanele.PostAsJsonAsync(
+            $"/api/jobs/{job.Id}/request-changes",
+            ChangesRequest("Wrong offer") with { Changes = "Use the R4 999 price", RevisedRequiredDate = newDeadline, Link = "https://example.com/new-copy" },
+            ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.Forbidden, byTrafficManager.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, noReason.StatusCode);
+        var asked = (await requested.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal(("Awaiting Revision Scheduling", job.Code, newDeadline, 1), (asked.Job.StatusName, asked.Job.Code, asked.Job.RequiredDate, asked.Job.RevisionCount));
+        // It waits for the traffic manager: the designer can't start it, and it is in the traffic manager's queue.
+        var designerStart = await priya.PostAsync($"/api/jobs/{job.Id}/start", null, _ct);
+        var incoming = await chloe.GetFromJsonAsync<List<JobDto>>($"/api/teams/{job.TeamId}/incoming", ApiFactory.Json, _ct);
+        Assert.Equal(HttpStatusCode.BadRequest, designerStart.StatusCode);
+        Assert.Contains(incoming!, j => j.Id == job.Id);
+        var revision = Assert.Single(asked.Revisions);
+        Assert.Equal((1, RevisionSource.Marketing, "Zanele Mthembu", "Wrong offer", "Use the R4 999 price", null), (revision.Number, revision.Source, revision.RequestedByName, revision.Reason, revision.Changes, revision.DesignerName));
+        Assert.Equal((ApprovalStage.Marketing, ApprovalDecision.ChangesRequested), (asked.Approvals[^1].Stage, asked.Approvals[^1].Decision));
+
+        await ScheduleAsync(job, "Ethan Pillay");
+        var ethan = await api.SignInAsAsync("Ethan Pillay");
+        var scheduled = (await chloe.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!;
+        Assert.Equal(("Revision Scheduled", "Ethan Pillay", 8m), (scheduled.Job.StatusName, scheduled.Revisions[0].DesignerName, scheduled.Job.EstimateHours));
+        Assert.Null(scheduled.Revisions[0].CompletedAt);
+        (await ethan.PostAsync($"/api/jobs/{job.Id}/start", null, _ct)).EnsureSuccessStatusCode();
+        var inProgress = (await ethan.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!;
+        var submitted = await ethan.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("https://example.com/v2", null), ApiFactory.Json, _ct);
+        var approved = await naledi.PostAsJsonAsync($"/api/jobs/{job.Id}/approve-design", new CommentRequest(null), ApiFactory.Json, _ct);
+
+        Assert.Equal("Revision In Progress", inProgress.Job.StatusName);
+        Assert.Equal("Awaiting Design Approval", (await submitted.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job.StatusName);
+        var result = (await approved.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal(("Awaiting Marketing Approval", job.Code), (result.Job.StatusName, result.Job.Code));
+        Assert.NotNull(result.Revisions[0].CompletedAt);
+        Assert.Equal([1, 2], result.Approvals.Where(a => a.Stage == ApprovalStage.Design).Select(a => a.Version!.Value));
+    }
+
+    [Fact]
+    public async Task A_stakeholders_requested_changes_are_recorded_with_who_and_when()
+    {
+        var job = await AwaitingMarketingApprovalAsync();
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/needs-business-approval", new MessageRequest("Sales"), ApiFactory.Json, _ct);
+
+        var noStakeholder = await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/request-changes", ChangesRequest("Too dark"), ApiFactory.Json, _ct);
+        var requested = await zanele.PostAsJsonAsync(
+            $"/api/jobs/{job.Id}/request-changes",
+            ChangesRequest("Too dark") with { StakeholderName = "Sales", DecidedOn = _today.AddDays(-1) }, ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, noStakeholder.StatusCode);
+        var result = (await requested.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal(("Awaiting Revision Scheduling", RevisionSource.Business), (result.Job.StatusName, result.Revisions[0].Source));
+        Assert.Equal(
+            (ApprovalStage.Business, ApprovalDecision.ChangesRequested, "Sales", _today.AddDays(-1)),
+            (result.Approvals[^1].Stage, result.Approvals[^1].Decision, result.Approvals[^1].StakeholderName, result.Approvals[^1].DecidedOn));
+    }
+
+    [Fact]
     public async Task Marking_ready_moves_a_new_request_to_awaiting_allocation_and_only_once()
     {
         var job = await SubmitAsync("Zanele Mthembu");
@@ -428,6 +496,8 @@ public sealed class WorkflowTests(ApiFactory api)
         (await naledi.PostAsJsonAsync($"/api/jobs/{job.Id}/approve-design", new CommentRequest(null), ApiFactory.Json, _ct)).EnsureSuccessStatusCode();
         return job;
     }
+
+    private static RequestChangesRequest ChangesRequest(string reason) => new(reason, null, null, null, null, null);
 
     private async Task<Guid> StudioPersonAsync(HttpClient client, string name)
     {

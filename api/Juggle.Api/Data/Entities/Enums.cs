@@ -55,6 +55,9 @@ public enum ApprovalStage { Design, Marketing, Business }
 
 public enum ApprovalDecision { Approved, ChangesRequested }
 
+/// <summary>Who asked for a revision: the marketing manager, or a stakeholder whose decision they recorded.</summary>
+public enum RevisionSource { Marketing, Business }
+
 /// <summary>Whether a job in a status is still open, done, or cancelled (left out of completed counts, D75).</summary>
 public enum JobStatusKind { Open, Done, Cancelled }
 

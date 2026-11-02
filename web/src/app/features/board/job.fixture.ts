@@ -32,6 +32,7 @@ export function job(changes: Partial<Job> = {}): Job {
     bookedHours: 0,
     bookings: [],
     actions: [],
+    revisionCount: 0,
     ...changes,
   };
 }

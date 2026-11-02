@@ -6,6 +6,7 @@ import { StatusChip } from '../../shared/status-chip';
 import { JobActions } from '../workflow/job-actions';
 import { JobApprovals } from '../workflow/job-approvals';
 import { JobArtwork } from '../workflow/job-artwork';
+import { JobRevisions } from '../workflow/job-revisions';
 import { JobTrail } from '../workflow/job-trail';
 import {
   CATEGORY_LABELS,
@@ -20,7 +21,7 @@ import {
  */
 @Component({
   selector: 'app-request-detail',
-  imports: [DatePipe, JobActions, JobApprovals, JobArtwork, JobTrail, StatusChip],
+  imports: [DatePipe, JobActions, JobApprovals, JobArtwork, JobRevisions, JobTrail, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <button
@@ -224,6 +225,10 @@ import {
 
           @if (loaded.approvals.length > 0) {
             <app-job-approvals class="xl:col-span-2" [approvals]="loaded.approvals" />
+          }
+
+          @if (loaded.revisions.length > 0) {
+            <app-job-revisions class="xl:col-span-2" [revisions]="loaded.revisions" />
           }
 
           <app-job-trail class="xl:col-span-2" [history]="loaded.history" />

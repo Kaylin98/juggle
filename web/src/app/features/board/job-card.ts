@@ -46,7 +46,9 @@ export interface BoardCard {
         <span class="mt-2 flex flex-wrap items-center gap-2 text-xs">
           <app-status-chip [name]="job.statusName" [colour]="job.statusColour" />
           @if (card().scheduled && job.plannedStartDate) {
-            <span class="whitespace-nowrap text-ink-muted">Starts {{ job.plannedStartDate | date: 'd MMM' }}</span>
+            <span class="whitespace-nowrap text-ink-muted"
+              >Starts {{ job.plannedStartDate | date: 'd MMM' }}</span
+            >
           }
         </span>
         <span class="mt-3 flex h-6 items-center gap-2 text-xs">
@@ -69,7 +71,9 @@ export interface BoardCard {
                 [routerLink]="['/t', teamContext.teamId(), 'capacity']"
                 [queryParams]="{ week: bookedWeek() }"
                 [appTooltip]="bookingsLabel()"
-                [attr.aria-label]="'Booked ' + job.bookedHours + 'h. Open the schedule at this booking'"
+                [attr.aria-label]="
+                  'Booked ' + job.bookedHours + 'h. Open the schedule at this booking'
+                "
                 >Booked {{ job.bookedHours }}h</a
               >
             } @else if (job.isDueSoon) {
@@ -79,13 +83,28 @@ export interface BoardCard {
                 >Not booked</span
               >
             } @else {
-              <span class="rounded-full bg-surface-muted px-2 py-0.5 whitespace-nowrap text-ink-muted">Not booked</span>
+              <span
+                class="rounded-full bg-surface-muted px-2 py-0.5 whitespace-nowrap text-ink-muted"
+                >Not booked</span
+              >
             }
+          }
+          @if (job.revisionCount > 0) {
+            <span
+              class="rounded-full bg-surface-muted px-2 py-0.5 font-semibold whitespace-nowrap text-ink-muted"
+            >
+              Rev {{ job.revisionCount }}
+            </span>
           }
           @if (detail()) {
             <span class="ml-auto truncate text-ink-muted">{{ detail() }}</span>
           } @else if (card().designer; as designer) {
-            <app-avatar class="ml-auto" size="sm" [name]="designer.name" [colour]="designer.avatarColour" />
+            <app-avatar
+              class="ml-auto"
+              size="sm"
+              [name]="designer.name"
+              [colour]="designer.avatarColour"
+            />
           }
         </span>
       </div>
@@ -104,18 +123,27 @@ export class JobCard {
   readonly opened = output<void>();
 
   /** The week of the first booking, where the chip opens the schedule. */
-  protected readonly bookedWeek = computed(() => startOfWeek(this.card().job.bookings[0].startDate));
+  protected readonly bookedWeek = computed(() =>
+    startOfWeek(this.card().job.bookings[0].startDate),
+  );
 
   /** One line per booking: who, when and how many hours. */
   protected readonly bookingsLabel = computed(() =>
     this.card()
-      .job.bookings.map((b) => `${b.personName} · ${formatDateRange(b.startDate, b.endDate, this.locale)} · ${b.hours}h`)
+      .job.bookings.map(
+        (b) =>
+          `${b.personName} · ${formatDateRange(b.startDate, b.endDate, this.locale)} · ${b.hours}h`,
+      )
       .join('\n'),
   );
 }
 
 /** A job as a card: its designer from the people given, and whether its status is done or scheduled. */
-export function toCard(job: Job, people: ReadonlyMap<string, Person>, scheduledStatusIds: ReadonlySet<string>): BoardCard {
+export function toCard(
+  job: Job,
+  people: ReadonlyMap<string, Person>,
+  scheduledStatusIds: ReadonlySet<string>,
+): BoardCard {
   return {
     job,
     designer: job.designerPersonId ? (people.get(job.designerPersonId) ?? null) : null,

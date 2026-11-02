@@ -142,7 +142,7 @@ public sealed class JobsService(
         var job = await JobDto.Load(db.Jobs).Include(j => j.Links.OrderBy(l => l.SortOrder)).FirstOrDefaultAsync(j => j.Id == id, ct)
             ?? throw new NotFoundException("Job not found.");
         await jobAccess.EnsureCanSeeAsync(job, ct);
-        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct), await ArtworkAsync(job, ct), await ApprovalsAsync(id, ct));
+        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct), await ArtworkAsync(job, ct), await ApprovalsAsync(id, ct), await RevisionsAsync(id, ct));
     }
 
     /// <summary>
@@ -160,6 +160,18 @@ public sealed class JobsService(
             .AsNoTracking()
             .ToListAsync(ct);
     }
+
+    private async Task<IReadOnlyList<RevisionDto>> RevisionsAsync(Guid jobId, CancellationToken ct) =>
+        await (from r in db.JobRevisions.Where(r => r.JobId == jobId)
+               join u in db.Users on r.RequestedByUserId equals u.Id
+               join p in db.People.Include(p => p.User) on r.DesignerPersonId equals p.Id into designers
+               from p in designers.DefaultIfEmpty()
+               orderby r.Number
+               select new RevisionDto(
+                   r.Number, r.Source, u.Name, r.RequestedAt, r.Reason, r.Changes, r.RevisedRequiredDate, r.Link,
+                   p == null ? null : p.User.Name, r.EstimateHours, r.CompletedAt))
+            .AsNoTracking()
+            .ToListAsync(ct);
 
     private async Task<IReadOnlyList<ApprovalDto>> ApprovalsAsync(Guid jobId, CancellationToken ct) =>
         await (from p in db.JobApprovals.Where(p => p.JobId == jobId)
@@ -246,10 +258,11 @@ public sealed class JobsService(
     private async Task<IReadOnlyList<JobDto>> ToDtosAsync(List<Job> jobs, CancellationToken ct)
     {
         var bookings = await JobBookings.LoadAsync(db, jobs.Select(j => j.Id).ToList(), ct);
+        var revisions = await JobRevisions.CountsAsync(db, jobs.Select(j => j.Id).ToList(), ct);
         var dtos = new List<JobDto>(jobs.Count);
         foreach (var job in jobs)
         {
-            dtos.Add(JobDto.From(job, clock.Today, bookings[job.Id], await actionAccess.AvailableAsync(job, ct)));
+            dtos.Add(JobDto.From(job, clock.Today, bookings[job.Id], await actionAccess.AvailableAsync(job, ct), revisions.GetValueOrDefault(job.Id)));
         }
 
         return dtos;

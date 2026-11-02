@@ -50,10 +50,11 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, J
             .ToListAsync(ct);
         var holidays = timeOff.Where(t => t.PersonId == null).Select(t => t.StartDate).ToHashSet();
 
+        var revisions = await JobRevisions.CountsAsync(db, jobs.Select(j => j.Id).ToList(), ct);
         var jobDtos = new List<JobDto>(jobs.Count);
         foreach (var job in jobs)
         {
-            jobDtos.Add(JobDto.From(job, today, jobBookings[job.Id], await actionAccess.AvailableAsync(job, ct)));
+            jobDtos.Add(JobDto.From(job, today, jobBookings[job.Id], await actionAccess.AvailableAsync(job, ct), revisions.GetValueOrDefault(job.Id)));
         }
 
         return new MyWorkDto(

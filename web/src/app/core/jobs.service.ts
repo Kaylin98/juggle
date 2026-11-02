@@ -12,6 +12,7 @@ import {
   JobOptions,
   Person,
   QueuedJob,
+  RequestChanges,
   Workflow,
 } from './models';
 import { TeamContextService } from './team-context.service';
@@ -108,6 +109,10 @@ export class JobsService {
 
   close(id: string): Promise<JobDetail> {
     return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/close`, {}));
+  }
+
+  requestChanges(id: string, changes: RequestChanges): Promise<JobDetail> {
+    return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/request-changes`, changes));
   }
 
   start(id: string): Promise<JobDetail> {

@@ -524,6 +524,72 @@ namespace Juggle.Api.Data.Migrations
                     b.ToTable("JobLinks");
                 });
 
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Changes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DesignerPersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("EstimateHours")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("RevisedRequiredDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DesignerPersonId");
+
+                    b.HasIndex("OrgId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("JobId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("JobRevisions");
+                });
+
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobStatus", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1075,6 +1141,32 @@ namespace Juggle.Api.Data.Migrations
                         .WithMany()
                         .HasForeignKey("OrgId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobRevision", b =>
+                {
+                    b.HasOne("Juggle.Api.Data.Entities.Person", null)
+                        .WithMany()
+                        .HasForeignKey("DesignerPersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Juggle.Api.Data.Entities.Job", null)
+                        .WithMany()
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

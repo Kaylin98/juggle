@@ -26,6 +26,7 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
     public DbSet<JobEvent> JobEvents => Set<JobEvent>();
     public DbSet<JobArtwork> JobArtwork => Set<JobArtwork>();
     public DbSet<JobApproval> JobApprovals => Set<JobApproval>();
+    public DbSet<JobRevision> JobRevisions => Set<JobRevision>();
     public DbSet<Allocation> Allocations => Set<Allocation>();
     public DbSet<TimeOff> TimeOff => Set<TimeOff>();
 
@@ -183,6 +184,18 @@ public class JuggleDbContext(DbContextOptions<JuggleDbContext> options, CurrentU
             e.HasOne<Job>().WithMany().HasForeignKey(a => a.JobId);
             e.HasOne<JobArtwork>().WithMany().HasForeignKey(a => a.ArtworkId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<User>().WithMany().HasForeignKey(a => a.RecordedByUserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<JobRevision>(e =>
+        {
+            e.HasQueryFilter(r => r.OrgId == OrgId);
+            e.Property(r => r.Reason).HasMaxLength(2000);
+            e.Property(r => r.Changes).HasMaxLength(2000);
+            e.Property(r => r.Link).HasMaxLength(1000);
+            e.HasIndex(r => new { r.JobId, r.Number }).IsUnique();
+            e.HasOne<Job>().WithMany().HasForeignKey(r => r.JobId);
+            e.HasOne<User>().WithMany().HasForeignKey(r => r.RequestedByUserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Person>().WithMany().HasForeignKey(r => r.DesignerPersonId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<TimeOff>(e =>

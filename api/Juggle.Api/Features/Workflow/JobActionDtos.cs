@@ -38,3 +38,15 @@ public sealed record BusinessApprovalRequest(
     DateOnly DecidedOn,
     [MaxLength(2000)] string? Note,
     [MaxLength(1000), Url] string? Link);
+
+/// <summary>
+/// Changes asked for after the artwork was submitted. When a stakeholder asked, the marketing manager records who
+/// and when; a new deadline, if the changes move it, replaces the required date.
+/// </summary>
+public sealed record RequestChangesRequest(
+    [Required, MaxLength(2000)] string Reason,
+    [MaxLength(2000)] string? Changes,
+    DateOnly? RevisedRequiredDate,
+    [MaxLength(1000), Url] string? Link,
+    [MaxLength(200)] string? StakeholderName,
+    DateOnly? DecidedOn);

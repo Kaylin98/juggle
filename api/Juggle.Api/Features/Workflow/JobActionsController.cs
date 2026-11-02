@@ -40,6 +40,10 @@ public sealed class JobActionsController(JobActions actions) : ControllerBase
     public Task<JobDetailDto> RecordBusinessApproval(Guid id, BusinessApprovalRequest request, CancellationToken ct) =>
         actions.RecordBusinessApprovalAsync(id, request, ct);
 
+    [HttpPost("request-changes")]
+    public Task<JobDetailDto> RequestChanges(Guid id, RequestChangesRequest request, CancellationToken ct) =>
+        actions.RequestChangesAsync(id, request, ct);
+
     [HttpPost("close")]
     public Task<JobDetailDto> Close(Guid id, CancellationToken ct) => actions.CloseAsync(id, ct);
 

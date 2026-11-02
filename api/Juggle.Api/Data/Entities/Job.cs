@@ -169,3 +169,33 @@ public class JobApproval
     /// <summary>Business approval only: a link to the evidence, such as an email.</summary>
     public string? Link { get; set; }
 }
+
+/// <summary>
+/// A round of changes asked for after the artwork was submitted (D72): it keeps the job's ID, goes to the traffic
+/// manager to schedule, and is worked and approved like the first round.
+/// </summary>
+public class JobRevision
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid OrgId { get; set; }
+    public Guid JobId { get; set; }
+
+    /// <summary>1 for the first revision of the job, counting up.</summary>
+    public int Number { get; set; }
+
+    public RevisionSource Source { get; set; }
+    public Guid RequestedByUserId { get; set; }
+    public DateTimeOffset RequestedAt { get; set; }
+    public required string Reason { get; set; }
+    public string? Changes { get; set; }
+    public DateOnly? RevisedRequiredDate { get; set; }
+    public string? Link { get; set; }
+
+    /// <summary>Set when the traffic manager schedules the revision.</summary>
+    public Guid? DesignerPersonId { get; set; }
+
+    public decimal? EstimateHours { get; set; }
+
+    /// <summary>When the head of design approved the revised design.</summary>
+    public DateTimeOffset? CompletedAt { get; set; }
+}

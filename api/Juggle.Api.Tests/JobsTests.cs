@@ -60,7 +60,7 @@ public sealed class JobsTests(ApiFactory api)
 
         var response = await zanele.PostAsJsonAsync("/api/jobs", sent, ApiFactory.Json, _ct);
         var id = (await response.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job.Id;
-        var (job, brief, _, _, _) = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{id}", ApiFactory.Json, _ct))!;
+        var (job, brief, _, _, _, _) = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{id}", ApiFactory.Json, _ct))!;
 
         // A. Job information, with the text trimmed.
         Assert.Equal(("Summer Holiday Sale", "Summer 2027", JobCategory.Promotion, "DJI0141_Q1'27_Black Friday", _today.AddDays(14), Priority.High),

@@ -62,6 +62,56 @@ public sealed class JobActions(
             });
     }
 
+    /// <summary>
+    /// The requester asks for changes to the artwork, or records that a stakeholder did. The job keeps its ID and goes
+    /// back to the traffic manager as a new revision to schedule, never straight to the designer.
+    /// </summary>
+    public async Task<JobDetailDto> RequestChangesAsync(Guid id, RequestChangesRequest request, CancellationToken ct)
+    {
+        var job = await LoadAsync(id, ct);
+        var transition = await access.EnsureAsync(job, WorkflowAction.RequestChanges, ct);
+        var business = transition.Stage == ApprovalStage.Business;
+        if (business && (string.IsNullOrWhiteSpace(request.StakeholderName) || request.DecidedOn is null))
+        {
+            throw new BadRequestException("Say who asked for the changes and when.");
+        }
+        if (request.DecidedOn > clock.Today || request.RevisedRequiredDate < clock.Today)
+        {
+            throw new BadRequestException("The decision can't be dated in the future, or the new deadline in the past.");
+        }
+
+        var reason = request.Reason.Trim();
+        await RecordApprovalAsync(job, transition, ApprovalDecision.ChangesRequested, reason, approval =>
+        {
+            if (business)
+            {
+                approval.StakeholderName = request.StakeholderName!.Trim();
+                approval.DecidedOn = request.DecidedOn;
+                approval.Link = Clean(request.Link);
+            }
+        }, ct);
+        var number = 1 + await db.JobRevisions.CountAsync(r => r.JobId == id, ct);
+        db.JobRevisions.Add(new JobRevision
+        {
+            OrgId = job.OrgId,
+            JobId = id,
+            Number = number,
+            Source = business ? RevisionSource.Business : RevisionSource.Marketing,
+            RequestedByUserId = currentUser.UserId,
+            RequestedAt = clock.Now,
+            Reason = reason,
+            Changes = Clean(request.Changes),
+            RevisedRequiredDate = request.RevisedRequiredDate,
+            Link = Clean(request.Link),
+        });
+        job.RequiredDate = request.RevisedRequiredDate ?? job.RequiredDate;
+        Apply(job, WorkflowAction.RequestChanges, transition, reason);
+        await db.SaveChangesAsync(ct);
+        return await jobs.GetAsync(id, ct);
+    }
+
+    private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
     /// <summary>The requester closes the approved job.</summary>
     public async Task<JobDetailDto> CloseAsync(Guid id, CancellationToken ct)
     {
@@ -113,7 +163,20 @@ public sealed class JobActions(
 
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var booking = await allocations.CreateAsync(new SaveAllocationRequest(request.PersonId, id, request.StartDate, request.EndDate, request.HoursPerDay, null), ct);
-        job.EstimateHours = request.EstimateHours;
+        job.DesignerPersonId = request.PersonId;
+        var revision = await OpenRevisionAsync(id, ct);
+        if (revision is null)
+        {
+            job.EstimateHours = request.EstimateHours;
+        }
+        else
+        {
+            // The job's estimate is the total across the first round and every revision.
+            revision.DesignerPersonId = request.PersonId;
+            revision.EstimateHours = request.EstimateHours;
+            job.EstimateHours = (job.EstimateHours ?? 0) + request.EstimateHours;
+        }
+
         Apply(job, WorkflowAction.AllocateAndSchedule, transition, null);
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
@@ -142,27 +205,45 @@ public sealed class JobActions(
         {
             throw new BadRequestException("Say what needs to change.");
         }
-        if (transition.Stage is { } stage)
+        await RecordApprovalAsync(job, transition, decision, comment, details, ct);
+        if (action == WorkflowAction.ApproveDesign)
         {
-            var approval = new JobApproval
-            {
-                OrgId = job.OrgId,
-                JobId = id,
-                Stage = stage,
-                Decision = decision,
-                ArtworkId = await LatestArtworkIdAsync(id, ct),
-                RecordedByUserId = currentUser.UserId,
-                RecordedAt = clock.Now,
-                Comment = comment,
-            };
-            details?.Invoke(approval);
-            db.JobApprovals.Add(approval);
+            var revision = await OpenRevisionAsync(id, ct);
+            revision?.CompletedAt = clock.Now;
         }
 
         Apply(job, action, transition, comment);
         await db.SaveChangesAsync(ct);
         return await jobs.GetAsync(id, ct);
     }
+
+    /// <summary>Records the approval the step calls for, if it has a stage, for the latest artwork (D72).</summary>
+    private async Task RecordApprovalAsync(
+        Job job, WorkflowTransition transition, ApprovalDecision decision, string? comment, Action<JobApproval>? details, CancellationToken ct)
+    {
+        if (transition.Stage is not { } stage)
+        {
+            return;
+        }
+
+        var approval = new JobApproval
+        {
+            OrgId = job.OrgId,
+            JobId = job.Id,
+            Stage = stage,
+            Decision = decision,
+            ArtworkId = await LatestArtworkIdAsync(job.Id, ct),
+            RecordedByUserId = currentUser.UserId,
+            RecordedAt = clock.Now,
+            Comment = comment,
+        };
+        details?.Invoke(approval);
+        db.JobApprovals.Add(approval);
+    }
+
+    /// <summary>The revision being worked on: the latest one the head of design has not yet approved.</summary>
+    private Task<JobRevision?> OpenRevisionAsync(Guid jobId, CancellationToken ct) =>
+        db.JobRevisions.Where(r => r.JobId == jobId && r.CompletedAt == null).OrderByDescending(r => r.Number).FirstOrDefaultAsync(ct);
 
     private Task<Guid?> LatestArtworkIdAsync(Guid jobId, CancellationToken ct) =>
         db.JobArtwork.Where(a => a.JobId == jobId).OrderByDescending(a => a.Version).Select(a => (Guid?)a.Id).FirstOrDefaultAsync(ct);

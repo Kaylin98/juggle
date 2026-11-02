@@ -8,10 +8,10 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30. Finish
 
 | | |
 | --- | --- |
-| Current phase | J - Roles and jobs |
-| Phase status | Done (approved 2026-11-02) |
-| Last completed task | J.4 Brief form sections A to F and the job page |
-| Next task | W.1 Traffic Manager actions, once the user says to start Phase W |
+| Current phase | W - Workflow |
+| Phase status | In progress |
+| Last completed task | W.1 Traffic Manager actions |
+| Next task | W.2 Request information and the Marketing Manager answer |
 | Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; question 8 (job categories) has a placeholder list in code until the client answers. Listed in the Phase J review summary for the client |
 | Last updated | 2026-11-02 |
 
@@ -33,7 +33,7 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30. Finish
 | C | - | Client demo for The Core Group | Done (folded into R) |
 | R | - | Requirements and gap analysis | Done |
 | J | - | Roles and jobs | Done |
-| W | - | Workflow | Not started |
+| W | - | Workflow | In progress |
 | V | - | Views and demo | Not started |
 
 Status values: Not started, In progress, Awaiting review, Done. A phase is Done only after the user approves it at its review gate.
@@ -122,6 +122,7 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - D75 Cancelled: the Traffic Manager cancels from any open status with a reason; shown in Done, left out of completed counts
 - D76 Scheduled sits in In Design and shows "Starts <date>"; Incoming is the Traffic Manager's queue only
 - D77 Juggle is configurable per organisation: roles, capabilities, statuses, columns, workflow, terms and the job ID format are data, never code checks
+- D78 Reassign and Reschedule are logged on the job but are not workflow steps: a booking moved to another person reassigns the job if that person was its designer; a booking's dates set the job's planned start and expected completion
 
 ## Review gate (ends every phase)
 
@@ -136,12 +137,12 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 
 ## Phase W - Workflow
 
-**Status:** Not started
+**Status:** In progress
 **Done when:** one job runs from brief to close across all five roles, with one revision routed back through the Traffic Manager, and every step is recorded
 
 **Tasks**
 
-- [ ] W.1 Traffic Manager: Incoming (replaces Triage), Brief complete, Allocate and schedule (makes the booking; clash, leave and deadline warnings), View on schedule, Add booking (hidden at or above the estimate), reassign and reschedule, Cancel with a reason (D75)
+- [x] W.1 Traffic Manager: Incoming (replaces Triage), Brief complete, Allocate and schedule (makes the booking; clash, leave and deadline warnings), View on schedule, Add booking (hidden at or above the estimate), reassign and reschedule, Cancel with a reason (D75)
 - [ ] W.2 Request information and the Marketing Manager's answer (Awaiting Information, Awaiting Traffic Review)
 - [ ] W.3 Designer: Start, Submit artwork link (`JobArtwork` versions); no Schedule in the nav
 - [ ] W.4 Head of Design: approval queue, Approve and Send back with a comment (`JobApproval`)
@@ -169,7 +170,7 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 
 ## Phase V - Views and demo
 
-**Status:** Not started
+**Status:** In progress
 **Done when:** each role has its dashboard, Reports is its own menu item scoped by role, and the demo script in `docs/gap-analysis.md` section 4 runs start to finish on freshly reset data
 
 **Tasks**
@@ -256,3 +257,4 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - 2026-11-01: J.3 built: job IDs from the org's format and an atomic per-brand counter at submission, never changed; migration `JobNumbers`; the brief form starts on the only team for marketing managers. Build with no warnings, lint, 76 API tests and 127 web tests pass; DJI0143 checked in Chromium at 1440.
 - 2026-11-01: J.4 built: the brief form in the client's template, sections A to F, with deliverable rows (type, specifications, deadline) and supporting links; the job page shows the whole brief; migration `BriefSections`. Build with no warnings, lint, 77 API tests and 129 web tests pass; checked in Chromium at 1440. Demo data reset. Phase J awaiting review.
 - 2026-11-02: Phase J approved and done. Phase W not started; waiting for the user to say to start.
+- 2026-11-02: Phase W started. W.1 built: `JobActionAccess` answers which workflow actions a user may take on a job (the workflow allows it in the status, the role has the capability, and the requester or designer where the action needs it); `JobDto.Actions` lists them and the web shows a button for each. Incoming replaces Triage with Request information, Brief complete, Allocate and schedule (booking and status change saved together; clash, leave and late warnings) and Cancel with a reason. Moving a booking to another person or other dates reassigns or reschedules the job and logs it (D78). No schema change. Build with no warnings, lint, 86 API tests and 131 web tests pass.

@@ -15,7 +15,7 @@ export const TEAM_PAGES: Record<string, Capability[]> = {
   briefs: ['ViewAllJobs', 'ViewReports'],
   capacity: ['ViewSchedule'],
   board: ['ViewBoard'],
-  triage: ['TriageBriefs'],
+  incoming: ['TriageBriefs'],
 };
 
 /** The team being viewed, taken from the `/t/:teamId/...` URL. Pages outside a team keep the last one. */

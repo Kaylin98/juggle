@@ -57,7 +57,7 @@ describe('TeamContextService.switchTo', () => {
   });
 
   it("falls back to the board when the role cannot open the page, whatever the role's name", async () => {
-    expect(await switchTeam(DESIGNER, '/t/design/triage')).toBe('/t/marketing/board');
+    expect(await switchTeam(DESIGNER, '/t/design/incoming')).toBe('/t/marketing/board');
   });
 
   it('falls back to the dashboard for users who see all the work', async () => {

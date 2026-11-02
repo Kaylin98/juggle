@@ -12,7 +12,7 @@ export interface CardLink {
 
 /**
  * A headline number. With one link the whole card opens it; with one per team ("All teams"),
- * each team is its own line, since the board and triage are per team.
+ * each team is its own line, since the board and incoming are per team.
  */
 @Component({
   selector: 'app-summary-card',

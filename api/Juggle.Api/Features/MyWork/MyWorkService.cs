@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Juggle.Api.Features.MyWork;
 
 /// <summary>My work: the signed-in person's jobs, schedule and leave across every team they are in, ignoring the team switcher.</summary>
-public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, OrgClock clock)
+public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, JobActionAccess actionAccess, OrgClock clock)
 {
     /// <summary>This week and next week.</summary>
     private const int Weeks = 2;
@@ -50,10 +50,15 @@ public sealed class MyWorkService(JuggleDbContext db, CurrentUser currentUser, O
             .ToListAsync(ct);
         var holidays = timeOff.Where(t => t.PersonId == null).Select(t => t.StartDate).ToHashSet();
 
+        var jobDtos = new List<JobDto>(jobs.Count);
+        foreach (var job in jobs)
+        {
+            jobDtos.Add(JobDto.From(job, today, jobBookings[job.Id], await actionAccess.AvailableAsync(job, ct)));
+        }
+
         return new MyWorkDto(
             new PersonDto(person.Id, person.User.Name, person.User.AvatarColour, person.JobTitle, person.HoursPerDay),
-            jobs
-                .Select(j => JobDto.From(j, today, jobBookings[j.Id]))
+            jobDtos
                 .OrderByDescending(j => j.IsOverdue)
                 .ThenBy(j => j.RequiredDate ?? DateOnly.MaxValue)
                 .ThenBy(j => j.Title)

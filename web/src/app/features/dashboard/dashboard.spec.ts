@@ -16,9 +16,9 @@ describe('teamLinks', () => {
   });
 
   it('gives each team its own line with its count on "All teams"', () => {
-    expect(teamLinks(counts, true, 'triage', 'Open triage')).toEqual([
-      { label: 'Design', count: 3, link: ['/t', 'design', 'triage'], queryParams: undefined },
-      { label: 'Marketing', count: 1, link: ['/t', 'marketing', 'triage'], queryParams: undefined },
+    expect(teamLinks(counts, true, 'incoming', 'Open incoming')).toEqual([
+      { label: 'Design', count: 3, link: ['/t', 'design', 'incoming'], queryParams: undefined },
+      { label: 'Marketing', count: 1, link: ['/t', 'marketing', 'incoming'], queryParams: undefined },
     ]);
   });
 });

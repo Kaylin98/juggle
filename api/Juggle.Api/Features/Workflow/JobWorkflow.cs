@@ -20,6 +20,14 @@ public sealed class JobWorkflow(JuggleDbContext db)
     public async Task<Guid> FirstStatusIdAsync(CancellationToken ct) =>
         (await TransitionsAsync(ct)).Single(t => t.Action == WorkflowAction.Submit).ToStatusId;
 
+    /// <summary>The step that takes the action on a job in the status, or null when the workflow has none.</summary>
+    public async Task<WorkflowTransition?> FindAsync(WorkflowAction action, Guid fromStatusId, CancellationToken ct) =>
+        (await TransitionsAsync(ct)).FirstOrDefault(t => t.Action == action && t.FromStatusId == fromStatusId);
+
+    /// <summary>The actions the workflow allows on a job in the status.</summary>
+    public async Task<IReadOnlyList<WorkflowAction>> ActionsFromAsync(Guid statusId, CancellationToken ct) =>
+        (await TransitionsAsync(ct)).Where(t => t.FromStatusId == statusId).Select(t => t.Action).Distinct().ToList();
+
     /// <summary>The statuses the action leads to, such as those a job is in once Allocate and schedule has booked it.</summary>
     private async Task<IReadOnlySet<Guid>> StatusesAfterAsync(WorkflowAction action, CancellationToken ct) =>
         (await TransitionsAsync(ct)).Where(t => t.Action == action).Select(t => t.ToStatusId).ToHashSet();

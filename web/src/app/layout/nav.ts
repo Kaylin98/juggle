@@ -36,14 +36,14 @@ const ICONS = {
   myRequests:
     'M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z',
   newRequest: 'M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
-  triage:
+  incoming:
     'M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z',
   timeOff:
     'M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z',
 };
 
-/** Pages inside the Requests group: My requests and a request, New request, a team's Triage, and Time off. */
-const REQUEST_PAGE = /^\/(requests?|time-off|t\/[^/]+\/triage)(\/|\?|$)/;
+/** Pages inside the Requests group: My requests and a request, New request, a team's Incoming, and Time off. */
+const REQUEST_PAGE = /^\/(requests?|time-off|t\/[^/]+\/incoming)(\/|\?|$)/;
 
 /** In the rail, the Requests group opens beside its icon. */
 const FLYOUT_POSITIONS: ConnectedPosition[] = [
@@ -52,7 +52,7 @@ const FLYOUT_POSITIONS: ConnectedPosition[] = [
 ];
 
 /**
- * The side menu: the team pages, then a "Requests" group (Triage, Time off, My requests, New brief, by capability),
+ * The side menu: the team pages, then a "Requests" group (Incoming, Time off, My requests, New brief, by capability),
  * open while one of its pages is shown. A toggle shrinks it to a 64px icon rail with tooltips, where badges
  * become dots and the group opens as a flyout; the choice is remembered per user.
  */
@@ -88,13 +88,13 @@ export class Nav {
     ];
   });
 
-  /** Triage, Time off, My requests and New brief, each shown by capability; the same in the flyout. */
+  /** Incoming, Time off, My requests and New brief, each shown by capability; the same in the flyout. */
   protected readonly requestLinks = computed<NavItem[]>(() => {
     const teamId = this.teamContext.teamId();
     const auth = this.auth;
     return [
       ...(teamId && auth.can('TriageBriefs')
-        ? [{ label: 'Triage', link: ['/t', teamId, 'triage'], icon: ICONS.triage, count: this.triageCount() }]
+        ? [{ label: 'Incoming', link: ['/t', teamId, 'incoming'], icon: ICONS.incoming, count: this.incomingCount() }]
         : []),
       ...(auth.can('ApproveTimeOff')
         ? [{ label: 'Time off', link: ['/time-off'], icon: ICONS.timeOff, count: this.timeOffCount() }]
@@ -108,7 +108,7 @@ export class Nav {
     ];
   });
 
-  protected readonly triageCount = computed(() => {
+  protected readonly incomingCount = computed(() => {
     const incoming = this.jobs.incoming;
     return this.auth.can('TriageBriefs') && incoming.hasValue() ? incoming.value().length : 0;
   });
@@ -119,7 +119,7 @@ export class Nav {
   });
 
   /** Everything waiting for the viewer in the group, shown on it while it is closed. */
-  protected readonly waitingCount = computed(() => this.triageCount() + this.timeOffCount());
+  protected readonly waitingCount = computed(() => this.incomingCount() + this.timeOffCount());
 
   private readonly url = toSignal(
     this.router.events.pipe(

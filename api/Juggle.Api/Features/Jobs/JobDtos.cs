@@ -15,6 +15,7 @@ namespace Juggle.Api.Features.Jobs;
 /// <param name="IsOverdue">Open and the required date has passed (D21).</param>
 /// <param name="IsDueSoon">Open and required within the next 7 days, or overdue (D57).</param>
 /// <param name="Bookings">Its bookings, earliest first.</param>
+/// <param name="Actions">The workflow actions the signed-in user may take on it now (D70).</param>
 public sealed record JobDto(
     Guid Id,
     Guid TeamId,
@@ -43,7 +44,8 @@ public sealed record JobDto(
     bool IsOverdue,
     bool IsDueSoon,
     decimal BookedHours,
-    IReadOnlyList<JobBookingDto> Bookings)
+    IReadOnlyList<JobBookingDto> Bookings,
+    IReadOnlyList<WorkflowAction> Actions)
 {
     private const int DueSoonDays = 7;
 
@@ -59,7 +61,7 @@ public sealed record JobDto(
         .AsNoTracking();
 
     /// <summary>Maps a job read with <see cref="Load"/>.</summary>
-    public static JobDto From(Job job, DateOnly today, IEnumerable<JobBookingDto> bookings)
+    public static JobDto From(Job job, DateOnly today, IEnumerable<JobBookingDto> bookings, IReadOnlyList<WorkflowAction> actions)
     {
         var open = job.Status.Kind == JobStatusKind.Open;
         var linked = bookings.ToList();
@@ -91,7 +93,8 @@ public sealed record JobDto(
             open && job.RequiredDate < today,
             open && job.RequiredDate <= today.AddDays(DueSoonDays),
             linked.Sum(b => b.Hours),
-            linked);
+            linked,
+            actions);
     }
 }
 

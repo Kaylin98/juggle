@@ -31,6 +31,7 @@ export function job(changes: Partial<Job> = {}): Job {
     isDueSoon: false,
     bookedHours: 0,
     bookings: [],
+    actions: [],
     ...changes,
   };
 }

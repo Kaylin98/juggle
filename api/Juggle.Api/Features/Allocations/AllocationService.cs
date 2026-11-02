@@ -11,32 +11,75 @@ namespace Juggle.Api.Features.Allocations;
 /// Books people onto jobs. An allocation belongs to its job's team, so only users who may book work (Allocate)
 /// in that team change it. Saving never fails on a clash; the response lists the days now over capacity.
 /// </summary>
-public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess)
+public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUser, TeamAccess teamAccess, OrgClock clock)
 {
     private const int MaxDays = 366;
 
     public async Task<SavedAllocationDto> CreateAsync(SaveAllocationRequest request, CancellationToken ct)
     {
         var allocation = new Allocation { OrgId = currentUser.OrgId };
-        await ApplyAsync(allocation, request, ct);
+        var job = await ApplyAsync(allocation, request, ct);
         db.Allocations.Add(allocation);
+        job.DesignerPersonId ??= allocation.PersonId;
         await db.SaveChangesAsync(ct);
+        await SyncJobDatesAsync(job, ct);
         return await ToDtoAsync(allocation, ct);
     }
 
+    /// <summary>
+    /// Saves the booking. Moving it to another person reassigns the job when that person was its designer, and moving
+    /// its dates reschedules it; both are logged on the job (D72).
+    /// </summary>
     public async Task<SavedAllocationDto> UpdateAsync(Guid id, SaveAllocationRequest request, CancellationToken ct)
     {
         var allocation = await FindManageableAsync(id, ct);
-        await ApplyAsync(allocation, request, ct);
+        var (person, start, end) = (allocation.PersonId, allocation.StartDate, allocation.EndDate);
+        var job = await ApplyAsync(allocation, request, ct);
+        if (allocation.PersonId != person && job.DesignerPersonId == person)
+        {
+            job.DesignerPersonId = allocation.PersonId;
+            var name = await db.People.Where(p => p.Id == allocation.PersonId).Select(p => p.User.Name).FirstAsync(ct);
+            LogEvent(job, WorkflowAction.Reassign, $"Reassigned to {name}");
+        }
+        if (allocation.StartDate != start || allocation.EndDate != end)
+        {
+            LogEvent(job, WorkflowAction.Reschedule, $"Booked {allocation.StartDate:d MMM} to {allocation.EndDate:d MMM}");
+        }
+
         await db.SaveChangesAsync(ct);
+        await SyncJobDatesAsync(job, ct);
         return await ToDtoAsync(allocation, ct);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
-        db.Allocations.Remove(await FindManageableAsync(id, ct));
+        var allocation = await FindManageableAsync(id, ct);
+        db.Allocations.Remove(allocation);
+        await db.SaveChangesAsync(ct);
+        await SyncJobDatesAsync(allocation.Job, ct);
+    }
+
+    /// <summary>A job starts with its first booking and is expected to finish with its last.</summary>
+    private async Task SyncJobDatesAsync(Job job, CancellationToken ct)
+    {
+        var bookings = await db.Allocations.Where(a => a.JobId == job.Id).Select(a => new { a.StartDate, a.EndDate }).ToListAsync(ct);
+        job.PlannedStartDate = bookings.Count == 0 ? null : bookings.Min(b => b.StartDate);
+        job.ExpectedCompletionDate = bookings.Count == 0 ? null : bookings.Max(b => b.EndDate);
         await db.SaveChangesAsync(ct);
     }
+
+    private void LogEvent(Job job, WorkflowAction action, string message) =>
+        db.JobEvents.Add(new JobEvent
+        {
+            OrgId = job.OrgId,
+            JobId = job.Id,
+            UserId = currentUser.UserId,
+            At = clock.Now,
+            Action = action,
+            FromStatusId = job.StatusId,
+            ToStatusId = job.StatusId,
+            Message = message,
+        });
 
     private async Task<Allocation> FindManageableAsync(Guid id, CancellationToken ct)
     {
@@ -47,7 +90,7 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
     }
 
     /// <summary>Validates the request against the job's team and copies it onto the allocation.</summary>
-    private async Task ApplyAsync(Allocation allocation, SaveAllocationRequest request, CancellationToken ct)
+    private async Task<Job> ApplyAsync(Allocation allocation, SaveAllocationRequest request, CancellationToken ct)
     {
         if (request.EndDate < request.StartDate)
         {
@@ -73,6 +116,7 @@ public sealed class AllocationService(JuggleDbContext db, CurrentUser currentUse
         allocation.EndDate = request.EndDate;
         allocation.HoursPerDay = request.HoursPerDay;
         allocation.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+        return job;
     }
 
     private async Task<SavedAllocationDto> ToDtoAsync(Allocation allocation, CancellationToken ct)

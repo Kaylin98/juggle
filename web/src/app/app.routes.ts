@@ -58,10 +58,10 @@ export const routes: Routes = [
             title: 'Board',
           },
           {
-            path: 'triage',
-            loadComponent: () => import('./features/triage/triage-page').then((m) => m.TriagePage),
-            title: 'Triage',
-            canActivate: [capabilityGuard(...TEAM_PAGES['triage'])],
+            path: 'incoming',
+            loadComponent: () => import('./features/incoming/incoming-page').then((m) => m.IncomingPage),
+            title: 'Incoming',
+            canActivate: [capabilityGuard(...TEAM_PAGES['incoming'])],
           },
           {
             path: 'dashboard',

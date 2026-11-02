@@ -11,7 +11,7 @@ import { UtilisationPanel } from './utilisation-panel';
 
 /**
  * The team dashboard (ViewAllJobs): summary cards (overdue, awaiting approval, incoming, over capacity)
- * that open the filtered board, triage or schedule, utilisation per person, and open jobs by brand. "All teams"
+ * that open the filtered board, incoming or schedule, utilisation per person, and open jobs by brand. "All teams"
  * shows every team.
  */
 @Component({
@@ -124,10 +124,10 @@ export class DashboardPage {
     teamLinks(this.data()?.awaitingApproval ?? [], this.teamContext.allTeams(), 'board', 'Show on the board'),
   );
 
-  /** Only users who triage open the queue; the others see it on the board. */
+  /** Only users who triage briefs open the queue; the others see it on the board. */
   protected readonly incomingLinks = computed(() =>
     this.auth.can('TriageBriefs')
-      ? teamLinks(this.data()?.incoming ?? [], this.teamContext.allTeams(), 'triage', 'Open triage')
+      ? teamLinks(this.data()?.incoming ?? [], this.teamContext.allTeams(), 'incoming', 'Open incoming')
       : teamLinks(this.data()?.incoming ?? [], this.teamContext.allTeams(), 'board', 'Show on the board'),
   );
 
@@ -136,7 +136,7 @@ export class DashboardPage {
   }
 }
 
-/** One link to the team's page, or with "All teams" one per team, since the board and triage are per team. */
+/** One link to the team's page, or with "All teams" one per team, since the board and incoming are per team. */
 export function teamLinks(counts: TeamCount[], allTeams: boolean, page: string, label: string, queryParams?: Params): CardLink[] {
   return allTeams
     ? counts.map((team) => ({ label: team.teamName, count: team.count, link: ['/t', team.teamId, page], queryParams }))

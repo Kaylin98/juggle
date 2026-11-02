@@ -43,7 +43,7 @@ describe('collapsedColumns', () => {
   });
 
   it('keeps To Do open on the Design board at 1440px', () => {
-    // Design without Triage. A 1440px window leaves 1136px for the board (240px nav, 32px padding each side).
+    // Design without Incoming. A 1440px window leaves 1136px for the board (240px nav, 32px padding each side).
     const design = [
       status('todo', 'Todo'),
       status('in-design', 'InProgress'),

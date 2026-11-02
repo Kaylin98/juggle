@@ -17,6 +17,7 @@ public sealed class JobsService(
     Permissions permissions,
     TeamAccess teamAccess,
     JobAccess jobAccess,
+    JobActionAccess actionAccess,
     JobWorkflow workflow,
     OrgClock clock)
 {
@@ -181,9 +182,15 @@ public sealed class JobsService(
         return await ToDtosAsync(jobs, ct);
     }
 
-    private async Task<IReadOnlyList<JobDto>> ToDtosAsync(IReadOnlyList<Job> jobs, CancellationToken ct)
+    private async Task<IReadOnlyList<JobDto>> ToDtosAsync(List<Job> jobs, CancellationToken ct)
     {
         var bookings = await JobBookings.LoadAsync(db, jobs.Select(j => j.Id).ToList(), ct);
-        return jobs.Select(j => JobDto.From(j, clock.Today, bookings[j.Id])).ToList();
+        var dtos = new List<JobDto>(jobs.Count);
+        foreach (var job in jobs)
+        {
+            dtos.Add(JobDto.From(job, clock.Today, bookings[job.Id], await actionAccess.AvailableAsync(job, ct)));
+        }
+
+        return dtos;
     }
 }

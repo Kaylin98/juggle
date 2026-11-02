@@ -88,6 +88,23 @@ export interface Person {
   hoursPerDay: number;
 }
 
+/** The workflow actions (D77). The API offers a job only those its status and the user's role allow. */
+export type WorkflowAction =
+  | 'RequestInformation'
+  | 'Answer'
+  | 'MarkReady'
+  | 'Cancel'
+  | 'AllocateAndSchedule'
+  | 'Start'
+  | 'SubmitForApproval'
+  | 'ApproveDesign'
+  | 'SendBack'
+  | 'ApproveMarketing'
+  | 'NeedsBusinessApproval'
+  | 'RecordBusinessApproval'
+  | 'RequestChanges'
+  | 'Close';
+
 /** A job: a brief from its marketing manager, with its job ID, status and designer (D68). */
 export interface Job {
   id: string;
@@ -128,6 +145,8 @@ export interface Job {
   bookedHours: number;
   /** Its bookings, earliest first. */
   bookings: JobBooking[];
+  /** The workflow actions the signed-in user may take on it now (D70). */
+  actions: WorkflowAction[];
 }
 
 export interface JobBooking {
@@ -193,6 +212,42 @@ export interface SaveAllocation {
   endDate: string;
   hoursPerDay: number;
   notes: string | null;
+}
+
+/** Allocate and schedule: the designer, the booking that schedules them (dates inclusive), and the estimate. */
+export interface AllocateJob {
+  personId: string;
+  startDate: string;
+  endDate: string;
+  hoursPerDay: number;
+  estimateHours: number;
+}
+
+/** A job just scheduled, with what its booking ran into. */
+export interface AllocatedJob {
+  job: JobDetail;
+  clashDays: string[];
+  leaveDays: string[];
+  /** The booking ends after the date the job is required. */
+  afterRequiredDate: boolean;
+}
+
+/** Allocate and schedule: the designer, the booking that schedules them (dates inclusive), and the estimate. */
+export interface AllocateJob {
+  personId: string;
+  startDate: string;
+  endDate: string;
+  hoursPerDay: number;
+  estimateHours: number;
+}
+
+/** A job just scheduled, with what its booking ran into. */
+export interface AllocatedJob {
+  job: JobDetail;
+  clashDays: string[];
+  leaveDays: string[];
+  /** The booking ends after the date the job is required. */
+  afterRequiredDate: boolean;
 }
 
 export interface SavedAllocation extends SaveAllocation {
@@ -397,7 +452,8 @@ export interface BriefsReport {
   receivedByMonth: MonthCount[];
 }
 
-export type TimeOffType = 'AnnualLeave' | 'SickLeave' | 'FamilyResponsibility' | 'StudyLeave' | 'Other';
+export type TimeOffType =
+  'AnnualLeave' | 'SickLeave' | 'FamilyResponsibility' | 'StudyLeave' | 'Other';
 export type TimeOffStatus = 'Pending' | 'Approved' | 'Declined';
 
 /** The signed-in person's own time off; cancelled requests are left out. */

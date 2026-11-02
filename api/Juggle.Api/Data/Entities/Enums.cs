@@ -42,6 +42,12 @@ public enum WorkflowAction
     RecordBusinessApproval,
     RequestChanges,
     Close,
+
+    /// <summary>Not a workflow step: logged when a booking moves a job to another designer.</summary>
+    Reassign,
+
+    /// <summary>Not a workflow step: logged when a booking's dates change.</summary>
+    Reschedule,
 }
 
 /// <summary>The approval a workflow step records, so an organisation can leave a stage out (D72, D77).</summary>

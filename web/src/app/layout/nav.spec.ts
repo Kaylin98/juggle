@@ -54,7 +54,7 @@ describe('Nav', () => {
 
     group()!.click();
     await fixture.whenStable();
-    expect(links()).toEqual(['Dashboard', 'Briefs report', 'Schedule', 'Board', 'Triage 3', 'Time off 2']);
+    expect(links()).toEqual(['Dashboard', 'Briefs report', 'Schedule', 'Board', 'Incoming 3', 'Time off 2']);
     expect(group()!.textContent).not.toContain('5');
   });
 

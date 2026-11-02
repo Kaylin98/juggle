@@ -54,6 +54,48 @@ public sealed class WorkflowTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task The_requester_answers_a_question_and_the_job_returns_to_the_traffic_manager()
+    {
+        var job = await SubmitAsync("Zanele Mthembu");
+        var chloe = await api.SignInAsAsync("Chloe Adams");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        var thabo = await api.SignInAsAsync("Thabo Mahlangu");
+        await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/request-information", new MessageRequest("Which sizes?"), ApiFactory.Json, _ct);
+
+        var early = await zanele.PostAsync($"/api/jobs/{job.Id}/mark-ready", null, _ct);
+        var asked = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!;
+        var wrongPerson = await thabo.PostAsJsonAsync($"/api/jobs/{job.Id}/answer", new MessageRequest("Stories"), ApiFactory.Json, _ct);
+        var trafficManagerAnswers = await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/answer", new MessageRequest("Stories"), ApiFactory.Json, _ct);
+        var answered = await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/answer", new MessageRequest("1080 x 1920"), ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.Forbidden, early.StatusCode);
+        Assert.Equal([WorkflowAction.Answer], asked.Job.Actions);
+        Assert.Equal(("Awaiting Information", "Which sizes?"), (asked.Job.StatusName, asked.History[^1].Message));
+        Assert.Equal(HttpStatusCode.Forbidden, wrongPerson.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, trafficManagerAnswers.StatusCode);
+        var result = (await answered.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal("Awaiting Traffic Review", result.Job.StatusName);
+        Assert.Equal(
+            [(WorkflowAction.Submit, "Zanele Mthembu"), (WorkflowAction.RequestInformation, "Chloe Adams"), (WorkflowAction.Answer, "Zanele Mthembu")],
+            result.History.Select(e => (e.Action, e.UserName)));
+        Assert.Equal("1080 x 1920", result.History[^1].Message);
+        // Back in the traffic manager's hands, who can ask again, mark it ready or book it.
+        var chloeSees = (await chloe.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!.Job.Actions;
+        Assert.Contains(WorkflowAction.MarkReady, chloeSees);
+    }
+
+    [Fact]
+    public async Task Answering_a_job_that_was_not_asked_a_question_is_refused()
+    {
+        var job = await SubmitAsync("Zanele Mthembu");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+
+        var response = await zanele.PostAsJsonAsync($"/api/jobs/{job.Id}/answer", new MessageRequest("Hello"), ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Marking_ready_moves_a_new_request_to_awaiting_allocation_and_only_once()
     {
         var job = await SubmitAsync("Zanele Mthembu");

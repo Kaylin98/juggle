@@ -9,14 +9,19 @@ import { JobActions } from './job-actions';
 async function buttons(actions: WorkflowAction[]): Promise<string[]> {
   TestBed.configureTestingModule({
     providers: [
-      { provide: AuthService, useValue: { terms: signal({ department: 'Brand', brief: 'Brief', job: 'Job' }) } },
+      {
+        provide: AuthService,
+        useValue: { terms: signal({ department: 'Brand', brief: 'Brief', job: 'Job' }) },
+      },
       { provide: JobsService, useValue: {} },
     ],
   });
   const fixture = TestBed.createComponent(JobActions);
   fixture.componentRef.setInput('job', job({ actions }));
   await fixture.whenStable();
-  return [...fixture.nativeElement.querySelectorAll('button')].map((b) => (b as HTMLElement).textContent!.trim());
+  return [...fixture.nativeElement.querySelectorAll('button')].map((b) =>
+    (b as HTMLElement).textContent!.trim(),
+  );
 }
 
 describe('JobActions', () => {

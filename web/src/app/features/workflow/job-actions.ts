@@ -41,6 +41,15 @@ const ACTIONS: WorkflowAction[] = [
             (closed)="open.set(null)"
           />
         }
+        @case ('Answer') {
+          <app-message-form
+            id="answer"
+            label="Your answer"
+            submitLabel="Send answer"
+            [action]="answer"
+            (closed)="open.set(null)"
+          />
+        }
         @case ('Cancel') {
           <app-message-form
             id="cancel-reason"
@@ -83,6 +92,7 @@ export class JobActions {
   );
 
   protected readonly labels = computed<Partial<Record<WorkflowAction, string>>>(() => ({
+    Answer: 'Answer the question',
     AllocateAndSchedule: 'Allocate and schedule',
     MarkReady: `${this.auth.terms().brief} complete`,
     RequestInformation: 'Request information',
@@ -111,6 +121,10 @@ export class JobActions {
 
   protected readonly requestInformation = async (message: string): Promise<void> => {
     await this.run(() => this.jobs.requestInformation(this.job().id, message), 'Question sent.');
+  };
+
+  protected readonly answer = async (message: string): Promise<void> => {
+    await this.run(() => this.jobs.answer(this.job().id, message), 'Answer sent.');
   };
 
   protected readonly cancel = async (reason: string): Promise<void> => {

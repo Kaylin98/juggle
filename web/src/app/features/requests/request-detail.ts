@@ -4,7 +4,14 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { StatusChip } from '../../shared/status-chip';
-import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS } from './brief-fields';
+import { JobActions } from '../workflow/job-actions';
+import { JobTrail } from '../workflow/job-trail';
+import {
+  CATEGORY_LABELS,
+  DELIVERABLE_LABELS,
+  GUIDELINE_FIELDS,
+  OBJECTIVE_FIELDS,
+} from './brief-fields';
 
 /**
  * One job, for the marketing manager who sent the brief (CD5): its job ID and status, who does it and when, and the
@@ -12,7 +19,7 @@ import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS
  */
 @Component({
   selector: 'app-request-detail',
-  imports: [DatePipe, RouterLink, StatusChip],
+  imports: [DatePipe, JobActions, JobTrail, RouterLink, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <a routerLink="/requests" class="btn-quiet inline-flex items-center gap-1">
@@ -29,11 +36,12 @@ import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS
 
       @if (detail.error()) {
         <p class="empty-state mt-6 text-over-700">
-          This {{ auth.terms().job.toLowerCase() }} could not be loaded. It may not exist, or it was briefed by someone else.
+          This {{ auth.terms().job.toLowerCase() }} could not be loaded. It may not exist, or it was
+          briefed by someone else.
         </p>
-      } @else if (detail.value(); as detail) {
-        @let job = detail.job;
-        @let brief = detail.brief;
+      } @else if (detail.value(); as loaded) {
+        @let job = loaded.job;
+        @let brief = loaded.brief;
         <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div class="min-w-0">
             <p class="flex items-center gap-2 text-sm text-ink-muted" [style.--hue]="job.colour">
@@ -45,6 +53,8 @@ import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS
           <app-status-chip class="text-sm" [name]="job.statusName" [colour]="job.statusColour" />
         </div>
 
+        <app-job-actions class="mt-6 block empty:hidden" [job]="job" (changed)="detail.reload()" />
+
         <section class="panel mt-6 p-6" aria-label="Who does it and when">
           <dl class="grid gap-4 text-sm sm:grid-cols-3">
             <div>
@@ -54,13 +64,21 @@ import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS
             <div>
               <dt class="label-caps">Planned start</dt>
               <dd class="mt-1 font-semibold">
-                {{ job.plannedStartDate ? (job.plannedStartDate | date: 'EEE d MMM y') : 'Not scheduled yet' }}
+                {{
+                  job.plannedStartDate
+                    ? (job.plannedStartDate | date: 'EEE d MMM y')
+                    : 'Not scheduled yet'
+                }}
               </dd>
             </div>
             <div>
               <dt class="label-caps">Expected completion</dt>
               <dd class="mt-1 font-semibold">
-                {{ job.expectedCompletionDate ? (job.expectedCompletionDate | date: 'EEE d MMM y') : 'Not scheduled yet' }}
+                {{
+                  job.expectedCompletionDate
+                    ? (job.expectedCompletionDate | date: 'EEE d MMM y')
+                    : 'Not scheduled yet'
+                }}
               </dd>
             </div>
           </dl>
@@ -76,19 +94,27 @@ import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS
               </div>
               <div>
                 <dt class="label-caps">Campaign or project</dt>
-                <dd class="mt-1" [class.text-ink-muted]="!brief.campaign">{{ brief.campaign ?? 'Not given' }}</dd>
+                <dd class="mt-1" [class.text-ink-muted]="!brief.campaign">
+                  {{ brief.campaign ?? 'Not given' }}
+                </dd>
               </div>
               <div>
                 <dt class="label-caps">Category</dt>
-                <dd class="mt-1" [class.text-ink-muted]="!brief.category">{{ brief.category ? categoryLabels[brief.category] : 'Not given' }}</dd>
+                <dd class="mt-1" [class.text-ink-muted]="!brief.category">
+                  {{ brief.category ? categoryLabels[brief.category] : 'Not given' }}
+                </dd>
               </div>
               <div>
                 <dt class="label-caps">New job or revision</dt>
-                <dd class="mt-1">{{ brief.revisesJobCode ? 'Revision of ' + brief.revisesJobCode : 'New job' }}</dd>
+                <dd class="mt-1">
+                  {{ brief.revisesJobCode ? 'Revision of ' + brief.revisesJobCode : 'New job' }}
+                </dd>
               </div>
               <div>
                 <dt class="label-caps">Required completion</dt>
-                <dd class="mt-1">{{ job.requiredDate ? (job.requiredDate | date: 'EEE d MMM y') : 'No date' }}</dd>
+                <dd class="mt-1">
+                  {{ job.requiredDate ? (job.requiredDate | date: 'EEE d MMM y') : 'No date' }}
+                </dd>
               </div>
               <div>
                 <dt class="label-caps">Priority</dt>
@@ -126,7 +152,9 @@ import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS
                 <li class="border-b border-line pb-4 last:border-b-0 last:pb-0">
                   <div class="flex flex-wrap items-baseline justify-between gap-2">
                     <span class="font-semibold">{{ deliverable.description }}</span>
-                    <span class="text-ink-muted">{{ deliverable.dueDate ? 'By ' + (deliverable.dueDate | date: 'EEE d MMM') : '' }}</span>
+                    <span class="text-ink-muted">{{
+                      deliverable.dueDate ? 'By ' + (deliverable.dueDate | date: 'EEE d MMM') : ''
+                    }}</span>
                   </div>
                   <p class="mt-1 text-ink-muted">
                     {{ deliverableLabels[deliverable.type] }}
@@ -160,7 +188,12 @@ import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS
             <ul class="mt-4 space-y-2 text-sm">
               @for (link of brief.links; track $index) {
                 <li class="min-w-0">
-                  <a class="break-all font-semibold text-accent-700 hover:underline" [href]="link.url" target="_blank" rel="noopener">
+                  <a
+                    class="break-all font-semibold text-accent-700 hover:underline"
+                    [href]="link.url"
+                    target="_blank"
+                    rel="noopener"
+                  >
                     {{ link.label ?? link.url }}
                   </a>
                 </li>
@@ -172,10 +205,15 @@ import { CATEGORY_LABELS, DELIVERABLE_LABELS, GUIDELINE_FIELDS, OBJECTIVE_FIELDS
 
           <section class="panel p-6" aria-labelledby="job-f">
             <h2 id="job-f" class="font-display text-lg font-semibold">F. Additional information</h2>
-            <p class="mt-4 text-sm whitespace-pre-line" [class.text-ink-muted]="!brief.additionalInformation">
+            <p
+              class="mt-4 text-sm whitespace-pre-line"
+              [class.text-ink-muted]="!brief.additionalInformation"
+            >
               {{ brief.additionalInformation ?? 'Nothing more given.' }}
             </p>
           </section>
+
+          <app-job-trail class="xl:col-span-2" [history]="loaded.history" />
         </div>
       } @else {
         <p class="empty-state mt-6">Loading...</p>
@@ -193,21 +231,30 @@ export class RequestDetailPage {
   protected readonly categoryLabels = CATEGORY_LABELS;
   protected readonly deliverableLabels = DELIVERABLE_LABELS;
 
-  protected readonly detail = resource({ params: () => this.id(), loader: ({ params }) => this.jobs.get(params) });
+  protected readonly detail = resource({
+    params: () => this.id(),
+    loader: ({ params }) => this.jobs.get(params),
+  });
 
   /** The objectives that were filled in, with their labels, in the template's order. */
   protected readonly objectives = computed(() => {
     const objectives = this.detail.value()?.brief.objectives;
-    return objectives ? filled(OBJECTIVE_FIELDS.map((f) => ({ label: f.label, value: objectives[f.key] }))) : [];
+    return objectives
+      ? filled(OBJECTIVE_FIELDS.map((f) => ({ label: f.label, value: objectives[f.key] })))
+      : [];
   });
 
   /** The guidelines that were filled in, with their labels, in the template's order. */
   protected readonly guidelines = computed(() => {
     const guidelines = this.detail.value()?.brief.guidelines;
-    return guidelines ? filled(GUIDELINE_FIELDS.map((f) => ({ label: f.label, value: guidelines[f.key] }))) : [];
+    return guidelines
+      ? filled(GUIDELINE_FIELDS.map((f) => ({ label: f.label, value: guidelines[f.key] })))
+      : [];
   });
 }
 
-function filled(fields: { label: string; value: string | null }[]): { label: string; value: string }[] {
+function filled(
+  fields: { label: string; value: string | null }[],
+): { label: string; value: string }[] {
   return fields.filter((f): f is { label: string; value: string } => f.value !== null);
 }

@@ -354,9 +354,22 @@ export interface Brief {
 }
 
 /** A job and its whole brief, for its own page. */
+/** Something done to a job, by whom and when (D72). */
+export interface JobEvent {
+  at: string;
+  action: WorkflowAction | 'Submit' | 'Reassign' | 'Reschedule';
+  userName: string;
+  /** The status the action left the job in. */
+  toStatusName: string;
+  /** What the user wrote with it, such as a question or the reason for cancelling. */
+  message: string | null;
+}
+
 export interface JobDetail {
   job: Job;
   brief: Brief;
+  /** Every action taken on the job, oldest first. */
+  history: JobEvent[];
 }
 
 /** A brief in the client's template, sections A to F (J.4). The signed-in user sends it (D67). */

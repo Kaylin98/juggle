@@ -30,7 +30,9 @@ export function capabilityGuard(...capabilities: Capability[]): CanActivateFn {
     const auth = inject(AuthService);
     const router = inject(Router);
     await auth.ensureLoaded();
-    return capabilities.every((capability) => auth.can(capability)) || router.parseUrl(auth.landingUrl());
+    return (
+      capabilities.every((capability) => auth.can(capability)) || router.parseUrl(auth.landingUrl())
+    );
   };
 }
 

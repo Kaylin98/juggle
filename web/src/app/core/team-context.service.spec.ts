@@ -15,7 +15,14 @@ const TEAMS: Team[] = [
   { id: 'marketing', name: 'Marketing', colour: '#3fa7a0' },
 ];
 
-const SEES_ALL: Capability[] = ['ViewAllJobs', 'ViewBoard', 'ViewSchedule', 'ViewReports', 'TriageBriefs', 'Allocate'];
+const SEES_ALL: Capability[] = [
+  'ViewAllJobs',
+  'ViewBoard',
+  'ViewSchedule',
+  'ViewReports',
+  'TriageBriefs',
+  'Allocate',
+];
 const DESIGNER: Capability[] = ['ViewBoard', 'WorkOnJobs', 'ViewReports'];
 
 function user(capabilities: Capability[]): Me {
@@ -34,7 +41,11 @@ function user(capabilities: Capability[]): Me {
 
 function setUp(capabilities: Capability[]): { router: Router; teamContext: TeamContextService } {
   TestBed.configureTestingModule({
-    providers: [provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]), provideHttpClient(), provideHttpClientTesting()],
+    providers: [
+      provideRouter([{ path: 't/:teamId/:page', component: BlankPage }]),
+      provideHttpClient(),
+      provideHttpClientTesting(),
+    ],
   });
   TestBed.inject(AuthService).me.set(user(capabilities));
   TestBed.inject(AuthService).teams.set(TEAMS);

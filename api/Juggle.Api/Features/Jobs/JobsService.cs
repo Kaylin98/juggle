@@ -142,8 +142,17 @@ public sealed class JobsService(
         var job = await JobDto.Load(db.Jobs).Include(j => j.Links.OrderBy(l => l.SortOrder)).FirstOrDefaultAsync(j => j.Id == id, ct)
             ?? throw new NotFoundException("Job not found.");
         await jobAccess.EnsureCanSeeAsync(job, ct);
-        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job));
+        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct));
     }
+
+    private async Task<IReadOnlyList<JobEventDto>> HistoryAsync(Guid jobId, CancellationToken ct) =>
+        await (from e in db.JobEvents.Where(e => e.JobId == jobId)
+               join u in db.Users on e.UserId equals u.Id
+               join s in db.JobStatuses on e.ToStatusId equals s.Id
+               orderby e.At, e.Id
+               select new JobEventDto(e.At, e.Action, u.Name, s.Name, e.Message))
+            .AsNoTracking()
+            .ToListAsync(ct);
 
     /// <summary>The jobs the signed-in user sent the brief for, newest first, in every team.</summary>
     public async Task<IReadOnlyList<JobDto>> GetMineAsync(CancellationToken ct)

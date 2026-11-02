@@ -24,6 +24,10 @@ public sealed class JobActions(
     public Task<JobDetailDto> RequestInformationAsync(Guid id, MessageRequest request, CancellationToken ct) =>
         MoveAsync(id, WorkflowAction.RequestInformation, request.Message, ct);
 
+    /// <summary>The requester answers the traffic manager's question, which returns the job to the queue.</summary>
+    public Task<JobDetailDto> AnswerAsync(Guid id, MessageRequest request, CancellationToken ct) =>
+        MoveAsync(id, WorkflowAction.Answer, request.Message, ct);
+
     public Task<JobDetailDto> MarkReadyAsync(Guid id, CancellationToken ct) => MoveAsync(id, WorkflowAction.MarkReady, null, ct);
 
     /// <summary>Cancels an open job with the reason (D75).</summary>

@@ -46,7 +46,9 @@ export class TeamContextService {
   readonly team = computed(() => this.auth.teams().find((t) => t.id === this.teamId()) ?? null);
 
   /** The pages that can show every team at once. */
-  readonly canShowAllTeams = computed(() => this.page() === 'capacity' || this.page() === 'dashboard');
+  readonly canShowAllTeams = computed(
+    () => this.page() === 'capacity' || this.page() === 'dashboard',
+  );
 
   /**
    * Users who see all the work can show every team on the schedule and dashboard ("All teams"), kept in the URL as
@@ -66,7 +68,9 @@ export class TeamContextService {
   }
 
   showAllTeams(): void {
-    void this.router.navigate(['/t', this.teamId(), this.page()], { queryParams: { teams: ALL_TEAMS } });
+    void this.router.navigate(['/t', this.teamId(), this.page()], {
+      queryParams: { teams: ALL_TEAMS },
+    });
   }
 
   /** Opens the same page in another team when the role can open it there, otherwise the role's landing page. */

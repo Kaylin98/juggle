@@ -98,8 +98,13 @@ public sealed record JobDto(
     }
 }
 
-/// <summary>A job and its whole brief, for its own page.</summary>
-public sealed record JobDetailDto(JobDto Job, BriefDto Brief);
+/// <summary>A job, its whole brief and what has been done to it, for its own page.</summary>
+/// <param name="History">Every action taken on the job, oldest first (D72).</param>
+public sealed record JobDetailDto(JobDto Job, BriefDto Brief, IReadOnlyList<JobEventDto> History);
+
+/// <param name="ToStatusName">The status the action left the job in.</param>
+/// <param name="Message">What the user wrote with it, such as a question or the reason for cancelling.</param>
+public sealed record JobEventDto(DateTimeOffset At, WorkflowAction Action, string UserName, string ToStatusName, string? Message);
 
 /// <summary>The parts of the brief (section 3.1) that are not on <see cref="JobDto"/>.</summary>
 /// <param name="RevisesJobCode">The job ID of the job this brief revises; null for a new job.</param>

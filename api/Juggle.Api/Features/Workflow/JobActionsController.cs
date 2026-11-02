@@ -11,6 +11,9 @@ public sealed class JobActionsController(JobActions actions) : ControllerBase
     public Task<JobDetailDto> RequestInformation(Guid id, MessageRequest request, CancellationToken ct) =>
         actions.RequestInformationAsync(id, request, ct);
 
+    [HttpPost("answer")]
+    public Task<JobDetailDto> Answer(Guid id, MessageRequest request, CancellationToken ct) => actions.AnswerAsync(id, request, ct);
+
     [HttpPost("mark-ready")]
     public Task<JobDetailDto> MarkReady(Guid id, CancellationToken ct) => actions.MarkReadyAsync(id, ct);
 

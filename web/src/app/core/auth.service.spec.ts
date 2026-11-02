@@ -5,8 +5,14 @@ import { AuthService } from './auth.service';
 import { Capability } from './models';
 
 describe('AuthService', () => {
-  function signedIn(capabilities: Capability[], personId: string | null, inTeam = true): AuthService {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+  function signedIn(
+    capabilities: Capability[],
+    personId: string | null,
+    inTeam = true,
+  ): AuthService {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     const auth = TestBed.inject(AuthService);
     auth.me.set({
       id: 'u1',
@@ -29,7 +35,8 @@ describe('AuthService', () => {
   it('sends people on a schedule to My work', () =>
     expect(signedIn(['ViewBoard', 'WorkOnJobs'], 'p1').landingUrl()).toBe('/my-work'));
 
-  it('sends other board users to the board', () => expect(signedIn(['ViewBoard'], null).landingUrl()).toBe('/t/studio/board'));
+  it('sends other board users to the board', () =>
+    expect(signedIn(['ViewBoard'], null).landingUrl()).toBe('/t/studio/board'));
 
   it('sends someone in no team, such as a marketing manager, to their requests', () =>
     expect(signedIn(['SubmitBrief'], null, false).landingUrl()).toBe('/requests'));

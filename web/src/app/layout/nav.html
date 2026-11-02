@@ -5,7 +5,10 @@
 >
   <div class="flex h-18 shrink-0 items-center gap-3 px-1">
     <img [src]="branding.logoUrl" alt="" class="size-8 shrink-0" />
-    <span class="font-display text-lg font-semibold tracking-tight whitespace-nowrap" [class.sr-only]="collapsed()">
+    <span
+      class="font-display text-lg font-semibold tracking-tight whitespace-nowrap"
+      [class.sr-only]="collapsed()"
+    >
       {{ branding.productName }}
     </span>
   </div>
@@ -18,7 +21,11 @@
           routerLinkActive
           #link="routerLinkActive"
           class="nav-item"
-          [class]="link.isActive ? 'bg-accent-100 text-accent-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
+          [class]="
+            link.isActive
+              ? 'bg-accent-100 text-accent-700'
+              : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+          "
           [appTooltip]="collapsed() ? item.label : ''"
           appTooltipPlacement="right"
         >
@@ -29,77 +36,94 @@
     }
 
     @if (requestLinks().length) {
-    <li>
-      @if (collapsed()) {
-        <button
-          type="button"
-          class="nav-item relative w-full"
-          [class]="inRequests() ? 'bg-accent-100 text-accent-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
-          aria-label="Requests"
-          [cdkMenuTriggerFor]="requestsMenu"
-          [cdkMenuPosition]="flyoutPositions"
-          appTooltip="Requests"
-          appTooltipPlacement="right"
-        >
-          <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.requests }" />
-          @if (waitingCount()) {
-            <span class="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent-600" [attr.aria-label]="waitingCount() + ' new'"></span>
+      <li>
+        @if (collapsed()) {
+          <button
+            type="button"
+            class="nav-item relative w-full"
+            [class]="
+              inRequests()
+                ? 'bg-accent-100 text-accent-700'
+                : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+            "
+            aria-label="Requests"
+            [cdkMenuTriggerFor]="requestsMenu"
+            [cdkMenuPosition]="flyoutPositions"
+            appTooltip="Requests"
+            appTooltipPlacement="right"
+          >
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.requests }" />
+            @if (waitingCount()) {
+              <span
+                class="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent-600"
+                [attr.aria-label]="waitingCount() + ' new'"
+              ></span>
+            }
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="nav-item w-full"
+            [class]="
+              inRequests() && !requestsOpen()
+                ? 'text-accent-700 hover:bg-surface-muted'
+                : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+            "
+            [attr.aria-expanded]="requestsOpen()"
+            aria-controls="nav-requests"
+            (click)="requestsOpen.set(!requestsOpen())"
+          >
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.requests }" />
+            <span class="whitespace-nowrap">Requests</span>
+            <span class="ml-auto flex items-center gap-2">
+              @if (waitingCount() && !requestsOpen()) {
+                <ng-container *ngTemplateOutlet="badge; context: { $implicit: waitingCount() }" />
+              }
+              <!-- Heroicons chevron-down (mini, MIT) -->
+              <svg
+                class="size-4 text-ink-faint transition-transform duration-150 motion-reduce:transition-none"
+                [class.rotate-180]="requestsOpen()"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </span>
+          </button>
+          @if (requestsOpen()) {
+            <ul id="nav-requests" class="mt-1 flex flex-col gap-1">
+              @for (item of requestLinks(); track item.label) {
+                <li>
+                  <a
+                    [routerLink]="item.link"
+                    routerLinkActive
+                    #link="routerLinkActive"
+                    class="nav-item gap-2.5 pl-10.5"
+                    [class]="
+                      link.isActive
+                        ? 'bg-accent-100 text-accent-700'
+                        : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+                    "
+                  >
+                    <ng-container
+                      *ngTemplateOutlet="icon; context: { $implicit: item.icon, small: true }"
+                    />
+                    <span class="whitespace-nowrap">{{ item.label }}</span>
+                    @if (item.count) {
+                      <ng-container *ngTemplateOutlet="badge; context: { $implicit: item.count }" />
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
           }
-        </button>
-      } @else {
-        <button
-          type="button"
-          class="nav-item w-full"
-          [class]="inRequests() && !requestsOpen() ? 'text-accent-700 hover:bg-surface-muted' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
-          [attr.aria-expanded]="requestsOpen()"
-          aria-controls="nav-requests"
-          (click)="requestsOpen.set(!requestsOpen())"
-        >
-          <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.requests }" />
-          <span class="whitespace-nowrap">Requests</span>
-          <span class="ml-auto flex items-center gap-2">
-            @if (waitingCount() && !requestsOpen()) {
-              <ng-container *ngTemplateOutlet="badge; context: { $implicit: waitingCount() }" />
-            }
-            <!-- Heroicons chevron-down (mini, MIT) -->
-            <svg
-              class="size-4 text-ink-faint transition-transform duration-150 motion-reduce:transition-none"
-              [class.rotate-180]="requestsOpen()"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </span>
-        </button>
-        @if (requestsOpen()) {
-          <ul id="nav-requests" class="mt-1 flex flex-col gap-1">
-            @for (item of requestLinks(); track item.label) {
-              <li>
-                <a
-                  [routerLink]="item.link"
-                  routerLinkActive
-                  #link="routerLinkActive"
-                  class="nav-item gap-2.5 pl-10.5"
-                  [class]="link.isActive ? 'bg-accent-100 text-accent-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
-                >
-                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: item.icon, small: true }" />
-                  <span class="whitespace-nowrap">{{ item.label }}</span>
-                  @if (item.count) {
-                    <ng-container *ngTemplateOutlet="badge; context: { $implicit: item.count }" />
-                  }
-                </a>
-              </li>
-            }
-          </ul>
         }
-      }
-    </li>
+      </li>
     }
   </ul>
 
@@ -139,7 +163,11 @@
         routerLinkActive
         #link="routerLinkActive"
         class="nav-item gap-2.5 focus:bg-surface-muted"
-        [class]="link.isActive ? 'bg-accent-100 text-accent-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'"
+        [class]="
+          link.isActive
+            ? 'bg-accent-100 text-accent-700'
+            : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+        "
       >
         <ng-container *ngTemplateOutlet="icon; context: { $implicit: item.icon, small: true }" />
         {{ item.label }}
@@ -153,7 +181,15 @@
 
 <!-- 20px for top-level items; 16px inside the Requests group, starting where the group's label starts. -->
 <ng-template #icon let-path let-small="small">
-  <svg class="shrink-0" [class]="small ? 'size-4' : 'size-5'" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+  <svg
+    class="shrink-0"
+    [class]="small ? 'size-4' : 'size-5'"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke-width="1.5"
+    stroke="currentColor"
+    aria-hidden="true"
+  >
     <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="path" />
   </svg>
 </ng-template>

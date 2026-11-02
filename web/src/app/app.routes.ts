@@ -1,5 +1,11 @@
 import { Routes } from '@angular/router';
-import { authGuard, capabilityGuard, landingGuard, personGuard, teamMemberGuard } from './core/guards';
+import {
+  authGuard,
+  capabilityGuard,
+  landingGuard,
+  personGuard,
+  teamMemberGuard,
+} from './core/guards';
 import { TEAM_PAGES } from './core/team-context.service';
 import { LoginPage } from './features/login/login-page';
 import { Shell } from './layout/shell';
@@ -25,20 +31,30 @@ export const routes: Routes = [
         title: 'Time off',
       },
       {
+        // Open to every role; the API lists only the jobs the user may approve.
+        path: 'approvals',
+        loadComponent: () =>
+          import('./features/approvals/approvals-page').then((m) => m.ApprovalsPage),
+        title: 'Approvals',
+      },
+      {
         path: 'request',
         canActivate: [capabilityGuard('SubmitBrief')],
-        loadComponent: () => import('./features/requests/request-form').then((m) => m.RequestFormPage),
+        loadComponent: () =>
+          import('./features/requests/request-form').then((m) => m.RequestFormPage),
         title: 'New request',
       },
       {
         // The fallback landing page, so it has no guard; the API lists only the user's own requests.
         path: 'requests',
-        loadComponent: () => import('./features/requests/my-requests').then((m) => m.MyRequestsPage),
+        loadComponent: () =>
+          import('./features/requests/my-requests').then((m) => m.MyRequestsPage),
         title: 'My requests',
       },
       {
         path: 'requests/:id',
-        loadComponent: () => import('./features/requests/request-detail').then((m) => m.RequestDetailPage),
+        loadComponent: () =>
+          import('./features/requests/request-detail').then((m) => m.RequestDetailPage),
         title: 'Request',
       },
       {
@@ -48,7 +64,8 @@ export const routes: Routes = [
           {
             path: 'capacity',
             canActivate: [capabilityGuard(...TEAM_PAGES['capacity'])],
-            loadComponent: () => import('./features/capacity/capacity-page').then((m) => m.CapacityPage),
+            loadComponent: () =>
+              import('./features/capacity/capacity-page').then((m) => m.CapacityPage),
             title: 'Schedule',
           },
           {
@@ -59,19 +76,22 @@ export const routes: Routes = [
           },
           {
             path: 'incoming',
-            loadComponent: () => import('./features/incoming/incoming-page').then((m) => m.IncomingPage),
+            loadComponent: () =>
+              import('./features/incoming/incoming-page').then((m) => m.IncomingPage),
             title: 'Incoming',
             canActivate: [capabilityGuard(...TEAM_PAGES['incoming'])],
           },
           {
             path: 'dashboard',
-            loadComponent: () => import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
+            loadComponent: () =>
+              import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
             title: 'Dashboard',
             canActivate: [capabilityGuard(...TEAM_PAGES['dashboard'])],
           },
           {
             path: 'briefs',
-            loadComponent: () => import('./features/reports/briefs-report-page').then((m) => m.BriefsReportPage),
+            loadComponent: () =>
+              import('./features/reports/briefs-report-page').then((m) => m.BriefsReportPage),
             title: 'Briefs report',
             canActivate: [capabilityGuard(...TEAM_PAGES['briefs'])],
           },

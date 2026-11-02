@@ -301,6 +301,65 @@ namespace Juggle.Api.Data.Migrations
                     b.ToTable("Jobs");
                 });
 
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobApproval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ArtworkId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateOnly?>("DecidedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("StakeholderName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArtworkId");
+
+                    b.HasIndex("OrgId");
+
+                    b.HasIndex("RecordedByUserId");
+
+                    b.HasIndex("JobId", "RecordedAt");
+
+                    b.ToTable("JobApprovals");
+                });
+
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobArtwork", b =>
                 {
                     b.Property<Guid>("Id")
@@ -908,6 +967,32 @@ namespace Juggle.Api.Data.Migrations
                     b.Navigation("Status");
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Juggle.Api.Data.Entities.JobApproval", b =>
+                {
+                    b.HasOne("Juggle.Api.Data.Entities.JobArtwork", null)
+                        .WithMany()
+                        .HasForeignKey("ArtworkId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Juggle.Api.Data.Entities.Job", null)
+                        .WithMany()
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Juggle.Api.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("RecordedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Juggle.Api.Data.Entities.JobArtwork", b =>

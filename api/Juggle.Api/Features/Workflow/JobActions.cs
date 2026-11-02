@@ -28,6 +28,14 @@ public sealed class JobActions(
     public Task<JobDetailDto> AnswerAsync(Guid id, MessageRequest request, CancellationToken ct) =>
         MoveAsync(id, WorkflowAction.Answer, request.Message, ct);
 
+    /// <summary>The head of design approves the design, which sends the artwork on to the marketing manager.</summary>
+    public Task<JobDetailDto> ApproveDesignAsync(Guid id, CommentRequest request, CancellationToken ct) =>
+        DecideAsync(id, WorkflowAction.ApproveDesign, ApprovalDecision.Approved, request.Comment, ct);
+
+    /// <summary>The head of design sends the design back to the designer with what to change.</summary>
+    public Task<JobDetailDto> SendBackAsync(Guid id, CommentRequest request, CancellationToken ct) =>
+        DecideAsync(id, WorkflowAction.SendBack, ApprovalDecision.ChangesRequested, request.Comment, ct);
+
     public Task<JobDetailDto> StartAsync(Guid id, CancellationToken ct) => MoveAsync(id, WorkflowAction.Start, null, ct);
 
     /// <summary>Records the next version of the artwork and sends the job for approval.</summary>
@@ -84,6 +92,40 @@ public sealed class JobActions(
         await db.SaveChangesAsync(ct);
         return await jobs.GetAsync(id, ct);
     }
+
+    /// <summary>Moves the job and records the approval its step calls for, for the latest artwork (D72).</summary>
+    private async Task<JobDetailDto> DecideAsync(
+        Guid id, WorkflowAction action, ApprovalDecision decision, string? comment, CancellationToken ct)
+    {
+        var job = await LoadAsync(id, ct);
+        var transition = await access.EnsureAsync(job, action, ct);
+        comment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
+        if (decision == ApprovalDecision.ChangesRequested && comment is null)
+        {
+            throw new BadRequestException("Say what needs to change.");
+        }
+        if (transition.Stage is { } stage)
+        {
+            db.JobApprovals.Add(new JobApproval
+            {
+                OrgId = job.OrgId,
+                JobId = id,
+                Stage = stage,
+                Decision = decision,
+                ArtworkId = await LatestArtworkIdAsync(id, ct),
+                RecordedByUserId = currentUser.UserId,
+                RecordedAt = clock.Now,
+                Comment = comment,
+            });
+        }
+
+        Apply(job, action, transition, comment);
+        await db.SaveChangesAsync(ct);
+        return await jobs.GetAsync(id, ct);
+    }
+
+    private Task<Guid?> LatestArtworkIdAsync(Guid jobId, CancellationToken ct) =>
+        db.JobArtwork.Where(a => a.JobId == jobId).OrderByDescending(a => a.Version).Select(a => (Guid?)a.Id).FirstOrDefaultAsync(ct);
 
     private async Task<Job> LoadAsync(Guid id, CancellationToken ct)
     {

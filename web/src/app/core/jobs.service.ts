@@ -10,6 +10,7 @@ import {
   JobDetail,
   JobOptions,
   Person,
+  QueuedJob,
   Workflow,
 } from './models';
 import { TeamContextService } from './team-context.service';
@@ -28,6 +29,16 @@ export class JobsService {
   readonly incoming = resource({
     params: () => (this.auth.can('TriageBriefs') ? this.teamContext.teamId() : undefined),
     loader: ({ params }) => firstValueFrom(this.http.get<Job[]>(`/api/teams/${params}/incoming`)),
+  });
+
+  /**
+   * The jobs waiting for the signed-in user to approve, with the artwork to review. The nav badge and the Approvals
+   * page share it, so reloading it refreshes both.
+   */
+  readonly approvals = resource({
+    params: () =>
+      this.auth.can('ApproveDesign') || this.auth.can('ApproveMarketing') ? true : undefined,
+    loader: () => firstValueFrom(this.http.get<QueuedJob[]>('/api/jobs/approvals')),
   });
 
   /** The organisation's board columns and statuses (D77). */
@@ -66,6 +77,14 @@ export class JobsService {
 
   answer(id: string, message: string): Promise<JobDetail> {
     return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/answer`, { message }));
+  }
+
+  approveDesign(id: string, comment: string | null): Promise<JobDetail> {
+    return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/approve-design`, { comment }));
+  }
+
+  sendBack(id: string, comment: string): Promise<JobDetail> {
+    return firstValueFrom(this.http.post<JobDetail>(`/api/jobs/${id}/send-back`, { comment }));
   }
 
   start(id: string): Promise<JobDetail> {

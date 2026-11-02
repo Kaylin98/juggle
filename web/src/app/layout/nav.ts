@@ -32,18 +32,20 @@ const ICONS = {
   report: 'M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z',
   myWork:
     'M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0M12 12.75h.008v.008H12v-.008Z',
-  requests: 'M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5',
+  requests:
+    'M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5',
   myRequests:
     'M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z',
   newRequest: 'M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
   incoming:
     'M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z',
+  approvals: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
   timeOff:
     'M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z',
 };
 
 /** Pages inside the Requests group: My requests and a request, New request, a team's Incoming, and Time off. */
-const REQUEST_PAGE = /^\/(requests?|time-off|t\/[^/]+\/incoming)(\/|\?|$)/;
+const REQUEST_PAGE = /^\/(requests?|approvals|time-off|t\/[^/]+\/incoming)(\/|\?|$)/;
 
 /** In the rail, the Requests group opens beside its icon. */
 const FLYOUT_POSITIONS: ConnectedPosition[] = [
@@ -58,7 +60,15 @@ const FLYOUT_POSITIONS: ConnectedPosition[] = [
  */
 @Component({
   selector: 'app-nav',
-  imports: [CdkMenu, CdkMenuItem, CdkMenuTrigger, NgTemplateOutlet, RouterLink, RouterLinkActive, Tooltip],
+  imports: [
+    CdkMenu,
+    CdkMenuItem,
+    CdkMenuTrigger,
+    NgTemplateOutlet,
+    RouterLink,
+    RouterLinkActive,
+    Tooltip,
+  ],
   templateUrl: './nav.html',
 })
 export class Nav {
@@ -78,13 +88,21 @@ export class Nav {
     const teamId = this.teamContext.teamId();
     const auth = this.auth;
     return [
-      ...(teamId && auth.can('ViewAllJobs') ? [{ label: 'Dashboard', link: ['/t', teamId, 'dashboard'], icon: ICONS.dashboard }] : []),
+      ...(teamId && auth.can('ViewAllJobs')
+        ? [{ label: 'Dashboard', link: ['/t', teamId, 'dashboard'], icon: ICONS.dashboard }]
+        : []),
       ...(teamId && auth.can('ViewAllJobs') && auth.can('ViewReports')
         ? [{ label: 'Briefs report', link: ['/t', teamId, 'briefs'], icon: ICONS.report }]
         : []),
-      ...(auth.me()?.personId ? [{ label: 'My work', link: ['/my-work'], icon: ICONS.myWork }] : []),
-      ...(teamId && auth.can('ViewSchedule') ? [{ label: 'Schedule', link: ['/t', teamId, 'capacity'], icon: ICONS.capacity }] : []),
-      ...(teamId && auth.can('ViewBoard') ? [{ label: 'Board', link: ['/t', teamId, 'board'], icon: ICONS.board }] : []),
+      ...(auth.me()?.personId
+        ? [{ label: 'My work', link: ['/my-work'], icon: ICONS.myWork }]
+        : []),
+      ...(teamId && auth.can('ViewSchedule')
+        ? [{ label: 'Schedule', link: ['/t', teamId, 'capacity'], icon: ICONS.capacity }]
+        : []),
+      ...(teamId && auth.can('ViewBoard')
+        ? [{ label: 'Board', link: ['/t', teamId, 'board'], icon: ICONS.board }]
+        : []),
     ];
   });
 
@@ -94,15 +112,43 @@ export class Nav {
     const auth = this.auth;
     return [
       ...(teamId && auth.can('TriageBriefs')
-        ? [{ label: 'Incoming', link: ['/t', teamId, 'incoming'], icon: ICONS.incoming, count: this.incomingCount() }]
+        ? [
+            {
+              label: 'Incoming',
+              link: ['/t', teamId, 'incoming'],
+              icon: ICONS.incoming,
+              count: this.incomingCount(),
+            },
+          ]
+        : []),
+      ...(auth.can('ApproveDesign') || auth.can('ApproveMarketing')
+        ? [
+            {
+              label: 'Approvals',
+              link: ['/approvals'],
+              icon: ICONS.approvals,
+              count: this.approvalCount(),
+            },
+          ]
         : []),
       ...(auth.can('ApproveTimeOff')
-        ? [{ label: 'Time off', link: ['/time-off'], icon: ICONS.timeOff, count: this.timeOffCount() }]
+        ? [
+            {
+              label: 'Time off',
+              link: ['/time-off'],
+              icon: ICONS.timeOff,
+              count: this.timeOffCount(),
+            },
+          ]
         : []),
       ...(auth.can('SubmitBrief')
         ? [
             { label: 'My requests', link: ['/requests'], icon: ICONS.myRequests },
-            { label: `New ${auth.terms().brief.toLowerCase()}`, link: ['/request'], icon: ICONS.newRequest },
+            {
+              label: `New ${auth.terms().brief.toLowerCase()}`,
+              link: ['/request'],
+              icon: ICONS.newRequest,
+            },
           ]
         : []),
     ];
@@ -113,13 +159,20 @@ export class Nav {
     return this.auth.can('TriageBriefs') && incoming.hasValue() ? incoming.value().length : 0;
   });
 
+  protected readonly approvalCount = computed(() => {
+    const approvals = this.jobs.approvals;
+    return approvals.hasValue() ? approvals.value().length : 0;
+  });
+
   protected readonly timeOffCount = computed(() => {
     const approvals = this.timeOff.approvals;
     return this.auth.can('ApproveTimeOff') && approvals.hasValue() ? approvals.value().length : 0;
   });
 
   /** Everything waiting for the viewer in the group, shown on it while it is closed. */
-  protected readonly waitingCount = computed(() => this.incomingCount() + this.timeOffCount());
+  protected readonly waitingCount = computed(
+    () => this.incomingCount() + this.approvalCount() + this.timeOffCount(),
+  );
 
   private readonly url = toSignal(
     this.router.events.pipe(

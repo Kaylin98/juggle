@@ -143,6 +143,58 @@ public sealed class WorkflowTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task Only_the_head_of_design_decides_on_the_design_and_the_job_waits_in_their_queue()
+    {
+        var job = await AwaitingDesignApprovalAsync();
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+
+        foreach (var name in new[] { "Chloe Adams", "Zanele Mthembu", "Priya Naidoo", "Megan Botha" })
+        {
+            var other = await api.SignInAsAsync(name);
+            var approve = await other.PostAsJsonAsync($"/api/jobs/{job.Id}/approve-design", new CommentRequest(null), ApiFactory.Json, _ct);
+            var queue = await other.GetFromJsonAsync<List<QueuedJobDto>>("/api/jobs/approvals", ApiFactory.Json, _ct);
+            Assert.Equal(HttpStatusCode.Forbidden, approve.StatusCode);
+            Assert.DoesNotContain(queue!, q => q.Job.Id == job.Id);
+        }
+
+        var queued = (await naledi.GetFromJsonAsync<List<QueuedJobDto>>("/api/jobs/approvals", ApiFactory.Json, _ct))!.Single(q => q.Job.Id == job.Id);
+        Assert.Equal("https://example.com/v1", queued.Artwork!.Url);
+        Assert.Equal([WorkflowAction.ApproveDesign, WorkflowAction.SendBack], queued.Job.Actions.Order());
+    }
+
+    [Fact]
+    public async Task Sending_the_design_back_needs_a_comment_and_the_next_version_goes_round_again()
+    {
+        var job = await AwaitingDesignApprovalAsync();
+        var naledi = await api.SignInAsAsync("Naledi Khumalo");
+        var priya = await api.SignInAsAsync("Priya Naidoo");
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+
+        var noComment = await naledi.PostAsJsonAsync($"/api/jobs/{job.Id}/send-back", new CommentRequest("  "), ApiFactory.Json, _ct);
+        var sentBack = await naledi.PostAsJsonAsync($"/api/jobs/{job.Id}/send-back", new CommentRequest("Logo is too small"), ApiFactory.Json, _ct);
+        var second = await priya.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("https://example.com/v2", null), ApiFactory.Json, _ct);
+        var beforeApproval = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!;
+        var approved = await naledi.PostAsJsonAsync($"/api/jobs/{job.Id}/approve-design", new CommentRequest("Better"), ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, noComment.StatusCode);
+        Assert.Equal("Design Changes Required", (await sentBack.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.Job.StatusName);
+        Assert.Equal(["Version 2"], [(await second.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!.History[^1].Message]);
+        // Nothing has reached the marketing manager yet.
+        Assert.Empty(beforeApproval.Artwork);
+        var result = (await approved.Content.ReadFromJsonAsync<JobDetailDto>(ApiFactory.Json, _ct))!;
+        Assert.Equal("Awaiting Marketing Approval", result.Job.StatusName);
+        Assert.Equal(
+            [(ApprovalStage.Design, ApprovalDecision.ChangesRequested, 1, "Naledi Khumalo", "Logo is too small"),
+             (ApprovalStage.Design, ApprovalDecision.Approved, 2, "Naledi Khumalo", "Better")],
+            result.Approvals.Select(a => (a.Stage, a.Decision, a.Version!.Value, a.ReviewerName, a.Comment!)));
+        // The marketing manager sees only the approved version, and the job is in their queue with it.
+        var seen = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!;
+        Assert.Equal([2], seen.Artwork.Select(a => a.Version));
+        var queued = (await zanele.GetFromJsonAsync<List<QueuedJobDto>>("/api/jobs/approvals", ApiFactory.Json, _ct))!.Single(q => q.Job.Id == job.Id);
+        Assert.Equal("https://example.com/v2", queued.Artwork!.Url);
+    }
+
+    [Fact]
     public async Task Marking_ready_moves_a_new_request_to_awaiting_allocation_and_only_once()
     {
         var job = await SubmitAsync("Zanele Mthembu");
@@ -288,6 +340,17 @@ public sealed class WorkflowTests(ApiFactory api)
         start = start.AddDays((8 - (int)start.DayOfWeek) % 7);
         var response = await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/allocate", new AllocateRequest(person, start, start, 4, 4), ApiFactory.Json, _ct);
         response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>A new job scheduled to Priya, started, and sent to the head of design with artwork version 1.</summary>
+    private async Task<JobDto> AwaitingDesignApprovalAsync()
+    {
+        var job = await SubmitAsync("Zanele Mthembu");
+        await ScheduleAsync(job, "Priya Naidoo");
+        var priya = await api.SignInAsAsync("Priya Naidoo");
+        (await priya.PostAsync($"/api/jobs/{job.Id}/start", null, _ct)).EnsureSuccessStatusCode();
+        (await priya.PostAsJsonAsync($"/api/jobs/{job.Id}/submit-artwork", new SubmitArtworkRequest("https://example.com/v1", null), ApiFactory.Json, _ct)).EnsureSuccessStatusCode();
+        return job;
     }
 
     private async Task<Guid> StudioPersonAsync(HttpClient client, string name)

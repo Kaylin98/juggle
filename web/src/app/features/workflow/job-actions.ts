@@ -54,6 +54,25 @@ const ACTIONS: WorkflowAction[] = [
         @case ('SubmitForApproval') {
           <app-artwork-form [action]="submitArtwork" (closed)="open.set(null)" />
         }
+        @case ('ApproveDesign') {
+          <app-message-form
+            id="approve-design"
+            label="Comment (optional)"
+            submitLabel="Approve design"
+            [mandatory]="false"
+            [action]="approveDesign"
+            (closed)="open.set(null)"
+          />
+        }
+        @case ('SendBack') {
+          <app-message-form
+            id="send-back"
+            label="What needs to change?"
+            submitLabel="Send back"
+            [action]="sendBack"
+            (closed)="open.set(null)"
+          />
+        }
         @case ('Cancel') {
           <app-message-form
             id="cancel-reason"
@@ -97,6 +116,8 @@ export class JobActions {
 
   protected readonly labels = computed<Partial<Record<WorkflowAction, string>>>(() => ({
     Answer: 'Answer the question',
+    ApproveDesign: 'Approve design',
+    SendBack: 'Send back',
     Start: 'Start work',
     SubmitForApproval: 'Submit artwork',
     AllocateAndSchedule: 'Allocate and schedule',
@@ -136,6 +157,17 @@ export class JobActions {
       () => this.jobs.submitArtwork(this.job().id, artwork.url, artwork.note),
       'Artwork submitted for approval.',
     );
+  };
+
+  protected readonly approveDesign = async (comment: string): Promise<void> => {
+    await this.run(
+      () => this.jobs.approveDesign(this.job().id, comment || null),
+      'Design approved.',
+    );
+  };
+
+  protected readonly sendBack = async (comment: string): Promise<void> => {
+    await this.run(() => this.jobs.sendBack(this.job().id, comment), 'Sent back to the designer.');
   };
 
   protected readonly answer = async (message: string): Promise<void> => {

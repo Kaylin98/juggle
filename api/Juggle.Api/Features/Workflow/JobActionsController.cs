@@ -21,6 +21,13 @@ public sealed class JobActionsController(JobActions actions) : ControllerBase
     public Task<JobDetailDto> SubmitArtwork(Guid id, SubmitArtworkRequest request, CancellationToken ct) =>
         actions.SubmitArtworkAsync(id, request, ct);
 
+    [HttpPost("approve-design")]
+    public Task<JobDetailDto> ApproveDesign(Guid id, CommentRequest request, CancellationToken ct) =>
+        actions.ApproveDesignAsync(id, request, ct);
+
+    [HttpPost("send-back")]
+    public Task<JobDetailDto> SendBack(Guid id, CommentRequest request, CancellationToken ct) => actions.SendBackAsync(id, request, ct);
+
     [HttpPost("mark-ready")]
     public Task<JobDetailDto> MarkReady(Guid id, CancellationToken ct) => actions.MarkReadyAsync(id, ct);
 

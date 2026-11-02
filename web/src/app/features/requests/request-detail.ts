@@ -4,6 +4,7 @@ import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { StatusChip } from '../../shared/status-chip';
 import { JobActions } from '../workflow/job-actions';
+import { JobApprovals } from '../workflow/job-approvals';
 import { JobArtwork } from '../workflow/job-artwork';
 import { JobTrail } from '../workflow/job-trail';
 import {
@@ -19,7 +20,7 @@ import {
  */
 @Component({
   selector: 'app-request-detail',
-  imports: [DatePipe, JobActions, JobArtwork, JobTrail, StatusChip],
+  imports: [DatePipe, JobActions, JobApprovals, JobArtwork, JobTrail, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <button
@@ -219,6 +220,10 @@ import {
 
           @if (loaded.artwork.length > 0) {
             <app-job-artwork class="xl:col-span-2" [artwork]="loaded.artwork" />
+          }
+
+          @if (loaded.approvals.length > 0) {
+            <app-job-approvals class="xl:col-span-2" [approvals]="loaded.approvals" />
           }
 
           <app-job-trail class="xl:col-span-2" [history]="loaded.history" />

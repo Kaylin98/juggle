@@ -53,6 +53,8 @@ public enum WorkflowAction
 /// <summary>The approval a workflow step records, so an organisation can leave a stage out (D72, D77).</summary>
 public enum ApprovalStage { Design, Marketing, Business }
 
+public enum ApprovalDecision { Approved, ChangesRequested }
+
 /// <summary>Whether a job in a status is still open, done, or cancelled (left out of completed counts, D75).</summary>
 public enum JobStatusKind { Open, Done, Cancelled }
 

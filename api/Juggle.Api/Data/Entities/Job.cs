@@ -140,3 +140,32 @@ public class JobArtwork
     public Guid SubmittedByUserId { get; set; }
     public DateTimeOffset SubmittedAt { get; set; }
 }
+
+/// <summary>
+/// An approval decision on a job's artwork (D72): the head of design's, the marketing manager's, or a stakeholder's
+/// that the marketing manager recorded. It is kept with who decided, when, and the version they reviewed.
+/// </summary>
+public class JobApproval
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public Guid OrgId { get; set; }
+    public Guid JobId { get; set; }
+    public ApprovalStage Stage { get; set; }
+    public ApprovalDecision Decision { get; set; }
+
+    /// <summary>The artwork version reviewed: the latest when the decision was made.</summary>
+    public Guid? ArtworkId { get; set; }
+
+    public Guid RecordedByUserId { get; set; }
+    public DateTimeOffset RecordedAt { get; set; }
+    public string? Comment { get; set; }
+
+    /// <summary>Business approval only: who decided, such as "Sales".</summary>
+    public string? StakeholderName { get; set; }
+
+    /// <summary>Business approval only: the day the stakeholder decided, which may be before it was recorded.</summary>
+    public DateOnly? DecidedOn { get; set; }
+
+    /// <summary>Business approval only: a link to the evidence, such as an email.</summary>
+    public string? Link { get; set; }
+}

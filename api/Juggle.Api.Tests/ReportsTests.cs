@@ -33,9 +33,10 @@ public sealed class ReportsTests(ApiFactory api)
         Assert.Equal(jobs.Count(j => j.StatusKind == JobStatusKind.Done), report.ByColumn[^1].Count);
         Assert.True(report.ByColumn[^1].Count > 40);
 
-        // Everyone in the team, the most open work first: Lerato is the overloaded designer.
+        // Everyone in the team, the most open work first. Workflow tests give designers more open jobs, so the leader can change.
         Assert.Equal(people.Select(p => p.Id).Order(), report.ByDesigner.Where(d => d.PersonId != null).Select(d => d.PersonId!.Value).Order());
-        Assert.Equal("Lerato Mokoena", report.ByDesigner[0].Name);
+        var open = report.ByDesigner.Where(d => d.PersonId != null).Select(d => jobs.Count(j => j.DesignerPersonId == d.PersonId && j.StatusKind == JobStatusKind.Open)).ToList();
+        Assert.Equal(open.OrderDescending(), open);
         foreach (var designer in report.ByDesigner)
         {
             var theirs = jobs.Where(j => j.DesignerPersonId == designer.PersonId).ToList();

@@ -18,6 +18,9 @@ public sealed class JobsController(JobsService jobs) : ControllerBase
     [HttpGet("api/jobs/mine")]
     public Task<IReadOnlyList<JobDto>> GetMine(CancellationToken ct) => jobs.GetMineAsync(ct);
 
+    [HttpGet("api/jobs/approvals")]
+    public Task<IReadOnlyList<QueuedJobDto>> GetApprovals(CancellationToken ct) => jobs.GetApprovalsAsync(ct);
+
     [HttpGet("api/jobs/{id:guid}")]
     public Task<JobDetailDto> Get(Guid id, CancellationToken ct) => jobs.GetAsync(id, ct);
 

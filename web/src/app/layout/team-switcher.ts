@@ -19,7 +19,12 @@ import { Select, SelectOption } from '../shared/select';
     } @else {
       <label class="flex items-center gap-3">
         <span class="label-caps">Team</span>
-        <app-select variant="pill" [options]="options()" [value]="value()" (valueChange)="select($event)" />
+        <app-select
+          variant="pill"
+          [options]="options()"
+          [value]="value()"
+          (valueChange)="select($event)"
+        />
       </label>
     }
   `,
@@ -30,13 +35,19 @@ export class TeamSwitcher {
 
   /** "All teams" is offered to Org Admins on the schedule and dashboard only. */
   protected readonly options = computed<SelectOption[]>(() => [
-    ...(this.auth.can('ViewAllJobs') && this.teamContext.canShowAllTeams() ? [{ value: ALL_TEAMS, label: 'All teams' }] : []),
+    ...(this.auth.can('ViewAllJobs') && this.teamContext.canShowAllTeams()
+      ? [{ value: ALL_TEAMS, label: 'All teams' }]
+      : []),
     ...this.auth.teams().map((team) => ({ value: team.id, label: team.name, colour: team.colour })),
   ]);
 
-  protected readonly onlyOption = computed(() => (this.options().length === 1 ? this.options()[0] : null));
+  protected readonly onlyOption = computed(() =>
+    this.options().length === 1 ? this.options()[0] : null,
+  );
 
-  protected readonly value = computed(() => (this.teamContext.allTeams() ? ALL_TEAMS : (this.teamContext.teamId() ?? '')));
+  protected readonly value = computed(() =>
+    this.teamContext.allTeams() ? ALL_TEAMS : (this.teamContext.teamId() ?? ''),
+  );
 
   protected select(value: string): void {
     if (value === ALL_TEAMS) {

@@ -12,11 +12,24 @@ import { Nav } from './nav';
 class Blank {}
 
 // The Core Group's roles, by capability only: the nav never reads a role's name (D77).
-const TRAFFIC: Capability[] = ['ViewAllJobs', 'ViewBoard', 'ViewSchedule', 'ViewReports', 'TriageBriefs', 'Allocate', 'ApproveTimeOff'];
+const TRAFFIC: Capability[] = [
+  'ViewAllJobs',
+  'ViewBoard',
+  'ViewSchedule',
+  'ViewReports',
+  'TriageBriefs',
+  'Allocate',
+  'ApproveTimeOff',
+];
 const DESIGNER: Capability[] = ['ViewBoard', 'ViewReports', 'WorkOnJobs'];
 const MARKETING: Capability[] = ['SubmitBrief', 'ViewReports', 'ApproveMarketing', 'CloseJob'];
 
-async function render(capabilities: Capability[], url: string, personId: string | null = null, teamId: string | null = 'design') {
+async function render(
+  capabilities: Capability[],
+  url: string,
+  personId: string | null = null,
+  teamId: string | null = 'design',
+) {
   TestBed.configureTestingModule({
     imports: [Nav],
     providers: [
@@ -30,16 +43,27 @@ async function render(capabilities: Capability[], url: string, personId: string 
         },
       },
       { provide: TeamContextService, useValue: { teamId: signal(teamId) } },
-      { provide: JobsService, useValue: { incoming: { hasValue: () => true, value: () => [{}, {}, {}] } } },
-      { provide: TimeOffService, useValue: { approvals: { hasValue: () => true, value: () => [{}, {}] } } },
+      {
+        provide: JobsService,
+        useValue: {
+          incoming: { hasValue: () => true, value: () => [{}, {}, {}] },
+          approvals: { hasValue: () => false },
+        },
+      },
+      {
+        provide: TimeOffService,
+        useValue: { approvals: { hasValue: () => true, value: () => [{}, {}] } },
+      },
     ],
   });
   await TestBed.inject(Router).navigateByUrl(url);
   const fixture = TestBed.createComponent(Nav);
   await fixture.whenStable();
   const element = fixture.nativeElement as HTMLElement;
-  const group = () => [...element.querySelectorAll('button')].find((b) => b.textContent?.includes('Requests'));
-  const links = () => [...element.querySelectorAll('a')].map((a) => a.textContent!.replace(/\s+/g, ' ').trim());
+  const group = () =>
+    [...element.querySelectorAll('button')].find((b) => b.textContent?.includes('Requests'));
+  const links = () =>
+    [...element.querySelectorAll('a')].map((a) => a.textContent!.replace(/\s+/g, ' ').trim());
   return { fixture, element, group, links };
 }
 
@@ -54,7 +78,14 @@ describe('Nav', () => {
 
     group()!.click();
     await fixture.whenStable();
-    expect(links()).toEqual(['Dashboard', 'Briefs report', 'Schedule', 'Board', 'Incoming 3', 'Time off 2']);
+    expect(links()).toEqual([
+      'Dashboard',
+      'Briefs report',
+      'Schedule',
+      'Board',
+      'Incoming 3',
+      'Time off 2',
+    ]);
     expect(group()!.textContent).not.toContain('5');
   });
 
@@ -63,15 +94,20 @@ describe('Nav', () => {
     const path = (el: Element) => el.querySelector('svg path')!.getAttribute('d');
     const items = [...element.querySelectorAll('#nav-requests a')];
 
-    expect(items.map((a) => a.querySelector('svg')!.classList.contains('size-4'))).toEqual([true, true, true, true]);
+    expect(items.map((a) => a.querySelector('svg')!.classList.contains('size-4'))).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
     expect(new Set(items.map(path)).size).toBe(4);
     expect(items.map(path)).not.toContain(path(group()!));
   });
 
-  it('gives marketing managers their requests and a new brief, named with the organisation term, and no team pages', async () => {
+  it('gives marketing managers their approvals, requests and a new brief, named with the organisation term, and no team pages', async () => {
     const { group, links } = await render(MARKETING, '/requests/r1', null, null);
     expect(group()!.getAttribute('aria-expanded')).toBe('true');
-    expect(links()).toEqual(['My requests', 'New brief']);
+    expect(links()).toEqual(['Approvals', 'My requests', 'New brief']);
   });
 
   it('gives designers My work and the board, and no Requests group', async () => {

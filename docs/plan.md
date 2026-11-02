@@ -10,8 +10,8 @@ Build plan for the demo in `docs/demo-brief.md`. Demo due Fri 2026-10-30. Finish
 | --- | --- |
 | Current phase | W - Workflow |
 | Phase status | In progress |
-| Last completed task | W.3 Designer: Start, Submit artwork link |
-| Next task | W.4 Head of Design: approval queue, Approve and Send back |
+| Last completed task | W.4 Head of Design: approval queue, Approve, Send back |
+| Next task | W.5 Marketing Manager: Approve, Needs business approval, Record business approval, Close |
 | Blockers / open questions | Client questions 1, 3, 4 and 6 to 12 in `docs/gap-analysis.md` section 7 stay on their defaults; question 8 (job categories) has a placeholder list in code until the client answers. Listed in the Phase J review summary for the client |
 | Last updated | 2026-11-02 |
 
@@ -145,7 +145,7 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - [x] W.1 Traffic Manager: Incoming (replaces Triage), Brief complete, Allocate and schedule (makes the booking; clash, leave and deadline warnings), View on schedule, Add booking (hidden at or above the estimate), reassign and reschedule, Cancel with a reason (D75)
 - [x] W.2 Request information and the Marketing Manager's answer (Awaiting Information, Awaiting Traffic Review)
 - [x] W.3 Designer: Start, Submit artwork link (`JobArtwork` versions); no Schedule in the nav
-- [ ] W.4 Head of Design: approval queue, Approve and Send back with a comment (`JobApproval`)
+- [x] W.4 Head of Design: approval queue, Approve and Send back with a comment (`JobApproval`)
 - [ ] W.5 Marketing Manager: Approve, Needs business approval, Record business approval (stakeholder, date, outcome, note, link), Close
 - [ ] W.6 Revisions: Request changes creates a `JobRevision` that goes to the Traffic Manager and is scheduled, worked and approved; revision badge on the card; the job page lists versions, approvals, revisions and history
 - [ ] W.7 Drag between columns (D74): a drop that maps to exactly one action for the role runs it; any other drop is refused with a hint naming the action
@@ -260,3 +260,4 @@ One line each. Full text, including superseded decisions, is in `docs/plan-archi
 - 2026-11-02: Phase W started. W.1 built: `JobActionAccess` answers which workflow actions a user may take on a job (the workflow allows it in the status, the role has the capability, and the requester or designer where the action needs it); `JobDto.Actions` lists them and the web shows a button for each. Incoming replaces Triage with Request information, Brief complete, Allocate and schedule (booking and status change saved together; clash, leave and late warnings) and Cancel with a reason. Moving a booking to another person or other dates reassigns or reschedules the job and logs it (D78). No schema change. Build with no warnings, lint, 86 API tests and 131 web tests pass.
 - 2026-11-02: W.2 built: the requester answers a question (Awaiting Information to Awaiting Traffic Review); the job page shows the next-step actions and an Activity list of every `JobEvent` with who, when, the status and the message. No schema change. 88 API tests and 131 web tests pass.
 - 2026-11-02: W.3 built: the designer starts a scheduled job and submits an artwork link, recorded as numbered `JobArtwork` versions (migration `JobArtwork`); the job page lists the versions and the drawer links to it. The user who briefed the job sees no artwork yet. 90 API tests and 131 web tests pass. A test caught a version-number bug (precedence in `1 + max ?? 0`), fixed.
+- 2026-11-02: W.4 built: Approvals page and nav badge for users who approve; the head of design approves the design or sends it back with a required comment, each recorded as a `JobApproval` with reviewer, time, decision, comment and the artwork version (migration `JobApprovals`). The user who briefed a job sees only the artwork versions the head of design approved. 92 API tests and 131 web tests pass. Two shared-data tests (dashboard, report) made independent of other tests' jobs.

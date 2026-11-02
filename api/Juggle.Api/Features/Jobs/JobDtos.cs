@@ -101,8 +101,13 @@ public sealed record JobDto(
 /// <summary>A job, its whole brief and what has been done to it, for its own page.</summary>
 /// <param name="History">Every action taken on the job, oldest first (D72).</param>
 /// <param name="Artwork">The versions submitted, oldest first. The user who briefed the job sees none until the head of design has approved the design.</param>
+/// <param name="Approvals">The approval decisions on the artwork, oldest first.</param>
 public sealed record JobDetailDto(
-    JobDto Job, BriefDto Brief, IReadOnlyList<JobEventDto> History, IReadOnlyList<ArtworkDto> Artwork);
+    JobDto Job,
+    BriefDto Brief,
+    IReadOnlyList<JobEventDto> History,
+    IReadOnlyList<ArtworkDto> Artwork,
+    IReadOnlyList<ApprovalDto> Approvals);
 
 /// <param name="ToStatusName">The status the action left the job in.</param>
 /// <param name="Message">What the user wrote with it, such as a question or the reason for cancelling.</param>
@@ -208,3 +213,21 @@ public sealed record BriefLink([Required, MaxLength(1000), Url] string Url, [Max
 
 /// <summary>A version of the artwork submitted for approval (D72).</summary>
 public sealed record ArtworkDto(int Version, string Url, string? Note, string SubmittedByName, DateTimeOffset SubmittedAt);
+
+/// <summary>An approval decision on the artwork (D72).</summary>
+/// <param name="Version">The artwork version reviewed.</param>
+/// <param name="StakeholderName">Business approval only: who decided.</param>
+/// <param name="DecidedOn">Business approval only: the day they decided.</param>
+public sealed record ApprovalDto(
+    ApprovalStage Stage,
+    ApprovalDecision Decision,
+    int? Version,
+    string ReviewerName,
+    DateTimeOffset RecordedAt,
+    string? Comment,
+    string? StakeholderName,
+    DateOnly? DecidedOn,
+    string? Link);
+
+/// <summary>A job waiting for the signed-in user's approval, with the artwork to review.</summary>
+public sealed record QueuedJobDto(JobDto Job, ArtworkDto? Artwork);

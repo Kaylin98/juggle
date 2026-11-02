@@ -15,7 +15,11 @@ async function render(teams: Team[]): Promise<HTMLElement> {
       { provide: AuthService, useValue: { teams: signal(teams), can: () => false } },
       {
         provide: TeamContextService,
-        useValue: { canShowAllTeams: signal(false), allTeams: signal(false), teamId: signal('design') },
+        useValue: {
+          canShowAllTeams: signal(false),
+          allTeams: signal(false),
+          teamId: signal('design'),
+        },
       },
     ],
   });

@@ -14,6 +14,9 @@ public sealed class JobWorkflow(JuggleDbContext db)
     private static readonly WorkflowAction[] Approvals =
         [WorkflowAction.ApproveDesign, WorkflowAction.ApproveMarketing, WorkflowAction.RecordBusinessApproval];
 
+    /// <summary>Whether the action approves work, so a user who may take it has a job to review.</summary>
+    public static bool IsApproval(WorkflowAction action) => Approvals.Contains(action);
+
     private List<WorkflowTransition>? transitions;
 
     /// <summary>The status a sent brief starts in: where the organisation's Submit step leads.</summary>

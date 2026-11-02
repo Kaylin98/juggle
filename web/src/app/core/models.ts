@@ -363,6 +363,30 @@ export interface Artwork {
   submittedAt: string;
 }
 
+export type ApprovalStage = 'Design' | 'Marketing' | 'Business';
+export type ApprovalDecision = 'Approved' | 'ChangesRequested';
+
+/** An approval decision on the artwork (D72). */
+export interface Approval {
+  stage: ApprovalStage;
+  decision: ApprovalDecision;
+  /** The artwork version reviewed. */
+  version: number | null;
+  reviewerName: string;
+  recordedAt: string;
+  comment: string | null;
+  /** Business approval only: who decided, the day they decided, and a link to the evidence. */
+  stakeholderName: string | null;
+  decidedOn: string | null;
+  link: string | null;
+}
+
+/** A job waiting for the signed-in user's approval, with the artwork to review. */
+export interface QueuedJob {
+  job: Job;
+  artwork: Artwork | null;
+}
+
 /** Something done to a job, by whom and when (D72). */
 export interface JobEvent {
   at: string;
@@ -381,6 +405,8 @@ export interface JobDetail {
   history: JobEvent[];
   /** The versions submitted, oldest first. The user who briefed the job sees none until the design is approved. */
   artwork: Artwork[];
+  /** The approval decisions on the artwork, oldest first. */
+  approvals: Approval[];
 }
 
 /** A brief in the client's template, sections A to F (J.4). The signed-in user sends it (D67). */

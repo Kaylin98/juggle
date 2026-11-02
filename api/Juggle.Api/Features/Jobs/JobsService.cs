@@ -142,26 +142,59 @@ public sealed class JobsService(
         var job = await JobDto.Load(db.Jobs).Include(j => j.Links.OrderBy(l => l.SortOrder)).FirstOrDefaultAsync(j => j.Id == id, ct)
             ?? throw new NotFoundException("Job not found.");
         await jobAccess.EnsureCanSeeAsync(job, ct);
-        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct), await ArtworkAsync(job, ct));
+        return new JobDetailDto((await ToDtosAsync([job], ct))[0], BriefDto.From(job), await HistoryAsync(id, ct), await ArtworkAsync(job, ct), await ApprovalsAsync(id, ct));
     }
 
     /// <summary>
-    /// The artwork versions. The user who briefed the job is not the designer or a viewer of all jobs, so sees none: no
-    /// artwork reaches them before the head of design approves it.
+    /// The artwork versions. The user who briefed the job, if not also its designer or a viewer of all jobs, sees only
+    /// the versions the head of design approved: no artwork reaches them before that.
     /// </summary>
     private async Task<IReadOnlyList<ArtworkDto>> ArtworkAsync(Job job, CancellationToken ct)
     {
-        if (!await jobAccess.CanSeeArtworkAsync(job, ct))
-        {
-            return [];
-        }
-
+        var all = await jobAccess.CanSeeArtworkAsync(job, ct);
         return await (from a in db.JobArtwork.Where(a => a.JobId == job.Id)
+                      where all || db.JobApprovals.Any(p => p.ArtworkId == a.Id && p.Stage == ApprovalStage.Design && p.Decision == ApprovalDecision.Approved)
                       join u in db.Users on a.SubmittedByUserId equals u.Id
                       orderby a.Version
                       select new ArtworkDto(a.Version, a.Url, a.Note, u.Name, a.SubmittedAt))
             .AsNoTracking()
             .ToListAsync(ct);
+    }
+
+    private async Task<IReadOnlyList<ApprovalDto>> ApprovalsAsync(Guid jobId, CancellationToken ct) =>
+        await (from p in db.JobApprovals.Where(p => p.JobId == jobId)
+               join u in db.Users on p.RecordedByUserId equals u.Id
+               join a in db.JobArtwork on p.ArtworkId equals a.Id into versions
+               from a in versions.DefaultIfEmpty()
+               orderby p.RecordedAt, p.Id
+               select new ApprovalDto(
+                   p.Stage, p.Decision, a == null ? null : a.Version, u.Name, p.RecordedAt, p.Comment, p.StakeholderName, p.DecidedOn, p.Link))
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+    /// <summary>
+    /// The jobs waiting for the user to approve, newest first, each with the latest artwork they may see. A job is
+    /// queued when its status is one an approval starts from and the user may take that approval.
+    /// </summary>
+    public async Task<IReadOnlyList<QueuedJobDto>> GetApprovalsAsync(CancellationToken ct)
+    {
+        var waiting = (await workflow.AwaitingApprovalAsync(ct)).ToList();
+        var jobs = await JobDto.Load(await jobAccess.VisibleAsync(ct))
+            .Where(j => waiting.Contains(j.StatusId))
+            .OrderByDescending(j => j.CreatedAt)
+            .ToListAsync(ct);
+        var queue = new List<QueuedJobDto>();
+        var dtos = await ToDtosAsync(jobs, ct);
+        for (var i = 0; i < jobs.Count; i++)
+        {
+            if (dtos[i].Actions.Any(JobWorkflow.IsApproval))
+            {
+                var artwork = await ArtworkAsync(jobs[i], ct);
+                queue.Add(new QueuedJobDto(dtos[i], artwork.Count > 0 ? artwork[^1] : null));
+            }
+        }
+
+        return queue;
     }
 
     private async Task<IReadOnlyList<JobEventDto>> HistoryAsync(Guid jobId, CancellationToken ct) =>

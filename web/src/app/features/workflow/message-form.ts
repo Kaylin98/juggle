@@ -30,6 +30,8 @@ export class MessageForm {
   readonly id = input.required<string>();
   readonly label = input.required<string>();
   readonly submitLabel = input.required<string>();
+  /** Whether a message is needed; a reviewer may approve without one. */
+  readonly mandatory = input(true);
   /** Does the action; the form stays open if it throws. */
   readonly action = input.required<(message: string) => Promise<void>>();
   readonly closed = output<void>();
@@ -37,7 +39,7 @@ export class MessageForm {
   protected readonly model = signal({ message: '' });
 
   protected readonly messageForm = form(this.model, (f) => {
-    required(f.message, { message: 'Write a message.' });
+    required(f.message, { message: 'Write a message.', when: () => this.mandatory() });
     maxLength(f.message, 2000, { message: 'Keep it under 2000 characters.' });
   });
 

@@ -12,7 +12,7 @@ async function render(mine: Job[]): Promise<HTMLElement> {
     imports: [MyRequestsPage],
     providers: [
       provideRouter([]),
-      { provide: JobsService, useValue: { mine: () => Promise.resolve(mine) } },
+      { provide: JobsService, useValue: { mine: () => Promise.resolve(mine), changes: () => 0 } },
       { provide: AuthService, useValue: { departmentLabel: signal('Brand'), terms: signal({ department: 'Brand', brief: 'Brief', job: 'Job' }) } },
     ],
   });

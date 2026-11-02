@@ -115,7 +115,6 @@ const PRIORITY_PILL: Record<Priority, string> = {
                     class="mt-4 block empty:hidden"
                     [job]="job"
                     [people]="people.value() ?? []"
-                    (changed)="incoming.reload()"
                   />
                 </li>
               }

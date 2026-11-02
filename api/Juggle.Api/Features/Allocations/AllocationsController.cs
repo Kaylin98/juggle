@@ -22,6 +22,11 @@ public sealed class AllocationsController(AllocationService allocations, Allocat
         return StatusCode(StatusCodes.Status201Created, saved);
     }
 
+    /// <summary>Moves the job, with all its bookings, to another designer.</summary>
+    [HttpPost("~/api/jobs/{jobId:guid}/reassign")]
+    public Task<ReassignedJobDto> Reassign(Guid jobId, ReassignRequest request, CancellationToken ct) =>
+        allocations.ReassignAsync(jobId, request, ct);
+
     [HttpPut("{id:guid}")]
     public Task<SavedAllocationDto> Update(Guid id, SaveAllocationRequest request, CancellationToken ct) =>
         allocations.UpdateAsync(id, request, ct);

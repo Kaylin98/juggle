@@ -30,6 +30,7 @@ export class ActionRunner {
         default:
           throw new Error(`${action} needs a form.`);
       }
+      this.jobs.notifyChanged();
       return true;
     } catch (error) {
       this.toast.error(error);

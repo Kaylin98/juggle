@@ -1,6 +1,6 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
-import { JobsService } from '../../core/jobs.service';
+import { JobsService, reloadOnJobChange } from '../../core/jobs.service';
 import { today } from '../../shared/dates';
 import { toCard } from '../board/job-card';
 import { JobDrawer } from '../board/job-drawer';
@@ -60,6 +60,10 @@ export class MyWorkPage {
   protected readonly today = today();
   protected readonly myWork = resource({ loader: () => this.service.get() });
   protected readonly workflow = resource({ loader: () => this.jobs.workflow() });
+
+  constructor() {
+    reloadOnJobChange(this.myWork);
+  }
 
   protected readonly openJobId = signal<string | null>(null);
   protected readonly openCard = computed(() => {

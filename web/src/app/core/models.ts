@@ -260,6 +260,12 @@ export interface CheckAllocation {
   exceptAllocationId?: string;
 }
 
+/** What moving a job to another designer ran into on its bookings. */
+export interface ReassignedJob {
+  clashDays: string[];
+  leaveDays: string[];
+}
+
 /** The hours a person has free over some days. */
 export interface PersonAvailability {
   personId: string;

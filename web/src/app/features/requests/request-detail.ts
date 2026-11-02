@@ -1,9 +1,9 @@
 import { DatePipe, Location } from '@angular/common';
 import { Component, computed, inject, input, resource } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
-import { JobsService } from '../../core/jobs.service';
+import { JobsService, reloadOnJobChange } from '../../core/jobs.service';
 import { StatusChip } from '../../shared/status-chip';
-import { JobActions } from '../workflow/job-actions';
+import { JobActionArea } from '../workflow/job-action-area';
 import { JobApprovals } from '../workflow/job-approvals';
 import { JobArtwork } from '../workflow/job-artwork';
 import { JobFiles } from '../workflow/job-files';
@@ -22,7 +22,7 @@ import {
  */
 @Component({
   selector: 'app-request-detail',
-  imports: [DatePipe, JobActions, JobApprovals, JobArtwork, JobFiles, JobRevisions, JobTrail, StatusChip],
+  imports: [DatePipe, JobActionArea, JobApprovals, JobArtwork, JobFiles, JobRevisions, JobTrail, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <button
@@ -60,7 +60,7 @@ import {
           <app-status-chip class="text-sm" [name]="job.statusName" [colour]="job.statusColour" />
         </div>
 
-        <app-job-actions class="mt-6 block empty:hidden" [job]="job" (changed)="detail.reload()" />
+        <app-job-action-area class="mt-6" [job]="job" />
 
         <section class="panel mt-6 p-6" aria-label="Who does it and when">
           <dl class="grid gap-4 text-sm sm:grid-cols-3">
@@ -265,6 +265,10 @@ export class RequestDetailPage {
     params: () => this.id(),
     loader: ({ params }) => this.jobs.get(params),
   });
+
+  constructor() {
+    reloadOnJobChange(this.detail);
+  }
 
   /** The objectives that were filled in, with their labels, in the template's order. */
   protected readonly objectives = computed(() => {

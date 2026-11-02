@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { JobsService } from '../../core/jobs.service';
+import { JobsService, reloadOnJobChange } from '../../core/jobs.service';
 import { DueDate } from '../../shared/due-date';
 import { StatusChip } from '../../shared/status-chip';
 
@@ -84,4 +84,8 @@ export class MyRequestsPage {
   protected readonly terms = this.auth.terms;
 
   protected readonly jobs = resource({ loader: () => this.service.mine() });
+
+  constructor() {
+    reloadOnJobChange(this.jobs);
+  }
 }

@@ -1,6 +1,7 @@
 import { Component, LOCALE_ID, computed, inject, input, linkedSignal, resource } from '@angular/core';
 import { Params } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { reloadOnJobChange } from '../../core/jobs.service';
 import { Dashboard, TeamCount } from '../../core/models';
 import { ALL_TEAMS, TeamContextService } from '../../core/team-context.service';
 import { addDays, formatDateRange, startOfWeek, today } from '../../shared/dates';
@@ -89,6 +90,10 @@ export class DashboardPage {
     params: () => (this.teamContext.allTeams() ? ALL_TEAMS : this.teamId()),
     loader: ({ params }) => this.dashboardService.get(params),
   });
+
+  constructor() {
+    reloadOnJobChange(this.dashboard);
+  }
 
   /** Keeps the last dashboard on screen while the next team's loads, so switching does not flash. */
   protected readonly data = linkedSignal<Dashboard | null, Dashboard | null>({

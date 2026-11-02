@@ -111,6 +111,28 @@ public sealed class FilesTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.BadRequest, (await SubmitFileAsync(priya, job.Id, "v2.png")).StatusCode);
     }
 
+    [Fact]
+    public async Task Images_and_PDFs_open_in_the_browser_on_request_and_everything_else_still_downloads()
+    {
+        var (_, job) = await Briefs.AllocatedJobAsync(api, "Priya Naidoo", NextMonday(_start.AddDays(35)), _ct);
+        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        async Task<Guid> Upload(string name) =>
+            (await (await UploadAsync(zanele, job.Id, name, "x"u8.ToArray(), FileKind.Supporting)).Content.ReadFromJsonAsync<JobFileDto>(ApiFactory.Json, _ct))!.Id;
+        var (image, vector, pdf, video) = (await Upload("a.png"), await Upload("a.svg"), await Upload("a.pdf"), await Upload("a.mp4"));
+
+        var inlineImage = await zanele.GetAsync($"/api/jobs/{job.Id}/files/{image}?inline=true", _ct);
+        var inlineSvg = await zanele.GetAsync($"/api/jobs/{job.Id}/files/{vector}?inline=true", _ct);
+        var inlinePdf = await zanele.GetAsync($"/api/jobs/{job.Id}/files/{pdf}?inline=true", _ct);
+        var inlineVideo = await zanele.GetAsync($"/api/jobs/{job.Id}/files/{video}?inline=true", _ct);
+        var download = await zanele.GetAsync($"/api/jobs/{job.Id}/files/{image}", _ct);
+
+        Assert.All(new[] { inlineImage, inlineSvg, inlinePdf }, r => Assert.Null(r.Content.Headers.ContentDisposition));
+        Assert.Equal("image/svg+xml", inlineSvg.Content.Headers.ContentType!.MediaType);
+        Assert.StartsWith("sandbox", inlineSvg.Headers.GetValues("Content-Security-Policy").Single());
+        Assert.Equal("attachment", inlineVideo.Content.Headers.ContentDisposition!.DispositionType);
+        Assert.Equal("attachment", download.Content.Headers.ContentDisposition!.DispositionType);
+    }
+
     private Task<HttpResponseMessage> SubmitFileAsync(HttpClient client, Guid jobId, string name)
     {
         var form = new MultipartFormDataContent { { new ByteArrayContent("a"u8.ToArray()), "file", name } };

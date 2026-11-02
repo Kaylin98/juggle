@@ -2,12 +2,13 @@ import { CdkConnectedOverlay, ConnectedPosition } from '@angular/cdk/overlay';
 import { Component, LOCALE_ID, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
 import { AllocationsService } from '../../core/allocations.service';
 import { AuthService } from '../../core/auth.service';
-import { JobsService } from '../../core/jobs.service';
+import { JobsService, reloadOnJobChange } from '../../core/jobs.service';
 import { Allocation, Job, SaveAllocation, Schedule } from '../../core/models';
 import { ALL_TEAMS, TeamContextService } from '../../core/team-context.service';
 import { BrandLegend, legendBrands } from '../../shared/brand-legend';
 import { ClashDialog } from '../../shared/clash-dialog';
-import { lateText, scheduledMessage } from '../../shared/clash-message';
+import { ConfirmDialog } from '../../shared/confirm-dialog';
+import { clashText, lateText, scheduledMessage } from '../../shared/clash-message';
 import { isIsoDate, startOfWeek, today, weekdaysBetween } from '../../shared/dates';
 import { ToastService } from '../../shared/toast.service';
 import { AllocationPopover, BookingDetails, BookingDraft } from './allocation-popover';
@@ -28,7 +29,7 @@ const POPOVER_POSITIONS: ConnectedPosition[] = [
 
 @Component({
   selector: 'app-capacity-page',
-  imports: [AllocationPopover, BrandLegend, CapacityGrid, CdkConnectedOverlay, ClashDialog, GridToolbar, PeopleFilter],
+  imports: [AllocationPopover, BrandLegend, CapacityGrid, CdkConnectedOverlay, ClashDialog, ConfirmDialog, GridToolbar, PeopleFilter],
   templateUrl: './capacity-page.html',
 })
 export class CapacityPage {
@@ -138,6 +139,14 @@ export class CapacityPage {
   /** A booking that would put someone over capacity, waiting for Cancel or "Book with overtime". */
   protected readonly clash = signal<Clash | null>(null);
 
+  /** A booking dragged to another person's row, waiting for Cancel or "Reassign": it moves the whole job. */
+  protected readonly reassign = signal<Reassignment | null>(null);
+
+  constructor() {
+    reloadOnJobChange(this.jobs);
+    reloadOnJobChange(this.schedule);
+  }
+
   /** The days picked for a new booking stay highlighted while its popover is open. */
   protected readonly pending = computed<NewBooking | null>(() => {
     const popover = this.popover();
@@ -160,6 +169,15 @@ export class CapacityPage {
   protected async onChanged({ allocation, origin }: { allocation: Allocation; origin: PopoverOrigin }): Promise<void> {
     const previous = this.data()!.allocations.find((a) => a.id === allocation.id)!;
     this.replace(allocation);
+    if (allocation.personId !== previous.personId) {
+      this.reassign.set({
+        allocation,
+        previous,
+        origin,
+        message: `Reassign ${allocation.jobCode} from ${this.personName(previous.personId)} to ${this.personName(allocation.personId)}? All its bookings move.`,
+      });
+      return;
+    }
     await this.saveUnlessClash(
       { ...allocation, origin },
       previous,
@@ -191,6 +209,30 @@ export class CapacityPage {
     await clash.book();
   }
 
+  protected cancelReassign(): void {
+    this.replace(this.reassign()!.previous);
+    this.reassign.set(null);
+  }
+
+  /** Moves the job and all its bookings. A booking dragged to other days as well returns to its own days. */
+  protected async confirmReassign(): Promise<void> {
+    const { allocation, previous } = this.reassign()!;
+    this.reassign.set(null);
+    try {
+      const result = await this.allocations.reassign(allocation.jobId, allocation.personId);
+      const name = this.personName(allocation.personId);
+      const clash = clashText(result.clashDays, result.leaveDays, this.locale);
+      this.toast.show(
+        clash ? `Reassigned to ${name}, who is ${clash}.` : `Reassigned to ${name}. All the job's bookings moved.`,
+        clash ? 'warning' : 'success',
+      );
+      this.jobsService.notifyChanged();
+    } catch (error) {
+      this.replace(previous);
+      this.toast.error(error);
+    }
+  }
+
   protected cancelClash(): void {
     this.clash()!.cancel();
     this.clash.set(null);
@@ -202,6 +244,7 @@ export class CapacityPage {
     try {
       await this.allocations.delete(allocation!.id);
       this.toast.show('Booking deleted.');
+      this.jobsService.notifyChanged();
     } catch (error) {
       this.toast.error(error);
     }
@@ -267,6 +310,7 @@ export class CapacityPage {
       } else {
         await (id ? this.allocations.update(id, request) : this.allocations.create(request));
         this.toast.show('Booking saved.', 'success');
+        this.jobsService.notifyChanged();
       }
     } catch (error) {
       this.toast.error(error);
@@ -290,7 +334,7 @@ export class CapacityPage {
     });
     const message = scheduledMessage(this.personName(personId), startDate, endDate, result, this.locale);
     this.toast.show(message.text, message.kind);
-    this.jobs.reload();
+    this.jobsService.notifyChanged();
   }
 
   private replace(allocation: Allocation): void {
@@ -300,6 +344,13 @@ export class CapacityPage {
   private personName(personId: string): string {
     return this.data()?.people.find((p) => p.id === personId)?.name ?? '';
   }
+}
+
+interface Reassignment {
+  allocation: Allocation;
+  previous: Allocation;
+  origin: PopoverOrigin;
+  message: string;
 }
 
 /** A booking to check for a clash before saving: its days and hours, and where to ask. */

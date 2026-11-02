@@ -4,7 +4,7 @@ import { Component, input, model, signal } from '@angular/core';
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const ACCEPTED_EXTENSIONS = [
   '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv', '.rtf',
-  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.m4v', '.mov', '.webm',
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.mp4', '.m4v', '.mov', '.webm',
 ];
 
 /** "340 KB", "12.5 MB". */

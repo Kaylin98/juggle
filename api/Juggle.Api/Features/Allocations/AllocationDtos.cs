@@ -47,3 +47,10 @@ public sealed record AllocationCheckDto(
 
 /// <param name="FreeHours">Capacity less bookings over the days asked about.</param>
 public sealed record PersonAvailabilityDto(Guid PersonId, decimal FreeHours);
+
+/// <summary>Moves a job, with all its bookings, to another person.</summary>
+public sealed record ReassignRequest(Guid PersonId);
+
+/// <param name="ClashDays">Days of the moved bookings on which the new designer is over capacity.</param>
+/// <param name="LeaveDays">Days of the moved bookings on which the new designer is on approved leave.</param>
+public sealed record ReassignedJobDto(IReadOnlyList<DateOnly> ClashDays, IReadOnlyList<DateOnly> LeaveDays);

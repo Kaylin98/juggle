@@ -5,6 +5,7 @@ import {
   AllocationCheck,
   CheckAllocation,
   PersonAvailability,
+  ReassignedJob,
   SaveAllocation,
   SavedAllocation,
 } from './models';
@@ -31,6 +32,11 @@ export class AllocationsService {
         params: { teamId, startDate, endDate },
       }),
     );
+  }
+
+  /** Moves the job, with all its bookings, to another designer. */
+  reassign(jobId: string, personId: string): Promise<ReassignedJob> {
+    return firstValueFrom(this.http.post<ReassignedJob>(`/api/jobs/${jobId}/reassign`, { personId }));
   }
 
   create(allocation: SaveAllocation): Promise<SavedAllocation> {

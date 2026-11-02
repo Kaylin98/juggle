@@ -8,7 +8,7 @@ import { startOfWeek } from '../../shared/dates';
 import { Drawer } from '../../shared/drawer';
 import { StatusChip } from '../../shared/status-chip';
 import { DELIVERABLE_LABELS } from '../requests/brief-fields';
-import { JobActions } from '../workflow/job-actions';
+import { JobActionArea } from '../workflow/job-action-area';
 import { BookOnSchedule } from './book-on-schedule';
 import { BoardCard } from './job-card';
 
@@ -19,7 +19,7 @@ import { BoardCard } from './job-card';
  */
 @Component({
   selector: 'app-job-drawer',
-  imports: [BookOnSchedule, DatePipe, Drawer, JobActions, RouterLink, StatusChip],
+  imports: [BookOnSchedule, DatePipe, Drawer, JobActionArea, RouterLink, StatusChip],
   template: `
     @let job = card().job;
     <app-drawer [heading]="auth.terms().job" (closed)="closed.emit()">
@@ -43,12 +43,10 @@ import { BoardCard } from './job-card';
           >
         </div>
 
-        <app-job-actions
-          class="block empty:hidden"
+        <app-job-action-area
           [job]="job"
           [people]="people()"
           [startWith]="startWith()"
-          (changed)="changed.emit()"
         />
 
         <!--
@@ -61,7 +59,6 @@ import { BoardCard } from './job-card';
               [job]="job"
               [designer]="designer"
               (closed)="booking.set(false)"
-              (booked)="booked.emit()"
             />
           } @else if (job.bookings.length > 0) {
             <div class="flex items-center gap-4">
@@ -174,10 +171,6 @@ export class JobDrawer {
   /** The workflow form to open at once, such as the one a card dropped on a column calls for. */
   readonly startWith = input<WorkflowAction | null>(null);
   readonly closed = output<void>();
-  /** A booking was made from here, so the job's booked hours changed. */
-  readonly booked = output<void>();
-  /** A workflow action changed the job, so the board should reload. */
-  readonly changed = output<void>();
 
   protected readonly deliverableLabels = DELIVERABLE_LABELS;
 

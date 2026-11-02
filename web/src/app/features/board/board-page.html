@@ -60,10 +60,8 @@
     [card]="card"
     [canBook]="auth.can('Allocate')"
     (closed)="openJobId.set(null)"
-    (booked)="board.reload()"
     [people]="data()?.people ?? []"
     [startWith]="openAction()"
-    (changed)="board.reload()"
   />
 }
 

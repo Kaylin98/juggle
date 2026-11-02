@@ -459,47 +459,73 @@ public sealed class WorkflowTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Moving_a_booking_reassigns_and_reschedules_the_job_and_logs_both()
+    public async Task Moving_a_booking_to_other_dates_reschedules_the_job_and_logs_it()
     {
         var job = await SubmitAsync("Zanele Mthembu");
         var chloe = await api.SignInAsAsync("Chloe Adams");
         var ethan = await StudioPersonAsync(chloe, "Ethan Pillay");
-        var amahle = await StudioPersonAsync(chloe, "Amahle Dlamini");
         var start = _today.AddDays(7 * 32);
         start = start.AddDays((8 - (int)start.DayOfWeek) % 7);
         await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/allocate", new AllocateRequest(ethan, start, start.AddDays(1), 4, 8), ApiFactory.Json, _ct);
         var bookingId = await BookingIdAsync(job.Id);
 
         var move = await chloe.PutAsJsonAsync(
-            $"/api/allocations/{bookingId}", new SaveAllocationRequest(amahle, job.Id, start.AddDays(1), start.AddDays(3), 4, null), ApiFactory.Json, _ct);
+            $"/api/allocations/{bookingId}", new SaveAllocationRequest(ethan, job.Id, start.AddDays(1), start.AddDays(3), 4, null), ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.OK, move.StatusCode);
         var moved = (await chloe.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!.Job;
-        Assert.Equal(("Amahle Dlamini", start.AddDays(1), start.AddDays(3)), (moved.DesignerName, moved.PlannedStartDate, moved.ExpectedCompletionDate));
+        Assert.Equal(("Ethan Pillay", start.AddDays(1), start.AddDays(3)), (moved.DesignerName, moved.PlannedStartDate, moved.ExpectedCompletionDate));
         Assert.Equal(
-            [WorkflowAction.Submit, WorkflowAction.AllocateAndSchedule, WorkflowAction.Reassign, WorkflowAction.Reschedule],
+            [WorkflowAction.Submit, WorkflowAction.AllocateAndSchedule, WorkflowAction.Reschedule],
             (await EventsAsync(job.Id)).Select(e => e.Event.Action));
     }
 
     [Fact]
-    public async Task Seeded_jobs_waiting_on_an_approval_have_artwork_and_approvals_to_act_on()
+    public async Task Reassigning_a_job_moves_its_designer_and_all_its_bookings_and_logs_it()
     {
-        var naledi = await api.SignInAsAsync("Naledi Khumalo");
-        var bongani = await api.SignInAsAsync("Bongani Zulu");
-        var zanele = await api.SignInAsAsync("Zanele Mthembu");
+        var job = await SubmitAsync("Zanele Mthembu");
+        var chloe = await api.SignInAsAsync("Chloe Adams");
+        var ethan = await StudioPersonAsync(chloe, "Ethan Pillay");
+        var amahle = await StudioPersonAsync(chloe, "Amahle Dlamini");
+        var start = _today.AddDays(7 * 34);
+        start = start.AddDays((8 - (int)start.DayOfWeek) % 7);
+        await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/allocate", new AllocateRequest(ethan, start, start.AddDays(1), 4, 12), ApiFactory.Json, _ct);
+        (await chloe.PostAsJsonAsync(
+            "/api/allocations", new SaveAllocationRequest(ethan, job.Id, start.AddDays(7), start.AddDays(8), 2, null), ApiFactory.Json, _ct)).EnsureSuccessStatusCode();
 
-        var designQueue = (await naledi.GetFromJsonAsync<List<QueuedJobDto>>("/api/jobs/approvals", ApiFactory.Json, _ct))!;
-        var marketingQueue = (await bongani.GetFromJsonAsync<List<QueuedJobDto>>("/api/jobs/approvals", ApiFactory.Json, _ct))!;
-        var businessJob = (await zanele.GetFromJsonAsync<List<JobDto>>("/api/jobs/mine", ApiFactory.Json, _ct))!.Single(j => j.Title == "Scooter Spec Sheets");
-        var business = (await zanele.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{businessJob.Id}", ApiFactory.Json, _ct))!;
+        var response = await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/reassign", new ReassignRequest(amahle), ApiFactory.Json, _ct);
 
-        Assert.Contains(designQueue, q => q.Job.Title == "Black Friday iStore Banners");
-        Assert.Contains(designQueue, q => q.Job.Title == "Black Friday Retailer Inserts");
-        Assert.All(designQueue, q => Assert.NotNull(q.Artwork));
-        Assert.Contains(marketingQueue, q => q.Job.Title == "Launch Concept Boards" && q.Artwork is not null);
-        Assert.Equal("Awaiting Business Approval", business.Job.StatusName);
-        Assert.Single(business.Artwork);
-        Assert.Equal([(ApprovalStage.Design, ApprovalDecision.Approved, "Naledi Khumalo")], business.Approvals.Select(a => (a.Stage, a.Decision, a.ReviewerName)));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var reassigned = (await chloe.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job.Id}", ApiFactory.Json, _ct))!.Job;
+        Assert.Equal("Amahle Dlamini", reassigned.DesignerName);
+        Assert.Equal(2, reassigned.Bookings.Count);
+        Assert.All(reassigned.Bookings, b => Assert.Equal("Amahle Dlamini", b.PersonName));
+        var logged = (await EventsAsync(job.Id))[^1];
+        Assert.Equal((WorkflowAction.Reassign, "Reassigned from Ethan Pillay to Amahle Dlamini"), (logged.Event.Action, logged.Event.Message));
+    }
+
+    [Fact]
+    public async Task Reassigning_is_for_users_who_book_work_and_refused_for_the_same_person_a_stranger_or_a_job_in_review()
+    {
+        var job = await SubmitAsync("Zanele Mthembu");
+        var chloe = await api.SignInAsAsync("Chloe Adams");
+        var priya = await api.SignInAsAsync("Priya Naidoo");
+        var ethan = await StudioPersonAsync(chloe, "Ethan Pillay");
+        var amahle = await StudioPersonAsync(chloe, "Amahle Dlamini");
+        var unallocated = await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/reassign", new ReassignRequest(amahle), ApiFactory.Json, _ct);
+        await ScheduleAsync(job, "Ethan Pillay");
+
+        var byDesigner = await priya.PostAsJsonAsync($"/api/jobs/{job.Id}/reassign", new ReassignRequest(amahle), ApiFactory.Json, _ct);
+        var samePerson = await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/reassign", new ReassignRequest(ethan), ApiFactory.Json, _ct);
+        var stranger = await chloe.PostAsJsonAsync($"/api/jobs/{job.Id}/reassign", new ReassignRequest(Guid.CreateVersion7()), ApiFactory.Json, _ct);
+        var inReview = await AwaitingDesignApprovalAsync();
+        var review = await chloe.PostAsJsonAsync($"/api/jobs/{inReview.Id}/reassign", new ReassignRequest(amahle), ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, unallocated.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byDesigner.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, samePerson.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, stranger.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, review.StatusCode);
     }
 
     private async Task<JobDto> SubmitAsync(string requester)

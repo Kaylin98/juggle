@@ -4,7 +4,7 @@ import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { DueDate } from '../../shared/due-date';
 import { StatusChip } from '../../shared/status-chip';
-import { JobActions } from '../workflow/job-actions';
+import { JobActionArea } from '../workflow/job-action-area';
 
 /**
  * The jobs waiting for the signed-in user to approve (D70): the head of design's designs, or a marketing manager's
@@ -12,7 +12,7 @@ import { JobActions } from '../workflow/job-actions';
  */
 @Component({
   selector: 'app-approvals-page',
-  imports: [DueDate, JobActions, RouterLink, StatusChip],
+  imports: [DueDate, JobActionArea, RouterLink, StatusChip],
   template: `
     <div class="px-8 pt-2 pb-8">
       <h1 class="page-title">Approvals</h1>
@@ -53,40 +53,9 @@ import { JobActions } from '../workflow/job-actions';
                 }
               </p>
               <p class="mt-3 text-sm">
-                @if (item.artwork; as artwork) {
-                  @if (artwork.file; as file) {
-                    <a
-                      class="font-semibold text-accent-700 hover:underline"
-                      [href]="jobs.fileUrl(job.id, file.id)"
-                      [attr.download]="file.fileName"
-                    >
-                      Review version {{ artwork.version }}: {{ file.fileName }}
-                    </a>
-                  } @else {
-                    <a
-                      class="font-semibold text-accent-700 hover:underline"
-                      [href]="artwork.url"
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      Review version {{ artwork.version }}
-                    </a>
-                  }
-                  @if (artwork.note) {
-                    <span class="text-ink-muted"> &middot; {{ artwork.note }}</span>
-                  }
-                } @else {
-                  <span class="text-ink-muted">No artwork to review.</span>
-                }
-                <a class="btn-quiet ml-2" [routerLink]="['/requests', job.id]"
-                  >Brief and activity</a
-                >
+                <a class="btn-quiet -ml-3" [routerLink]="['/requests', job.id]">Brief and activity</a>
               </p>
-              <app-job-actions
-                class="mt-4 block empty:hidden"
-                [job]="job"
-                (changed)="approvals.reload()"
-              />
+              <app-job-action-area class="mt-4" [job]="job" />
             </li>
           } @empty {
             <li class="empty-state">Nothing waiting for your approval.</li>

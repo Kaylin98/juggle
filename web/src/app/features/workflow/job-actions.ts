@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, linkedSignal, output } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
 import { JobsService } from '../../core/jobs.service';
 import { BusinessApproval, Job, Person, RequestChanges, WorkflowAction } from '../../core/models';
@@ -155,8 +155,6 @@ export class JobActions {
   readonly people = input<Person[]>([]);
   /** The form to open at once, such as the one a card dropped on a column calls for. */
   readonly startWith = input<WorkflowAction | null>(null);
-  /** An action changed the job, so the page showing it should reload. */
-  readonly changed = output<void>();
 
   protected readonly available = computed(() =>
     ACTIONS.filter((a) => this.job().actions.includes(a)),
@@ -179,8 +177,8 @@ export class JobActions {
   protected async choose(action: WorkflowAction): Promise<void> {
     if (!ONE_CLICK_ACTIONS.includes(action)) {
       this.open.set(action);
-    } else if (await this.runner.runOneClick(this.job().id, action)) {
-      this.changed.emit();
+    } else {
+      await this.runner.runOneClick(this.job().id, action);
     }
   }
 
@@ -249,14 +247,15 @@ export class JobActions {
   };
 
   protected finished(): void {
-    this.changed.emit();
+    this.jobs.notifyChanged();
   }
 
   private async run(request: () => Promise<unknown>, success: string): Promise<void> {
     try {
       await request();
       this.toast.show(success, 'success');
-      this.changed.emit();
+      this.open.set(null);
+      this.jobs.notifyChanged();
     } catch (error) {
       this.toast.error(error);
     }

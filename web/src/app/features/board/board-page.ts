@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { AuthService } from '../../core/auth.service';
+import { reloadOnJobChange } from '../../core/jobs.service';
 import { Job, WorkflowAction } from '../../core/models';
 import { TeamContextService } from '../../core/team-context.service';
 import { BrandLegend, legendBrands } from '../../shared/brand-legend';
@@ -90,6 +91,7 @@ export class BoardPage {
   private readonly areaWidth = signal(0);
 
   constructor() {
+    reloadOnJobChange(this.board);
     effect((onCleanup) => {
       const area = this.area()?.nativeElement;
       if (!area) return;
@@ -233,7 +235,7 @@ export class BoardPage {
     if (outcome?.kind === 'refuse') {
       this.toast.show(outcome.hint, 'warning');
     } else if (outcome?.kind === 'run') {
-      if (await this.runner.runOneClick(event.job.id, outcome.action)) this.board.reload();
+      await this.runner.runOneClick(event.job.id, outcome.action);
     } else if (outcome?.kind === 'choose') {
       this.dropMenu.set({ job: event.job, actions: outcome.actions, point: event.point });
     } else if (outcome) {
@@ -248,7 +250,7 @@ export class BoardPage {
     this.dropMenu.set(null);
     if (!menu) return;
     if (ONE_CLICK_ACTIONS.includes(action)) {
-      if (await this.runner.runOneClick(menu.job.id, action)) this.board.reload();
+      await this.runner.runOneClick(menu.job.id, action);
     } else {
       this.openJobId.set(menu.job.id);
       this.openAction.set(action);

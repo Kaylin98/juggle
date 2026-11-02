@@ -3,6 +3,7 @@ import { formatDate } from '@angular/common';
 import { Component, LOCALE_ID, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { FormField, form, max, min, required, submit } from '@angular/forms/signals';
 import { AllocationsService } from '../../core/allocations.service';
+import { JobsService } from '../../core/jobs.service';
 import { AllocationCheck, Job, Person } from '../../core/models';
 import { ClashDialog } from '../../shared/clash-dialog';
 import { clashMessage, lateText } from '../../shared/clash-message';
@@ -107,13 +108,13 @@ interface Warning {
 })
 export class BookOnSchedule {
   private readonly allocations = inject(AllocationsService);
+  private readonly jobs = inject(JobsService);
   private readonly toast = inject(ToastService);
   private readonly locale = inject(LOCALE_ID);
 
   readonly job = input.required<Job>();
   readonly designer = input.required<Person>();
   readonly closed = output<void>();
-  readonly booked = output<void>();
 
   protected readonly confirmPositions = CONFIRM_POSITIONS;
 
@@ -176,7 +177,7 @@ export class BookOnSchedule {
         clash ?? `Booked ${this.designer().name} for ${hoursPerDay}h/day, ${date(startDate)} to ${date(endDate)}.`,
         clash ? 'warning' : 'success',
       );
-      this.booked.emit();
+      this.jobs.notifyChanged();
       this.closed.emit();
     } catch (error) {
       this.toast.error(error);

@@ -49,19 +49,70 @@ public sealed class AllocationsTests(ApiFactory api)
     }
 
     [Fact]
-    public async Task Update_moves_an_allocation_to_other_dates_and_another_person()
+    public async Task Update_moves_an_allocation_to_other_dates_but_never_to_another_person()
     {
         var client = await api.SignInAsAsync("Chloe Adams");
         var (ethan, job) = await StudioPersonAndJobAsync(client, "Ethan Pillay");
-        var (amahle, _) = await StudioPersonAndJobAsync(client, "Amahle Dlamini");
+        var amahle = await StudioPersonAsync(client, "Amahle Dlamini");
         var created = await CreateAsync(client, Booking(ethan, job, 3));
 
-        var moved = Booking(amahle, job, 5) with { StartDate = _monday.AddDays(1), EndDate = _monday.AddDays(2), Notes = "  Moved  " };
+        var moved = Booking(ethan, job, 5) with { StartDate = _monday.AddDays(1), EndDate = _monday.AddDays(2), Notes = "  Moved  " };
         var response = await client.PutAsJsonAsync($"/api/allocations/{created.Id}", moved, ApiFactory.Json, _ct);
+        var toAnotherPerson = await client.PutAsJsonAsync($"/api/allocations/{created.Id}", moved with { PersonId = amahle }, ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var bar = (await GetStudioScheduleAsync(client)).Allocations.Single(a => a.Id == created.Id);
-        Assert.Equal((amahle, _monday.AddDays(1), _monday.AddDays(2), 5m, "Moved"), (bar.PersonId, bar.StartDate, bar.EndDate, bar.HoursPerDay, bar.Notes));
+        Assert.Equal((ethan, _monday.AddDays(1), _monday.AddDays(2), 5m, "Moved"), (bar.PersonId, bar.StartDate, bar.EndDate, bar.HoursPerDay, bar.Notes));
+        Assert.Equal(HttpStatusCode.BadRequest, toAnotherPerson.StatusCode);
+        Assert.Equal(ethan, (await GetStudioScheduleAsync(client)).Allocations.Single(a => a.Id == created.Id).PersonId);
+    }
+
+    [Fact]
+    public async Task A_booking_cannot_be_switched_to_a_job_that_belongs_to_someone_else()
+    {
+        var client = await api.SignInAsAsync("Chloe Adams");
+        var (ethan, job) = await StudioPersonAndJobAsync(client, "Ethan Pillay");
+        var (_, othersJob) = await StudioPersonAndJobAsync(client, "Amahle Dlamini");
+        var created = await CreateAsync(client, Booking(ethan, job, 3));
+
+        var response = await client.PutAsJsonAsync($"/api/allocations/{created.Id}", Booking(ethan, othersJob, 3), ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Adding_time_on_days_already_booked_extends_that_booking_instead_of_overlapping_it()
+    {
+        var client = await api.SignInAsAsync("Chloe Adams");
+        var week = _monday.AddDays(7 * 65);
+        var (person, job) = await StudioPersonAndJobAsync(client, "Ruben Fourie");
+        await CreateAsync(client, Booking(person, job, 2) with { StartDate = week, EndDate = week.AddDays(4) });
+
+        var response = await client.PostAsJsonAsync(
+            "/api/allocations", Booking(person, job, 3) with { StartDate = week.AddDays(2), EndDate = week.AddDays(3) }, ApiFactory.Json, _ct);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var bookings = (await client.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job}", ApiFactory.Json, _ct))!.Job.Bookings
+            .Where(b => b.StartDate >= week && b.StartDate <= week.AddDays(4))
+            .Select(b => (b.StartDate, b.EndDate, b.HoursPerDay));
+        Assert.Equal(
+            [(week, week.AddDays(1), 2m), (week.AddDays(2), week.AddDays(3), 5m), (week.AddDays(4), week.AddDays(4), 2m)],
+            bookings);
+    }
+
+    [Fact]
+    public async Task Adding_time_after_a_booking_with_no_overlap_makes_a_second_booking()
+    {
+        var client = await api.SignInAsAsync("Chloe Adams");
+        var week = _monday.AddDays(7 * 66);
+        var (person, job) = await StudioPersonAndJobAsync(client, "Ruben Fourie");
+        await CreateAsync(client, Booking(person, job, 2) with { StartDate = week, EndDate = week.AddDays(1) });
+
+        await CreateAsync(client, Booking(person, job, 2) with { StartDate = week.AddDays(2), EndDate = week.AddDays(3) });
+
+        var count = (await client.GetFromJsonAsync<JobDetailDto>($"/api/jobs/{job}", ApiFactory.Json, _ct))!.Job.Bookings
+            .Count(b => b.StartDate >= week && b.StartDate <= week.AddDays(4));
+        Assert.Equal(2, count);
     }
 
     [Fact]
@@ -134,7 +185,7 @@ public sealed class AllocationsTests(ApiFactory api)
         var response = await client.PostAsJsonAsync("/api/allocations", Booking(amahle, job, 2), ApiFactory.Json, _ct);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("This job is allocated to someone else.", (await response.Content.ReadFromJsonAsync<ProblemDetails>(_ct))!.Detail);
+        Assert.Equal("This job is allocated to someone else. Reassign it to move its bookings.", (await response.Content.ReadFromJsonAsync<ProblemDetails>(_ct))!.Detail);
     }
 
     [Fact]

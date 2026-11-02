@@ -28,11 +28,15 @@ public static class FileRules
         [".jpeg"] = "image/jpeg",
         [".gif"] = "image/gif",
         [".webp"] = "image/webp",
+        [".svg"] = "image/svg+xml",
         [".mp4"] = "video/mp4",
         [".m4v"] = "video/mp4",
         [".mov"] = "video/quicktime",
         [".webm"] = "video/webm",
     };
+
+    /// <summary>Images and PDFs can open in the browser; everything else downloads.</summary>
+    public static bool OpensInBrowser(string contentType) => contentType.StartsWith("image/", StringComparison.Ordinal) || contentType == "application/pdf";
 
     /// <summary>The extensions for the browser's file picker.</summary>
     public static string Accept => string.Join(',', ContentTypes.Keys);

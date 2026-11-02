@@ -91,3 +91,25 @@
     />
   </ng-template>
 }
+
+<!-- Over the grid when a booking is dragged to another person's row; a transparent backdrop keeps the grid still. -->
+@if (reassign(); as move) {
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="move.origin"
+    [cdkConnectedOverlayOpen]="true"
+    [cdkConnectedOverlayPositions]="popoverPositions"
+    [cdkConnectedOverlayHasBackdrop]="true"
+    cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+    (overlayOutsideClick)="cancelReassign()"
+    (overlayKeydown)="$event.key === 'Escape' && cancelReassign()"
+  >
+    <app-confirm-dialog
+      heading="Reassign job"
+      confirmLabel="Reassign"
+      [message]="move.message"
+      (cancelled)="cancelReassign()"
+      (confirmed)="confirmReassign()"
+    />
+  </ng-template>
+}

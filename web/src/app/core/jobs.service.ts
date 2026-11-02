@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject, resource } from '@angular/core';
+import { Injectable, effect, inject, resource, signal, untracked } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
@@ -18,6 +18,23 @@ import {
   Workflow,
 } from './models';
 import { TeamContextService } from './team-context.service';
+
+/**
+ * Reloads the resource whenever a job changes anywhere (see JobsService.notifyChanged), so every screen that shows
+ * jobs, the nav counts included, follows an action without a refresh. Call it where the resource is created.
+ */
+export function reloadOnJobChange(
+  data: { reload(): boolean },
+  jobs: { changes: () => number } = inject(JobsService),
+): void {
+  let seen = jobs.changes();
+  effect(() => {
+    const now = jobs.changes();
+    if (now === seen) return;
+    seen = now;
+    untracked(() => data.reload());
+  });
+}
 
 /** Jobs (D68): the brief form and the user's own jobs, the organisation's workflow, and the incoming queue. */
 @Injectable({ providedIn: 'root' })
@@ -44,6 +61,19 @@ export class JobsService {
       this.auth.can('ApproveDesign') || this.auth.can('ApproveMarketing') ? true : undefined,
     loader: () => firstValueFrom(this.http.get<QueuedJob[]>('/api/jobs/approvals')),
   });
+
+  /** Counts the changes made to jobs in this session; the screens showing jobs reload when it moves. */
+  readonly changes = signal(0);
+
+  constructor() {
+    reloadOnJobChange(this.incoming, this);
+    reloadOnJobChange(this.approvals, this);
+  }
+
+  /** Something was done to a job (an action, a booking, a file): tells every screen showing jobs to reload. */
+  notifyChanged(): void {
+    this.changes.update((n) => n + 1);
+  }
 
   /** The organisation's board columns and statuses (D77). */
   workflow(): Promise<Workflow> {
@@ -143,9 +173,9 @@ export class JobsService {
     return firstValueFrom(this.http.post<JobFile>(`/api/jobs/${id}/files`, body));
   }
 
-  /** Where a file downloads from, for a link. */
-  fileUrl(jobId: string, fileId: string): string {
-    return `/api/jobs/${jobId}/files/${fileId}`;
+  /** Where a file downloads from; `inline` opens an image or PDF in the browser instead. */
+  fileUrl(jobId: string, fileId: string, inline = false): string {
+    return `/api/jobs/${jobId}/files/${fileId}${inline ? '?inline=true' : ''}`;
   }
 
   markReady(id: string): Promise<JobDetail> {
